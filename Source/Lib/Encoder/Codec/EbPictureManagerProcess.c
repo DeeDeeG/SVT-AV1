@@ -1071,7 +1071,7 @@ void *picture_manager_kernel(void *input_ptr) {
                         }
 #endif
 
-                        child_pcs_ptr->parent_pcs_ptr->av1_cm->pcs_ptr = child_pcs_ptr;
+//                        child_pcs_ptr->parent_pcs_ptr->av1_cm->pcs_ptr = child_pcs_ptr;
 #if !TILES_PARALLEL
                         struct PictureParentControlSet *ppcs_ptr = child_pcs_ptr->parent_pcs_ptr;
                         Av1Common *const                cm       = ppcs_ptr->av1_cm;

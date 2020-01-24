@@ -9,7 +9,7 @@
  * PATENTS file, you can obtain it at www.aomedia.org/license/patent.
  *
  */
-#include "EbSequenceControlSet.h"
+//#include "EbSequenceControlSet.h"
 #include "EbPictureControlSet.h"
 #include "aom_dsp_rtcd.h"
 #include "EbRestoration.h"
@@ -1533,12 +1533,12 @@ void av1_foreach_rest_unit_in_frame_seg(Av1Common *cm, int32_t plane, RestTileSt
                                   segment_index);
 }
 
-int32_t eb_av1_loop_restoration_corners_in_sb(Av1Common *cm, int32_t plane, int32_t mi_row,
+int32_t eb_av1_loop_restoration_corners_in_sb(Av1Common *cm, SeqHeader *seq_header_p, int32_t plane, int32_t mi_row,
                                               int32_t mi_col, BlockSize bsize, int32_t *rcol0,
                                               int32_t *rcol1, int32_t *rrow0, int32_t *rrow1,
                                               int32_t *tile_tl_idx) {
     assert(rcol0 && rcol1 && rrow0 && rrow1);
-    if (bsize != cm->p_pcs_ptr->scs_ptr->seq_header.sb_size) return 0;
+    if (bsize != seq_header_p->sb_size) return 0;
     if (cm->rst_info[plane].frame_restoration_type == RESTORE_NONE) return 0;
 
     // assert(!cm->all_lossless);

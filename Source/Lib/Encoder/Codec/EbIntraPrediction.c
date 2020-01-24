@@ -2992,7 +2992,8 @@ void eb_av1_predict_intra_block(
     uint32_t bl_org_x_pict,
     uint32_t bl_org_y_pict,
     uint32_t bl_org_x_mb,
-    uint32_t bl_org_y_mb)
+    uint32_t bl_org_y_mb,
+    ModeInfo **mi_grid_base)
 {
     MacroBlockD xd_s;
     MacroBlockD *xd = &xd_s;
@@ -3069,7 +3070,7 @@ void eb_av1_predict_intra_block(
 
     int mi_stride = cm->mi_stride;
     const int32_t offset = mirow * mi_stride + micol;
-    xd->mi = cm->pcs_ptr->mi_grid_base + offset;
+    xd->mi = mi_grid_base + offset;
     ModeInfo *mi_ptr = *xd->mi;
 
     if (xd->up_available) {
@@ -3226,7 +3227,8 @@ void eb_av1_predict_intra_block_16bit(
     uint32_t bl_org_x_pict,
     uint32_t bl_org_y_pict,
     uint32_t bl_org_x_mb,
-    uint32_t bl_org_y_mb)
+    uint32_t bl_org_y_mb,
+    ModeInfo **mi_grid_base)
 {
     MacroBlockD xd_s;
     MacroBlockD *xd = &xd_s;
@@ -3303,7 +3305,7 @@ void eb_av1_predict_intra_block_16bit(
 
     int mi_stride = cm->mi_stride;
     const int32_t offset = mirow * mi_stride + micol;
-    xd->mi = cm->pcs_ptr->mi_grid_base + offset;
+    xd->mi = mi_grid_base + offset;
     ModeInfo *mi_ptr = *xd->mi;
 
     if (xd->up_available) {
@@ -3546,7 +3548,8 @@ EbErrorType eb_av1_intra_prediction_cl(
                 md_context_ptr->blk_origin_x,                  //uint32_t cuOrgX,
                 md_context_ptr->blk_origin_y,                  //uint32_t cuOrgY
                 plane ? ((md_context_ptr->blk_geom->origin_x >> 3) << 3) / 2 : md_context_ptr->blk_geom->origin_x,  //uint32_t cuOrgX used only for prediction Ptr
-                plane ? ((md_context_ptr->blk_geom->origin_y >> 3) << 3) / 2 : md_context_ptr->blk_geom->origin_y   //uint32_t cuOrgY used only for prediction Ptr
+                plane ? ((md_context_ptr->blk_geom->origin_y >> 3) << 3) / 2 : md_context_ptr->blk_geom->origin_y,   //uint32_t cuOrgY used only for prediction Ptr
+                pcs_ptr->mi_grid_base
             );
         }
     } else {
@@ -3618,7 +3621,8 @@ EbErrorType eb_av1_intra_prediction_cl(
                 md_context_ptr->blk_origin_x,                  //uint32_t cuOrgX,
                 md_context_ptr->blk_origin_y,                  //uint32_t cuOrgY
                 plane ? ((md_context_ptr->blk_geom->origin_x >> 3) << 3) / 2 : md_context_ptr->blk_geom->origin_x,  //uint32_t cuOrgX used only for prediction Ptr
-                plane ? ((md_context_ptr->blk_geom->origin_y >> 3) << 3) / 2 : md_context_ptr->blk_geom->origin_y   //uint32_t cuOrgY used only for prediction Ptr
+                plane ? ((md_context_ptr->blk_geom->origin_y >> 3) << 3) / 2 : md_context_ptr->blk_geom->origin_y,   //uint32_t cuOrgY used only for prediction Ptr
+                pcs_ptr->mi_grid_base
             );
         }
     }
@@ -3694,7 +3698,8 @@ EbErrorType  intra_luma_prediction_for_interintra(
             md_context_ptr->blk_origin_x,                            //uint32_t cuOrgX,
             md_context_ptr->blk_origin_y,                            //uint32_t cuOrgY
             0,                                                      //cuOrgX used only for prediction Ptr
-            0                                                       //cuOrgY used only for prediction Ptr
+            0,                                                       //cuOrgY used only for prediction Ptr
+            pcs_ptr->mi_grid_base
         );
     } else {
         uint16_t top_neigh_array[64 * 2 + 1];
@@ -3732,7 +3737,8 @@ EbErrorType  intra_luma_prediction_for_interintra(
             md_context_ptr->blk_origin_x,                            //uint32_t cuOrgX,
             md_context_ptr->blk_origin_y,                            //uint32_t cuOrgY
             0,                                                      //cuOrgX used only for prediction Ptr
-            0                                                       //cuOrgY used only for prediction Ptr
+            0,                                                      //cuOrgY used only for prediction Ptr
+            pcs_ptr->mi_grid_base
         );
     }
 

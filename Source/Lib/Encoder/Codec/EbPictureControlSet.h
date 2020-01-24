@@ -187,7 +187,7 @@ typedef struct Av1Common {
     int8_t                          sg_ref_frame_ep[2];
     int8_t                          wn_filter_mode;
 
-    struct PictureControlSet *pcs_ptr;
+//    struct PictureControlSet *pcs_ptr;
 
     FrameSize frm_size;
     TilesInfo tiles_info;

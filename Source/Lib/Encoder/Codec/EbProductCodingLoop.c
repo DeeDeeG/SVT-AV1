@@ -3498,9 +3498,9 @@ EbErrorType av1_intra_luma_prediction(ModeDecisionContext *        md_context_pt
             md_context_ptr->blk_geom
                 ->tx_org_x[is_inter][md_context_ptr->tx_depth]
                           [md_context_ptr->txb_itr], //uint32_t cuOrgX used only for prediction Ptr
-            md_context_ptr->blk_geom
-                ->tx_org_y[is_inter][md_context_ptr->tx_depth]
-                          [md_context_ptr->txb_itr] //uint32_t cuOrgY used only for prediction Ptr
+            md_context_ptr->blk_geom->tx_org_y[md_context_ptr->tx_depth]
+                          [md_context_ptr->txb_itr], //uint32_t cuOrgY used only for prediction Ptr
+            pcs_ptr->mi_grid_base
         );
     } else {
         uint16_t top_neigh_array[64 * 2 + 1];
@@ -3558,9 +3558,9 @@ EbErrorType av1_intra_luma_prediction(ModeDecisionContext *        md_context_pt
             md_context_ptr->blk_geom
                 ->tx_org_x[is_inter][md_context_ptr->tx_depth]
                           [md_context_ptr->txb_itr], //uint32_t cuOrgX used only for prediction Ptr
-            md_context_ptr->blk_geom
-                ->tx_org_y[is_inter][md_context_ptr->tx_depth]
-                          [md_context_ptr->txb_itr] //uint32_t cuOrgY used only for prediction Ptr
+            md_context_ptr->blk_geom->tx_org_y[md_context_ptr->tx_depth]
+                          [md_context_ptr->txb_itr], //uint32_t cuOrgY used only for prediction Ptr
+            pcs_ptr->mi_grid_base
         );
     }
 
@@ -7246,7 +7246,7 @@ EB_EXTERN EbErrorType mode_decision_sb(SequenceControlSet *scs_ptr, PictureContr
         int32_t       mi_col    = context_ptr->blk_origin_x >> MI_SIZE_LOG2;
         int           mi_stride = pcs_ptr->parent_pcs_ptr->av1_cm->mi_stride;
         const int32_t offset    = mi_row * mi_stride + mi_col;
-        blk_ptr->av1xd->mi      = pcs_ptr->parent_pcs_ptr->av1_cm->pcs_ptr->mi_grid_base + offset;
+        blk_ptr->av1xd->mi      = pcs_ptr->mi_grid_base + offset;
         ModeInfo *mi_ptr        = *blk_ptr->av1xd->mi;
         blk_ptr->av1xd->up_available   = (mi_row > sb_ptr->tile_info.mi_row_start);
         blk_ptr->av1xd->left_available = (mi_col > sb_ptr->tile_info.mi_col_start);

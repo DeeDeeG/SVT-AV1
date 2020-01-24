@@ -3003,14 +3003,16 @@ extern void eb_av1_predict_intra_block(
     PaletteInfo *palette_info, FilterIntraMode filter_intra_mode, uint8_t *topNeighArray,
     uint8_t *leftNeighArray, EbPictureBufferDesc *recon_buffer, int32_t col_off, int32_t row_off,
     int32_t plane, BlockSize bsize, uint32_t tu_org_x_pict, uint32_t tu_org_y_pict,
-    uint32_t bl_org_x_pict, uint32_t bl_org_y_pict, uint32_t bl_org_x_mb, uint32_t bl_org_y_mb);
+    uint32_t bl_org_x_pict, uint32_t bl_org_y_pict, uint32_t bl_org_x_mb, uint32_t bl_org_y_mb,
+    ModeInfo **mi_grid_base);
 extern void eb_av1_predict_intra_block_16bit(
     TileInfo *tile, STAGE stage, const BlockGeom *blk_geom, const Av1Common *cm, int32_t wpx,
     int32_t hpx, TxSize tx_size, PredictionMode mode, int32_t angle_delta, int32_t use_palette,
     PaletteInfo *palette_info, FilterIntraMode filter_intra_mode, uint16_t *topNeighArray,
     uint16_t *leftNeighArray, EbPictureBufferDesc *recon_buffer, int32_t col_off, int32_t row_off,
     int32_t plane, BlockSize bsize, uint32_t tu_org_x_pict, uint32_t tu_org_y_pict,
-    uint32_t bl_org_x_pict, uint32_t bl_org_y_pict, uint32_t bl_org_x_mb, uint32_t bl_org_y_mb);
+    uint32_t bl_org_x_pict, uint32_t bl_org_y_pict, uint32_t bl_org_x_mb, uint32_t bl_org_y_mb,
+    ModeInfo **mi_grid_base);
 
 #define INTERINTRA_WEDGE_SIGN 0
 
@@ -5219,7 +5221,8 @@ EbErrorType av1_inter_prediction(
                     pu_origin_x,
                     pu_origin_y,
                     0,                                                  //uint32_t cuOrgX used only for prediction Ptr
-                    0                                                   //uint32_t cuOrgY used only for prediction Ptr
+                    0,                                                   //uint32_t cuOrgY used only for prediction Ptr
+                    picture_control_set_ptr->mi_grid_base
                 );
             else
                 eb_av1_predict_intra_block(
@@ -5248,8 +5251,8 @@ EbErrorType av1_inter_prediction(
                     pu_origin_x,
                     pu_origin_y,
                     0,                                                  //uint32_t cuOrgX used only for prediction Ptr
-                    0                                                   //uint32_t cuOrgY used only for prediction Ptr
-                );
+                    0,                                                   //uint32_t cuOrgY used only for prediction Ptr
+                    picture_control_set_ptr->mi_grid_base);
 
             //combine_interintra
 
