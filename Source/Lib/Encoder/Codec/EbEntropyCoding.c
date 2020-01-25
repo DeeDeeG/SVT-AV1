@@ -5152,10 +5152,10 @@ void eb_av1_encode_dv(AomWriter *w, const MV *mv, const MV *ref, NmvContext *mvc
     if (mv_joint_horizontal(j)) encode_mv_component(w, diff.col, &mvctx->comps[1], MV_SUBPEL_NONE);
 }
 
-int av1_allow_intrabc(const Av1Common *const cm) {
-    return (cm->p_pcs_ptr->slice_type == I_SLICE &&
-            cm->p_pcs_ptr->frm_hdr.allow_screen_content_tools &&
-            cm->p_pcs_ptr->frm_hdr.allow_intrabc);
+int av1_allow_intrabc(const FrameHeader *frm_hdr, EB_SLICE slice_type) {
+    return (slice_type == I_SLICE &&
+            frm_hdr->allow_screen_content_tools &&
+            frm_hdr->allow_intrabc);
 }
 
 static void write_intrabc_info(FRAME_CONTEXT *ec_ctx, BlkStruct *blk_ptr, AomWriter *w) {
@@ -5822,7 +5822,8 @@ EbErrorType write_modes_b(PictureControlSet *pcs_ptr, EntropyCodingContext *cont
             const uint32_t intra_luma_mode   = blk_ptr->pred_mode;
             uint32_t       intra_chroma_mode = blk_ptr->prediction_unit_array->intra_chroma_mode;
 
-            if (av1_allow_intrabc(pcs_ptr->parent_pcs_ptr->av1_cm))
+            if (av1_allow_intrabc(&pcs_ptr->parent_pcs_ptr->frm_hdr,
+                    pcs_ptr->parent_pcs_ptr->slice_type))
                 write_intrabc_info(frame_context, blk_ptr, ec_writer);
 
             if (blk_ptr->av1xd->use_intrabc == 0)
@@ -6439,7 +6440,7 @@ EB_EXTERN EbErrorType write_sb(EntropyCodingContext *context_ptr, SuperBlock *tb
                 for (int32_t plane = 0; plane < 3; ++plane) {
                     int32_t rcol0, rcol1, rrow0, rrow1, tile_tl_idx;
                     if (eb_av1_loop_restoration_corners_in_sb(cm,
-                                                              &cm->p_pcs_ptr->scs_ptr->seq_header,
+                                                              &scs_ptr->seq_header,
                                                               plane,
                                                               mi_row,
                                                               mi_col,

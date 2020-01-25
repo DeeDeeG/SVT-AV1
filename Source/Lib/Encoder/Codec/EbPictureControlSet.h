@@ -180,7 +180,8 @@ typedef struct Av1Common {
     int32_t                         log2_tile_cols; // only valid for uniform tiles
     int32_t                         log2_tile_rows; // only valid for uniform tiles
     int32_t                         tile_width, tile_height; // In MI units
-    struct PictureParentControlSet *p_pcs_ptr;
+//    struct PictureParentControlSet *p_pcs_ptr;
+    SeqHeader                       *seq_header_ptr;
     int8_t                          sg_filter_mode;
     int32_t                         sg_frame_ep_cnt[SGRPROJ_PARAMS];
     int32_t                         sg_frame_ep;

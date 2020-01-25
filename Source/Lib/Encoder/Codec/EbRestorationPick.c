@@ -1553,7 +1553,7 @@ void restoration_seg_search(int32_t *rst_tmpbuf, Yv12BufferConfig *org_fts,
                                            segment_index);
     }
 }
-void rest_finish_search(Macroblock *x, Av1Common *const cm) {
+void rest_finish_search(PictureParentControlSet *p_pcs_ptr, Macroblock *x, Av1Common *const cm) {
     const int32_t   num_planes           = 3;
     RestorationType force_restore_type_d = (cm->wn_filter_mode) ? RESTORE_TYPES : RESTORE_SGRPROJ;
     int32_t         ntiles[2];
@@ -1578,8 +1578,8 @@ void rest_finish_search(Macroblock *x, Av1Common *const cm) {
         rsc.x        = x;
         rsc.plane    = plane;
         rsc.rusi     = rusi;
-        rsc.pic_num  = (uint32_t)cm->p_pcs_ptr->picture_number;
-        rsc.rusi_pic = cm->p_pcs_ptr->rusi_picture[plane];
+        rsc.pic_num  = (uint32_t)p_pcs_ptr->picture_number;
+        rsc.rusi_pic = p_pcs_ptr->rusi_picture[plane];
 
         const int32_t         plane_ntiles = ntiles[plane > 0];
         const RestorationType num_rtypes =

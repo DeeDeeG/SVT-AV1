@@ -302,7 +302,7 @@ void eb_av1_predict_intra_block(TileInfo *tile, STAGE stage, const BlockGeom *bl
                                 int32_t plane, BlockSize bsize, uint32_t txb_org_x_pict,
                                 uint32_t txb_org_y_pict, uint32_t bl_org_x_pict,
                                 uint32_t bl_org_y_pict, uint32_t bl_org_x_mb, uint32_t bl_org_y_mb,
-                                ModeInfo **mi_grid_base);
+                                ModeInfo **mi_grid_base, SeqHeader *seq_header_ptr);
 
 void eb_av1_predict_intra_block_16bit(
     TileInfo *tile, STAGE stage, const BlockGeom *blk_geom, const Av1Common *cm, int32_t wpx,
@@ -311,7 +311,7 @@ void eb_av1_predict_intra_block_16bit(
     uint16_t *left_neigh_array, EbPictureBufferDesc *recon_buffer, int32_t col_off, int32_t row_off,
     int32_t plane, BlockSize bsize, uint32_t txb_org_x_pict, uint32_t txb_org_y_pict,
     uint32_t bl_org_x_pict, uint32_t bl_org_y_pict, uint32_t bl_org_x_mb, uint32_t bl_org_y_mb,
-    ModeInfo **mi_grid_base);
+    ModeInfo **mi_grid_base, SeqHeader *seq_header_ptr);
 
 #ifdef __cplusplus
 }

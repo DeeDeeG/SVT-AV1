@@ -2993,7 +2993,8 @@ void eb_av1_predict_intra_block(
     uint32_t bl_org_y_pict,
     uint32_t bl_org_x_mb,
     uint32_t bl_org_y_mb,
-    ModeInfo **mi_grid_base)
+    ModeInfo **mi_grid_base,
+    SeqHeader *seq_header_ptr)
 {
     MacroBlockD xd_s;
     MacroBlockD *xd = &xd_s;
@@ -3167,11 +3168,11 @@ void eb_av1_predict_intra_block(
     bsize = scale_chroma_bsize(bsize, pd->subsampling_x, pd->subsampling_y);
 
     const int32_t have_top_right = intra_has_top_right(
-        cm->p_pcs_ptr->scs_ptr->seq_header.sb_size, bsize,
+        seq_header_ptr->sb_size, bsize,
         mi_row, mi_col, have_top, right_available, partition, tx_size,
         row_off, col_off, pd->subsampling_x, pd->subsampling_y);
     const int32_t have_bottom_left = intra_has_bottom_left(
-        cm->p_pcs_ptr->scs_ptr->seq_header.sb_size, bsize,
+        seq_header_ptr->sb_size, bsize,
         mi_row, mi_col, bottom_available, have_left, partition,
         tx_size, row_off, col_off, pd->subsampling_x, pd->subsampling_y);
 
@@ -3228,7 +3229,8 @@ void eb_av1_predict_intra_block_16bit(
     uint32_t bl_org_y_pict,
     uint32_t bl_org_x_mb,
     uint32_t bl_org_y_mb,
-    ModeInfo **mi_grid_base)
+    ModeInfo **mi_grid_base,
+    SeqHeader *seq_header_ptr)
 {
     MacroBlockD xd_s;
     MacroBlockD *xd = &xd_s;
@@ -3401,11 +3403,11 @@ void eb_av1_predict_intra_block_16bit(
     bsize = scale_chroma_bsize(bsize, pd->subsampling_x, pd->subsampling_y);
 
     const int32_t have_top_right = intra_has_top_right(
-        cm->p_pcs_ptr->scs_ptr->seq_header.sb_size, bsize,
+        seq_header_ptr->sb_size, bsize,
         mi_row, mi_col, have_top, right_available, partition, tx_size,
         row_off, col_off, pd->subsampling_x, pd->subsampling_y);
     const int32_t have_bottom_left = intra_has_bottom_left(
-        cm->p_pcs_ptr->scs_ptr->seq_header.sb_size, bsize,
+        seq_header_ptr->sb_size, bsize,
         mi_row, mi_col, bottom_available, have_left, partition,
         tx_size, row_off, col_off, pd->subsampling_x, pd->subsampling_y);
 
@@ -3549,7 +3551,8 @@ EbErrorType eb_av1_intra_prediction_cl(
                 md_context_ptr->blk_origin_y,                  //uint32_t cuOrgY
                 plane ? ((md_context_ptr->blk_geom->origin_x >> 3) << 3) / 2 : md_context_ptr->blk_geom->origin_x,  //uint32_t cuOrgX used only for prediction Ptr
                 plane ? ((md_context_ptr->blk_geom->origin_y >> 3) << 3) / 2 : md_context_ptr->blk_geom->origin_y,   //uint32_t cuOrgY used only for prediction Ptr
-                pcs_ptr->mi_grid_base
+                pcs_ptr->mi_grid_base,
+                &((SequenceControlSet *)pcs_ptr->scs_wrapper_ptr->object_ptr)->seq_header
             );
         }
     } else {
@@ -3622,7 +3625,8 @@ EbErrorType eb_av1_intra_prediction_cl(
                 md_context_ptr->blk_origin_y,                  //uint32_t cuOrgY
                 plane ? ((md_context_ptr->blk_geom->origin_x >> 3) << 3) / 2 : md_context_ptr->blk_geom->origin_x,  //uint32_t cuOrgX used only for prediction Ptr
                 plane ? ((md_context_ptr->blk_geom->origin_y >> 3) << 3) / 2 : md_context_ptr->blk_geom->origin_y,   //uint32_t cuOrgY used only for prediction Ptr
-                pcs_ptr->mi_grid_base
+                pcs_ptr->mi_grid_base,
+                &((SequenceControlSet *)pcs_ptr->scs_wrapper_ptr->object_ptr)->seq_header
             );
         }
     }
@@ -3699,7 +3703,8 @@ EbErrorType  intra_luma_prediction_for_interintra(
             md_context_ptr->blk_origin_y,                            //uint32_t cuOrgY
             0,                                                      //cuOrgX used only for prediction Ptr
             0,                                                       //cuOrgY used only for prediction Ptr
-            pcs_ptr->mi_grid_base
+            pcs_ptr->mi_grid_base,
+            &((SequenceControlSet *)pcs_ptr->scs_wrapper_ptr->object_ptr)->seq_header
         );
     } else {
         uint16_t top_neigh_array[64 * 2 + 1];
@@ -3738,7 +3743,8 @@ EbErrorType  intra_luma_prediction_for_interintra(
             md_context_ptr->blk_origin_y,                            //uint32_t cuOrgY
             0,                                                      //cuOrgX used only for prediction Ptr
             0,                                                      //cuOrgY used only for prediction Ptr
-            pcs_ptr->mi_grid_base
+            pcs_ptr->mi_grid_base,
+            &((SequenceControlSet *)pcs_ptr->scs_wrapper_ptr->object_ptr)->seq_header
         );
     }
 

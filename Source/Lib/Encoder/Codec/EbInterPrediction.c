@@ -3004,7 +3004,7 @@ extern void eb_av1_predict_intra_block(
     uint8_t *leftNeighArray, EbPictureBufferDesc *recon_buffer, int32_t col_off, int32_t row_off,
     int32_t plane, BlockSize bsize, uint32_t tu_org_x_pict, uint32_t tu_org_y_pict,
     uint32_t bl_org_x_pict, uint32_t bl_org_y_pict, uint32_t bl_org_x_mb, uint32_t bl_org_y_mb,
-    ModeInfo **mi_grid_base);
+    ModeInfo **mi_grid_base, SeqHeader *seq_header_ptr);
 extern void eb_av1_predict_intra_block_16bit(
     TileInfo *tile, STAGE stage, const BlockGeom *blk_geom, const Av1Common *cm, int32_t wpx,
     int32_t hpx, TxSize tx_size, PredictionMode mode, int32_t angle_delta, int32_t use_palette,
@@ -3012,7 +3012,7 @@ extern void eb_av1_predict_intra_block_16bit(
     uint16_t *leftNeighArray, EbPictureBufferDesc *recon_buffer, int32_t col_off, int32_t row_off,
     int32_t plane, BlockSize bsize, uint32_t tu_org_x_pict, uint32_t tu_org_y_pict,
     uint32_t bl_org_x_pict, uint32_t bl_org_y_pict, uint32_t bl_org_x_mb, uint32_t bl_org_y_mb,
-    ModeInfo **mi_grid_base);
+    ModeInfo **mi_grid_base, SeqHeader *seq_header_ptr);
 
 #define INTERINTRA_WEDGE_SIGN 0
 
@@ -5222,8 +5222,8 @@ EbErrorType av1_inter_prediction(
                     pu_origin_y,
                     0,                                                  //uint32_t cuOrgX used only for prediction Ptr
                     0,                                                   //uint32_t cuOrgY used only for prediction Ptr
-                    picture_control_set_ptr->mi_grid_base
-                );
+                    picture_control_set_ptr->mi_grid_base,
+                    &((SequenceControlSet *)picture_control_set_ptr->scs_wrapper_ptr->object_ptr)->seq_header);
             else
                 eb_av1_predict_intra_block(
                     tile,
@@ -5252,7 +5252,8 @@ EbErrorType av1_inter_prediction(
                     pu_origin_y,
                     0,                                                  //uint32_t cuOrgX used only for prediction Ptr
                     0,                                                   //uint32_t cuOrgY used only for prediction Ptr
-                    picture_control_set_ptr->mi_grid_base);
+                    picture_control_set_ptr->mi_grid_base,
+                    &((SequenceControlSet *)picture_control_set_ptr->scs_wrapper_ptr->object_ptr)->seq_header);
 
             //combine_interintra
 
@@ -6521,6 +6522,7 @@ EbErrorType inter_pu_prediction_av1(uint8_t hbd_mode_decision, ModeDecisionConte
     if (picture_control_set_ptr->parent_pcs_ptr->frm_hdr.allow_warped_motion &&
         candidate_ptr->motion_mode != WARPED_CAUSAL) {
         wm_count_samples(md_context_ptr->blk_ptr,
+                         ((SequenceControlSet *)picture_control_set_ptr->scs_wrapper_ptr->object_ptr)->seq_header.sb_size,
                          md_context_ptr->blk_geom,
                          md_context_ptr->blk_origin_x,
                          md_context_ptr->blk_origin_y,

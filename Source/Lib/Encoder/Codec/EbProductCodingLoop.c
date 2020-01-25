@@ -3500,7 +3500,8 @@ EbErrorType av1_intra_luma_prediction(ModeDecisionContext *        md_context_pt
                           [md_context_ptr->txb_itr], //uint32_t cuOrgX used only for prediction Ptr
             md_context_ptr->blk_geom->tx_org_y[md_context_ptr->tx_depth]
                           [md_context_ptr->txb_itr], //uint32_t cuOrgY used only for prediction Ptr
-            pcs_ptr->mi_grid_base
+            pcs_ptr->mi_grid_base,
+            &((SequenceControlSet *)pcs_ptr->scs_wrapper_ptr->object_ptr)->seq_header
         );
     } else {
         uint16_t top_neigh_array[64 * 2 + 1];
@@ -3560,7 +3561,8 @@ EbErrorType av1_intra_luma_prediction(ModeDecisionContext *        md_context_pt
                           [md_context_ptr->txb_itr], //uint32_t cuOrgX used only for prediction Ptr
             md_context_ptr->blk_geom->tx_org_y[md_context_ptr->tx_depth]
                           [md_context_ptr->txb_itr], //uint32_t cuOrgY used only for prediction Ptr
-            pcs_ptr->mi_grid_base
+            pcs_ptr->mi_grid_base,
+            &((SequenceControlSet *)pcs_ptr->scs_wrapper_ptr->object_ptr)->seq_header
         );
     }
 
