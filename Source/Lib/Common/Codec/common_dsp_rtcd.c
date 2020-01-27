@@ -267,6 +267,15 @@ void setup_common_rtcd_internal(CPU_FLAGS flags) {
     if (flags & HAS_AVX2)
         av1_build_compound_diffwtd_mask_d16 = av1_build_compound_diffwtd_mask_d16_avx2;
 
+    eb_av1_highbd_wiener_convolve_add_src = eb_av1_highbd_wiener_convolve_add_src_c;
+    if (flags & HAS_AVX2)
+        eb_av1_highbd_wiener_convolve_add_src = eb_av1_highbd_wiener_convolve_add_src_avx2;
+
+    eb_apply_selfguided_restoration = eb_apply_selfguided_restoration_c;
+    if (flags & HAS_AVX2) eb_apply_selfguided_restoration = eb_apply_selfguided_restoration_avx2;
+
+    eb_av1_selfguided_restoration = eb_av1_selfguided_restoration_c;
+    if (flags & HAS_AVX2) eb_av1_selfguided_restoration = eb_av1_selfguided_restoration_avx2;
 
     eb_av1_inv_txfm2d_add_16x16 = eb_av1_inv_txfm2d_add_16x16_c;
     eb_av1_inv_txfm2d_add_32x32 = eb_av1_inv_txfm2d_add_32x32_c;
@@ -368,4 +377,10 @@ void setup_common_rtcd_internal(CPU_FLAGS flags) {
     SET_SSSE3(avc_style_luma_interpolation_filter,
               avc_style_luma_interpolation_filter_helper_c,
               avc_style_luma_interpolation_filter_helper_ssse3);
+
+    SET_AVX2_AVX512(eb_av1_wiener_convolve_add_src,
+                    eb_av1_wiener_convolve_add_src_c,
+                    eb_av1_wiener_convolve_add_src_avx2,
+                    eb_av1_wiener_convolve_add_src_avx512);
+
 }

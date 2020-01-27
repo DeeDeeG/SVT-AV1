@@ -282,6 +282,29 @@ extern "C" {
     void avc_style_luma_interpolation_filter_ssse3_helper(EbByte ref_pic, uint32_t src_stride, EbByte dst, uint32_t dst_stride, uint32_t pu_width, uint32_t pu_height, EbByte temp_buf, EbBool skip, uint32_t frac_pos, uint8_t choice);
     RTCD_EXTERN void(*avc_style_luma_interpolation_filter)(EbByte ref_pic, uint32_t src_stride, EbByte dst, uint32_t dst_stride, uint32_t pu_width, uint32_t pu_height, EbByte temp_buf, EbBool skip, uint32_t frac_pos, uint8_t choice);
 
+    void eb_av1_wiener_convolve_add_src_c(const uint8_t *const src, const ptrdiff_t src_stride, uint8_t *const dst, const ptrdiff_t dst_stride, const int16_t *const filter_x, const int16_t *const filter_y, const int32_t w, const int32_t h, const ConvolveParams *const conv_params);
+    void eb_av1_wiener_convolve_add_src_avx2(const uint8_t *const src, const ptrdiff_t src_stride, uint8_t *const dst, const ptrdiff_t dst_stride, const int16_t *const filter_x, const int16_t *const filter_y, const int32_t w, const int32_t h, const ConvolveParams *const conv_params);
+    void eb_av1_wiener_convolve_add_src_avx512(const uint8_t *const src, const ptrdiff_t src_stride, uint8_t *const dst, const ptrdiff_t dst_stride, const int16_t *const filter_x, const int16_t *const filter_y, const int32_t w, const int32_t h, const ConvolveParams *const conv_params);
+    RTCD_EXTERN void(*eb_av1_wiener_convolve_add_src)(const uint8_t *const src, const ptrdiff_t src_stride, uint8_t *const dst, const ptrdiff_t dst_stride, const int16_t *const filter_x, const int16_t *const filter_y, const int32_t w, const int32_t h, const ConvolveParams *const conv_params);
+
+    void eb_av1_highbd_wiener_convolve_add_src_c(const uint8_t *const src, const ptrdiff_t src_stride, uint8_t *const dst, const ptrdiff_t dst_stride, const int16_t *const filter_x, const int16_t *const filter_y, const int32_t w, const int32_t h, const ConvolveParams *const conv_params, const int32_t bd);
+    void eb_av1_highbd_wiener_convolve_add_src_avx2(const uint8_t *const src, const ptrdiff_t src_stride, uint8_t *const dst, const ptrdiff_t dst_stride, const int16_t *const filter_x, const int16_t *const filter_y, const int32_t w, const int32_t h, const ConvolveParams *const conv_params, const int32_t bd);
+    RTCD_EXTERN void(*eb_av1_highbd_wiener_convolve_add_src)(const uint8_t *const src, const ptrdiff_t src_stride, uint8_t *const dst, const ptrdiff_t dst_stride, const int16_t *const filter_x, const int16_t *const filter_y, const int32_t w, const int32_t h, const ConvolveParams *const conv_params, const int32_t bd);
+
+    void eb_apply_selfguided_restoration_c(const uint8_t *dat, int32_t width, int32_t height, int32_t stride, int32_t eps, const int32_t *xqd, uint8_t *dst, int32_t dst_stride, int32_t *tmpbuf, int32_t bit_depth, int32_t highbd);
+    void eb_apply_selfguided_restoration_avx2(const uint8_t *dat, int32_t width, int32_t height, int32_t stride, int32_t eps, const int32_t *xqd, uint8_t *dst, int32_t dst_stride, int32_t *tmpbuf, int32_t bit_depth, int32_t highbd);
+    RTCD_EXTERN void(*eb_apply_selfguided_restoration)(const uint8_t *dat, int32_t width, int32_t height, int32_t stride, int32_t eps, const int32_t *xqd, uint8_t *dst, int32_t dst_stride, int32_t *tmpbuf, int32_t bit_depth, int32_t highbd);
+
+    void eb_av1_selfguided_restoration_c(const uint8_t *dgd8, int32_t width, int32_t height,
+                                         int32_t dgd_stride, int32_t *flt0, int32_t *flt1, int32_t flt_stride,
+                                         int32_t sgr_params_idx, int32_t bit_depth, int32_t highbd);
+    void eb_av1_selfguided_restoration_avx2(const uint8_t *dgd8, int32_t width, int32_t height,
+                                            int32_t dgd_stride, int32_t *flt0, int32_t *flt1, int32_t flt_stride,
+                                            int32_t sgr_params_idx, int32_t bit_depth, int32_t highbd);
+    RTCD_EXTERN void(*eb_av1_selfguided_restoration)(const uint8_t *dgd8, int32_t width, int32_t height,
+                                                     int32_t dgd_stride, int32_t *flt0, int32_t *flt1, int32_t flt_stride,
+                                                     int32_t sgr_params_idx, int32_t bit_depth, int32_t highbd);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif

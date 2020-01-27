@@ -76,15 +76,6 @@ void setup_rtcd_internal(CPU_FLAGS flags) {
 
     //to use C: flags=0
 
-    eb_apply_selfguided_restoration = eb_apply_selfguided_restoration_c;
-    if (flags & HAS_AVX2) eb_apply_selfguided_restoration = eb_apply_selfguided_restoration_avx2;
-
-    eb_av1_highbd_wiener_convolve_add_src = eb_av1_highbd_wiener_convolve_add_src_c;
-    if (flags & HAS_AVX2)
-        eb_av1_highbd_wiener_convolve_add_src = eb_av1_highbd_wiener_convolve_add_src_avx2;
-
-    eb_av1_selfguided_restoration = eb_av1_selfguided_restoration_c;
-    if (flags & HAS_AVX2) eb_av1_selfguided_restoration = eb_av1_selfguided_restoration_avx2;
     av1_build_compound_diffwtd_mask = av1_build_compound_diffwtd_mask_c;
     if (flags & HAS_AVX2) av1_build_compound_diffwtd_mask = av1_build_compound_diffwtd_mask_avx2;
     av1_build_compound_diffwtd_mask_highbd = av1_build_compound_diffwtd_mask_highbd_c;
@@ -1745,10 +1736,7 @@ void setup_rtcd_internal(CPU_FLAGS flags) {
                     eb_av1_jnt_convolve_y_c,
                     eb_av1_jnt_convolve_y_avx2,
                     eb_av1_jnt_convolve_y_avx512);
-    SET_AVX2_AVX512(eb_av1_wiener_convolve_add_src,
-                    eb_av1_wiener_convolve_add_src_c,
-                    eb_av1_wiener_convolve_add_src_avx2,
-                    eb_av1_wiener_convolve_add_src_avx512);
+
     SET_AVX2_AVX512(
         search_one_dual, search_one_dual_c, search_one_dual_avx2, search_one_dual_avx512);
     SET_SSE41_AVX2(sad_loop_kernel_sparse,
