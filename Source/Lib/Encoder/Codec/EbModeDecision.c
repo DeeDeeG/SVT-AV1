@@ -28,7 +28,7 @@
 
 #include "av1me.h"
 #include "hash.h"
-#include "EbInterPrediction.h"
+#include "EbEncInterPrediction.h"
 #include "EbRateDistortionCost.h"
 #include "aom_dsp_rtcd.h"
 #include "EbLog.h"
