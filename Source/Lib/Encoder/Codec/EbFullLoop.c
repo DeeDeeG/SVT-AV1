@@ -1879,9 +1879,18 @@ void product_full_loop(ModeDecisionCandidateBuffer *candidate_buffer,
     uint8_t  tx_depth              = context_ptr->tx_depth;
     uint32_t txb_itr               = context_ptr->txb_itr;
     uint32_t txb_1d_offset         = context_ptr->txb_1d_offset;
-    uint16_t tx_org_x              = context_ptr->blk_geom->tx_org_x[tx_depth][txb_itr];
-    uint16_t tx_org_y              = context_ptr->blk_geom->tx_org_y[tx_depth][txb_itr];
-    int32_t  cropped_tx_width =
+#if TX_ORG_INTERINTRA
+    int32_t is_inter = (candidate_buffer->candidate_ptr->type == INTER_MODE ||
+                        candidate_buffer->candidate_ptr->use_intrabc)
+                           ? EB_TRUE
+                           : EB_FALSE;
+    uint16_t tx_org_x = context_ptr->blk_geom->tx_org_x[is_inter][tx_depth][txb_itr];
+    uint16_t tx_org_y = context_ptr->blk_geom->tx_org_y[is_inter][tx_depth][txb_itr];
+#else
+    uint16_t       tx_org_x = context_ptr->blk_geom->tx_org_x[tx_depth][txb_itr];
+    uint16_t       tx_org_y = context_ptr->blk_geom->tx_org_y[tx_depth][txb_itr];
+#endif
+    int32_t cropped_tx_width =
         MIN(context_ptr->blk_geom->tx_width[tx_depth][txb_itr],
             pcs_ptr->parent_pcs_ptr->aligned_width - (context_ptr->sb_origin_x + tx_org_x));
     int32_t cropped_tx_height =
@@ -2121,7 +2130,7 @@ uint8_t allowed_tx_set_b[TX_SIZES_ALL][TX_TYPES] = {
     {1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0},
     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
-
+#if !LOSSLESS_TX_TYPE_OPT
 void product_full_loop_tx_search(ModeDecisionCandidateBuffer *candidate_buffer,
                                  ModeDecisionContext *context_ptr, PictureControlSet *pcs_ptr) {
     uint32_t              txb_origin_index;
@@ -2180,8 +2189,15 @@ void product_full_loop_tx_search(ModeDecisionCandidateBuffer *candidate_buffer,
         uint32_t txb_itr               = 0;
         uint16_t txb_count             = context_ptr->blk_geom->txb_count[tx_depth];
         for (txb_itr = 0; txb_itr < txb_count; txb_itr++) {
+#if TX_ORG_INTERINTRA
+            uint8_t txb_origin_x =
+                (uint8_t)context_ptr->blk_geom->tx_org_x[is_inter][tx_depth][txb_itr];
+            uint8_t txb_origin_y =
+                (uint8_t)context_ptr->blk_geom->tx_org_y[is_inter][tx_depth][txb_itr];
+#else
             uint8_t txb_origin_x = (uint8_t)context_ptr->blk_geom->tx_org_x[tx_depth][txb_itr];
             uint8_t txb_origin_y = (uint8_t)context_ptr->blk_geom->tx_org_y[tx_depth][txb_itr];
+#endif
             txb_origin_index =
                 txb_origin_x + (txb_origin_y * candidate_buffer->residual_ptr->stride_y);
             y_txb_coeff_bits = 0;
@@ -2401,7 +2417,7 @@ void product_full_loop_tx_search(ModeDecisionCandidateBuffer *candidate_buffer,
         candidate_buffer->candidate_ptr->transform_type_uv =
             candidate_buffer->candidate_ptr->transform_type[0];
 }
-
+#endif
 void encode_pass_tx_search(PictureControlSet *pcs_ptr, EncDecContext *context_ptr,
                            SuperBlock *sb_ptr, uint32_t cb_qp,
                            EbPictureBufferDesc *coeff_samples_sb,
@@ -2430,9 +2446,15 @@ void encode_pass_tx_search(PictureControlSet *pcs_ptr, EncDecContext *context_pt
     TxType                txk_end   = TX_TYPES;
     TxType                tx_type;
     TxSize         tx_size = context_ptr->blk_geom->txsize[blk_ptr->tx_depth][context_ptr->txb_itr];
+#if TX_ORG_INTERINTRA
+    const uint32_t scratch_luma_offset =
+        context_ptr->blk_geom->tx_org_x[1][blk_ptr->tx_depth][context_ptr->txb_itr] +
+        context_ptr->blk_geom->tx_org_y[1][blk_ptr->tx_depth][context_ptr->txb_itr] * SB_STRIDE_Y;
+#else
     const uint32_t scratch_luma_offset =
         context_ptr->blk_geom->tx_org_x[blk_ptr->tx_depth][context_ptr->txb_itr] +
         context_ptr->blk_geom->tx_org_y[blk_ptr->tx_depth][context_ptr->txb_itr] * SB_STRIDE_Y;
+#endif
     assert(tx_size < TX_SIZES_ALL);
     const TxSetType tx_set_type =
         get_ext_tx_set_type(tx_size, is_inter, pcs_ptr->parent_pcs_ptr->frm_hdr.reduced_tx_set);
@@ -2830,14 +2852,25 @@ void full_loop_r(SuperBlock *sb_ptr, ModeDecisionCandidateBuffer *candidate_buff
     context_ptr->three_quad_energy = 0;
 
     uint8_t tx_depth = candidate_buffer->candidate_ptr->tx_depth;
-    tu_count         = context_ptr->blk_geom->txb_count[candidate_buffer->candidate_ptr->tx_depth];
+#if TX_ORG_INTERINTRA
+    int32_t is_inter = (candidate_buffer->candidate_ptr->type == INTER_MODE ||
+                        candidate_buffer->candidate_ptr->use_intrabc)
+                           ? EB_TRUE
+                           : EB_FALSE;
+#endif
+    tu_count = context_ptr->blk_geom->txb_count[candidate_buffer->candidate_ptr->tx_depth];
     uint32_t txb_1d_offset = 0;
     tu_count               = tx_depth ? 1 : tu_count; //NM: 128x128 exeption
 
     txb_itr = 0;
     do {
+#if TX_ORG_INTERINTRA
+        txb_origin_x = context_ptr->blk_geom->tx_org_x[is_inter][tx_depth][txb_itr];
+        txb_origin_y = context_ptr->blk_geom->tx_org_y[is_inter][tx_depth][txb_itr];
+#else
         txb_origin_x = context_ptr->blk_geom->tx_org_x[tx_depth][txb_itr];
         txb_origin_y = context_ptr->blk_geom->tx_org_y[tx_depth][txb_itr];
+#endif
 
         context_ptr->cb_txb_skip_context = 0;
         context_ptr->cb_dc_sign_context  = 0;
@@ -3089,13 +3122,25 @@ void cu_full_distortion_fast_txb_mode_r(
     current_txb_index              = 0;
     transform_buffer = context_ptr->trans_quant_buffers_ptr->txb_trans_coeff2_nx2_n_ptr;
 
+#if TX_ORG_INTERINTRA
+    int32_t is_inter = (candidate_buffer->candidate_ptr->type == INTER_MODE ||
+                        candidate_buffer->candidate_ptr->use_intrabc)
+                           ? EB_TRUE
+                           : EB_FALSE;
+#endif
+
     uint32_t txb_1d_offset     = 0;
     candidate_ptr->u_has_coeff = 0;
     candidate_ptr->v_has_coeff = 0;
     tu_total_count             = tx_depth ? 1 : tu_total_count; //NM: 128x128 exeption
     do {
+#if TX_ORG_INTERINTRA
+        txb_origin_x = context_ptr->blk_geom->tx_org_x[is_inter][tx_depth][txb_itr];
+        txb_origin_y = context_ptr->blk_geom->tx_org_y[is_inter][tx_depth][txb_itr];
+#else
         txb_origin_x = context_ptr->blk_geom->tx_org_x[tx_depth][txb_itr];
         txb_origin_y = context_ptr->blk_geom->tx_org_y[tx_depth][txb_itr];
+#endif
         int32_t cropped_tx_width_uv =
             MIN(context_ptr->blk_geom->tx_width_uv[tx_depth][txb_itr],
                 pcs_ptr->parent_pcs_ptr->aligned_width / 2 -

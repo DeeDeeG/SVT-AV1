@@ -312,7 +312,9 @@ typedef struct ModeDecisionContext {
     uint64_t *   ref_best_cost_sq_table;
     uint32_t *   ref_best_ref_sq_table;
     uint8_t      edge_based_skip_angle_intra;
+#if !REMOVE_COEFF_BASED_SKIP_ATB
     EbBool       coeff_based_skip_atb;
+#endif
     uint8_t      prune_ref_frame_for_rec_partitions;
     unsigned int source_variance; // input block variance
     unsigned int inter_inter_wedge_variance_th;

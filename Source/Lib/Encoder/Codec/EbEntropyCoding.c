@@ -724,7 +724,11 @@ static EbErrorType av1_encode_tx_coef_y(
     uint32_t intraLumaDir, BlockSize plane_bsize, EbPictureBufferDesc *coeff_ptr,
     NeighborArrayUnit *luma_dc_sign_level_coeff_neighbor_array) {
     EbErrorType return_error = EB_ErrorNone;
-
+#if TX_ORG_INTERINTRA
+    int32_t is_inter = (blk_ptr->prediction_mode_flag == INTER_MODE || blk_ptr->av1xd->use_intrabc)
+                           ? EB_TRUE
+                           : EB_FALSE;
+#endif
     const BlockGeom *blk_geom    = get_blk_geom_mds(blk_ptr->mds_idx);
     int32_t          cul_level_y = 0;
 
@@ -751,8 +755,13 @@ static EbErrorType av1_encode_tx_coef_y(
             get_txb_ctx(pcs_ptr,
                         COMPONENT_LUMA,
                         luma_dc_sign_level_coeff_neighbor_array,
+#if TX_ORG_INTERINTRA
+                        blk_origin_x + blk_geom->tx_org_x[is_inter][tx_depth][txb_itr] - blk_geom->origin_x,
+                        blk_origin_y + blk_geom->tx_org_y[is_inter][tx_depth][txb_itr] - blk_geom->origin_y,
+#else
                         blk_origin_x + blk_geom->tx_org_x[tx_depth][txb_itr] - blk_geom->origin_x,
                         blk_origin_y + blk_geom->tx_org_y[tx_depth][txb_itr] - blk_geom->origin_y,
+#endif
                         plane_bsize,
                         tx_size,
                         &txb_skip_ctx,
@@ -781,8 +790,13 @@ static EbErrorType av1_encode_tx_coef_y(
             neighbor_array_unit_mode_write(
                 luma_dc_sign_level_coeff_neighbor_array,
                 (uint8_t *)&dc_sign_level_coeff,
+#if TX_ORG_INTERINTRA
+                blk_origin_x + blk_geom->tx_org_x[is_inter][tx_depth][txb_itr] - blk_geom->origin_x,
+                blk_origin_y + blk_geom->tx_org_y[is_inter][tx_depth][txb_itr] - blk_geom->origin_y,
+#else
                 blk_origin_x + blk_geom->tx_org_x[tx_depth][txb_itr] - blk_geom->origin_x,
                 blk_origin_y + blk_geom->tx_org_y[tx_depth][txb_itr] - blk_geom->origin_y,
+#endif
                 blk_geom->tx_width[tx_depth][txb_itr],
                 blk_geom->tx_height[tx_depth][txb_itr],
                 NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
@@ -803,7 +817,11 @@ static EbErrorType av1_encode_tx_coef_uv(PictureControlSet *   pcs_ptr,
                                          NeighborArrayUnit *  cr_dc_sign_level_coeff_neighbor_array,
                                          NeighborArrayUnit *cb_dc_sign_level_coeff_neighbor_array) {
     EbErrorType return_error = EB_ErrorNone;
-
+#if TX_ORG_INTERINTRA
+    int32_t is_inter = (blk_ptr->prediction_mode_flag == INTER_MODE || blk_ptr->av1xd->use_intrabc)
+                           ? EB_TRUE
+                           : EB_FALSE;
+#endif
     const BlockGeom *blk_geom = get_blk_geom_mds(blk_ptr->mds_idx);
 
     if (!blk_geom->has_uv) return return_error;
@@ -837,12 +855,21 @@ static EbErrorType av1_encode_tx_coef_uv(PictureControlSet *   pcs_ptr,
                 get_txb_ctx(pcs_ptr,
                             COMPONENT_CHROMA,
                             cb_dc_sign_level_coeff_neighbor_array,
+#if TX_ORG_INTERINTRA
+                            ROUND_UV(blk_origin_x + blk_geom->tx_org_x[is_inter][tx_depth][txb_itr] -
+                                     blk_geom->origin_x) >>
+                                1,
+                            ROUND_UV(blk_origin_y + blk_geom->tx_org_y[is_inter][tx_depth][txb_itr] -
+                                     blk_geom->origin_y) >>
+                                1,
+#else
                             ROUND_UV(blk_origin_x + blk_geom->tx_org_x[tx_depth][txb_itr] -
                                      blk_geom->origin_x) >>
                                 1,
                             ROUND_UV(blk_origin_y + blk_geom->tx_org_y[tx_depth][txb_itr] -
                                      blk_geom->origin_y) >>
                                 1,
+#endif
                             blk_geom->bsize_uv,
                             chroma_tx_size,
                             &txb_skip_ctx,
@@ -874,12 +901,21 @@ static EbErrorType av1_encode_tx_coef_uv(PictureControlSet *   pcs_ptr,
                 get_txb_ctx(pcs_ptr,
                             COMPONENT_CHROMA,
                             cr_dc_sign_level_coeff_neighbor_array,
+#if TX_ORG_INTERINTRA
+                            ROUND_UV(blk_origin_x + blk_geom->tx_org_x[is_inter][tx_depth][txb_itr] -
+                                     blk_geom->origin_x) >>
+                                1,
+                            ROUND_UV(blk_origin_y + blk_geom->tx_org_y[is_inter][tx_depth][txb_itr] -
+                                     blk_geom->origin_y) >>
+                                1,
+#else
                             ROUND_UV(blk_origin_x + blk_geom->tx_org_x[tx_depth][txb_itr] -
                                      blk_geom->origin_x) >>
                                 1,
                             ROUND_UV(blk_origin_y + blk_geom->tx_org_y[tx_depth][txb_itr] -
                                      blk_geom->origin_y) >>
                                 1,
+#endif
                             blk_geom->bsize_uv,
                             chroma_tx_size,
                             &txb_skip_ctx,
@@ -910,12 +946,21 @@ static EbErrorType av1_encode_tx_coef_uv(PictureControlSet *   pcs_ptr,
             neighbor_array_unit_mode_write(
                 cb_dc_sign_level_coeff_neighbor_array,
                 (uint8_t *)&dc_sign_level_coeff,
+#if TX_ORG_INTERINTRA
+                ROUND_UV(blk_origin_x + blk_geom->tx_org_x[is_inter][tx_depth][txb_itr] -
+                         blk_geom->origin_x) >>
+                    1,
+                ROUND_UV(blk_origin_y + blk_geom->tx_org_y[is_inter][tx_depth][txb_itr] -
+                         blk_geom->origin_y) >>
+                    1,
+#else
                 ROUND_UV(blk_origin_x + blk_geom->tx_org_x[tx_depth][txb_itr] -
                          blk_geom->origin_x) >>
                     1,
                 ROUND_UV(blk_origin_y + blk_geom->tx_org_y[tx_depth][txb_itr] -
                          blk_geom->origin_y) >>
                     1,
+#endif
                 blk_geom->tx_width_uv[tx_depth][txb_itr],
                 blk_geom->tx_height_uv[tx_depth][txb_itr],
                 NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
@@ -928,12 +973,21 @@ static EbErrorType av1_encode_tx_coef_uv(PictureControlSet *   pcs_ptr,
             neighbor_array_unit_mode_write(
                 cr_dc_sign_level_coeff_neighbor_array,
                 (uint8_t *)&dc_sign_level_coeff,
+#if TX_ORG_INTERINTRA
+                ROUND_UV(blk_origin_x + blk_geom->tx_org_x[is_inter][tx_depth][txb_itr] -
+                         blk_geom->origin_x) >>
+                    1,
+                ROUND_UV(blk_origin_y + blk_geom->tx_org_y[is_inter][tx_depth][txb_itr] -
+                         blk_geom->origin_y) >>
+                    1,
+#else
                 ROUND_UV(blk_origin_x + blk_geom->tx_org_x[tx_depth][txb_itr] -
                          blk_geom->origin_x) >>
                     1,
                 ROUND_UV(blk_origin_y + blk_geom->tx_org_y[tx_depth][txb_itr] -
                          blk_geom->origin_y) >>
                     1,
+#endif
                 blk_geom->tx_width_uv[tx_depth][txb_itr],
                 blk_geom->tx_height_uv[tx_depth][txb_itr],
                 NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
@@ -958,6 +1012,11 @@ static EbErrorType av1_encode_coeff_1d(PictureControlSet *   pcs_ptr,
                                        NeighborArrayUnit *cr_dc_sign_level_coeff_neighbor_array,
                                        NeighborArrayUnit *cb_dc_sign_level_coeff_neighbor_array) {
     EbErrorType return_error = EB_ErrorNone;
+#if TX_ORG_INTERINTRA
+    int32_t is_inter = (blk_ptr->prediction_mode_flag == INTER_MODE || blk_ptr->av1xd->use_intrabc)
+                           ? EB_TRUE
+                           : EB_FALSE;
+#endif
     if (blk_ptr->tx_depth) {
         av1_encode_tx_coef_y(pcs_ptr,
                              context_ptr,
@@ -1006,10 +1065,17 @@ static EbErrorType av1_encode_coeff_1d(PictureControlSet *   pcs_ptr,
                 get_txb_ctx(pcs_ptr,
                             COMPONENT_LUMA,
                             luma_dc_sign_level_coeff_neighbor_array,
+#if TX_ORG_INTERINTRA
+                            blk_origin_x + blk_geom->tx_org_x[is_inter][blk_ptr->tx_depth][txb_itr] -
+                                blk_geom->origin_x,
+                            blk_origin_y + blk_geom->tx_org_y[is_inter][blk_ptr->tx_depth][txb_itr] -
+                                blk_geom->origin_y,
+#else
                             blk_origin_x + blk_geom->tx_org_x[blk_ptr->tx_depth][txb_itr] -
                                 blk_geom->origin_x,
                             blk_origin_y + blk_geom->tx_org_y[blk_ptr->tx_depth][txb_itr] -
                                 blk_geom->origin_y,
+#endif
                             plane_bsize,
                             tx_size,
                             &txb_skip_ctx,
@@ -1042,12 +1108,25 @@ static EbErrorType av1_encode_coeff_1d(PictureControlSet *   pcs_ptr,
                         pcs_ptr,
                         COMPONENT_CHROMA,
                         cb_dc_sign_level_coeff_neighbor_array,
-                        ROUND_UV(blk_origin_x + blk_geom->tx_org_x[blk_ptr->tx_depth][txb_itr] -
-                                 blk_geom->origin_x) >>
+#if TX_ORG_INTERINTRA
+                        ROUND_UV(blk_origin_x +
+                                    blk_geom->tx_org_x[is_inter][blk_ptr->tx_depth][txb_itr] -
+                                    blk_geom->origin_x) >>
                             1,
-                        ROUND_UV(blk_origin_y + blk_geom->tx_org_y[blk_ptr->tx_depth][txb_itr] -
-                                 blk_geom->origin_y) >>
+                        ROUND_UV(blk_origin_y +
+                                    blk_geom->tx_org_y[is_inter][blk_ptr->tx_depth][txb_itr] -
+                                    blk_geom->origin_y) >>
                             1,
+#else
+                        ROUND_UV(blk_origin_x +
+                                    blk_geom->tx_org_x[blk_ptr->tx_depth][txb_itr] -
+                                    blk_geom->origin_x) >>
+                            1,
+                        ROUND_UV(blk_origin_y +
+                                    blk_geom->tx_org_y[blk_ptr->tx_depth][txb_itr] -
+                                    blk_geom->origin_y) >>
+                            1,
+#endif
                         blk_geom->bsize_uv,
                         chroma_tx_size,
                         &txb_skip_ctx,
@@ -1080,12 +1159,25 @@ static EbErrorType av1_encode_coeff_1d(PictureControlSet *   pcs_ptr,
                         pcs_ptr,
                         COMPONENT_CHROMA,
                         cr_dc_sign_level_coeff_neighbor_array,
-                        ROUND_UV(blk_origin_x + blk_geom->tx_org_x[blk_ptr->tx_depth][txb_itr] -
-                                 blk_geom->origin_x) >>
+#if TX_ORG_INTERINTRA
+                        ROUND_UV(blk_origin_x +
+                                    blk_geom->tx_org_x[is_inter][blk_ptr->tx_depth][txb_itr] -
+                                    blk_geom->origin_x) >>
                             1,
-                        ROUND_UV(blk_origin_y + blk_geom->tx_org_y[blk_ptr->tx_depth][txb_itr] -
-                                 blk_geom->origin_y) >>
+                        ROUND_UV(blk_origin_y +
+                                    blk_geom->tx_org_y[is_inter][blk_ptr->tx_depth][txb_itr] -
+                                    blk_geom->origin_y) >>
                             1,
+#else
+                        ROUND_UV(blk_origin_x +
+                                    blk_geom->tx_org_x[blk_ptr->tx_depth][txb_itr] -
+                                    blk_geom->origin_x) >>
+                            1,
+                        ROUND_UV(blk_origin_y +
+                                    blk_geom->tx_org_y[blk_ptr->tx_depth][txb_itr] -
+                                    blk_geom->origin_y) >>
+                            1,
+#endif
                         blk_geom->bsize_uv,
                         chroma_tx_size,
                         &txb_skip_ctx,
@@ -1117,10 +1209,17 @@ static EbErrorType av1_encode_coeff_1d(PictureControlSet *   pcs_ptr,
                 neighbor_array_unit_mode_write(
                     luma_dc_sign_level_coeff_neighbor_array,
                     (uint8_t *)&dc_sign_level_coeff,
+#if TX_ORG_INTERINTRA
+                    blk_origin_x + blk_geom->tx_org_x[is_inter][blk_ptr->tx_depth][txb_itr] -
+                        blk_geom->origin_x,
+                    blk_origin_y + blk_geom->tx_org_y[is_inter][blk_ptr->tx_depth][txb_itr] -
+                        blk_geom->origin_y,
+#else
                     blk_origin_x + blk_geom->tx_org_x[blk_ptr->tx_depth][txb_itr] -
                         blk_geom->origin_x,
                     blk_origin_y + blk_geom->tx_org_y[blk_ptr->tx_depth][txb_itr] -
                         blk_geom->origin_y,
+#endif
                     blk_geom->tx_width[blk_ptr->tx_depth][txb_itr],
                     blk_geom->tx_height[blk_ptr->tx_depth][txb_itr],
                     NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
@@ -1133,12 +1232,23 @@ static EbErrorType av1_encode_coeff_1d(PictureControlSet *   pcs_ptr,
                 neighbor_array_unit_mode_write(
                     cb_dc_sign_level_coeff_neighbor_array,
                     (uint8_t *)&dc_sign_level_coeff,
+#if TX_ORG_INTERINTRA
+                    ROUND_UV(blk_origin_x +
+                             blk_geom->tx_org_x[is_inter][blk_ptr->tx_depth][txb_itr] -
+                             blk_geom->origin_x) >>
+                        1,
+                    ROUND_UV(blk_origin_y +
+                             blk_geom->tx_org_y[is_inter][blk_ptr->tx_depth][txb_itr] -
+                             blk_geom->origin_y) >>
+                        1,
+#else
                     ROUND_UV(blk_origin_x + blk_geom->tx_org_x[blk_ptr->tx_depth][txb_itr] -
                              blk_geom->origin_x) >>
                         1,
                     ROUND_UV(blk_origin_y + blk_geom->tx_org_y[blk_ptr->tx_depth][txb_itr] -
                              blk_geom->origin_y) >>
                         1,
+#endif
                     blk_geom->tx_width_uv[blk_ptr->tx_depth][txb_itr],
                     blk_geom->tx_height_uv[blk_ptr->tx_depth][txb_itr],
                     NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
@@ -1151,12 +1261,23 @@ static EbErrorType av1_encode_coeff_1d(PictureControlSet *   pcs_ptr,
                 neighbor_array_unit_mode_write(
                     cr_dc_sign_level_coeff_neighbor_array,
                     (uint8_t *)&dc_sign_level_coeff,
+#if TX_ORG_INTERINTRA
+                    ROUND_UV(blk_origin_x +
+                             blk_geom->tx_org_x[is_inter][blk_ptr->tx_depth][txb_itr] -
+                             blk_geom->origin_x) >>
+                        1,
+                    ROUND_UV(blk_origin_y +
+                             blk_geom->tx_org_y[is_inter][blk_ptr->tx_depth][txb_itr] -
+                             blk_geom->origin_y) >>
+                        1,
+#else
                     ROUND_UV(blk_origin_x + blk_geom->tx_org_x[blk_ptr->tx_depth][txb_itr] -
                              blk_geom->origin_x) >>
                         1,
                     ROUND_UV(blk_origin_y + blk_geom->tx_org_y[blk_ptr->tx_depth][txb_itr] -
                              blk_geom->origin_y) >>
                         1,
+#endif
                     blk_geom->tx_width_uv[blk_ptr->tx_depth][txb_itr],
                     blk_geom->tx_height_uv[blk_ptr->tx_depth][txb_itr],
                     NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);

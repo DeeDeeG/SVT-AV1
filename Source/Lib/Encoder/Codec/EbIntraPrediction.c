@@ -3684,8 +3684,13 @@ EbErrorType  intra_luma_prediction_for_interintra(
             top_neigh_array + 1,
             left_neigh_array + 1,
             prediction_ptr,                                         //uint8_t *dst,
+#if TX_ORG_INTERINTRA
+            (md_context_ptr->blk_geom->tx_org_x[0][0][0] - md_context_ptr->blk_geom->origin_x) >> 2,
+            (md_context_ptr->blk_geom->tx_org_y[0][0][0] - md_context_ptr->blk_geom->origin_y) >> 2,
+#else
             md_context_ptr->blk_geom->tx_boff_x[0][0] >> 2,         //int32_t col_off,
             md_context_ptr->blk_geom->tx_boff_y[0][0] >> 2,         //int32_t row_off,
+#endif
             PLANE_TYPE_Y,                                           //int32_t plane,
             md_context_ptr->blk_geom->bsize,                        //uint32_t puSize,
             md_context_ptr->blk_origin_x,
@@ -3722,8 +3727,13 @@ EbErrorType  intra_luma_prediction_for_interintra(
             top_neigh_array + 1,
             left_neigh_array + 1,
             prediction_ptr,                                         //uint8_t *dst,
+#if TX_ORG_INTERINTRA
+            (md_context_ptr->blk_geom->tx_org_x[0][0][0] - md_context_ptr->blk_geom->origin_x) >> 2,
+            (md_context_ptr->blk_geom->tx_org_y[0][0][0] - md_context_ptr->blk_geom->origin_y) >> 2,
+#else
             md_context_ptr->blk_geom->tx_boff_x[0][0] >> 2,         //int32_t col_off,
             md_context_ptr->blk_geom->tx_boff_y[0][0] >> 2,         //int32_t row_off,
+#endif
             PLANE_TYPE_Y,                                           //int32_t plane,
             md_context_ptr->blk_geom->bsize,                        //uint32_t puSize,
             md_context_ptr->blk_origin_x,
