@@ -3999,7 +3999,11 @@ void tx_type_search(PictureControlSet *pcs_ptr,
         //if (context_ptr->tx_search_reduced_set) // done below
         //    if (!allowed_tx_set_a[tx_size][tx_type]) continue;
 #endif
+#if FREQUENCY_SPATIAL_DOMAIN
+        context_ptr->three_quad_energy = 0;
+#else
         //context_ptr->three_quad_energy = 0;
+#endif
         if (tx_type != DCT_DCT) {
             if (is_inter) {
                 TxSize          max_tx_size = context_ptr->blk_geom->txsize[0][0];
@@ -4099,7 +4103,9 @@ void tx_type_search(PictureControlSet *pcs_ptr,
 
         // tx_type not equal to DCT_DCT and no coeff is not an acceptable option in AV1.
         if (y_has_coeff == 0 && tx_type != DCT_DCT) continue;
-
+#if FREQUENCY_SPATIAL_DOMAIN
+        if (context_ptr->md_staging_spatial_sse_full_loop) {
+#endif
         if (y_has_coeff)
             inv_transform_recon_wrapper(
                 candidate_buffer->prediction_ptr->buffer_y,
@@ -4156,7 +4162,40 @@ void tx_type_search(PictureControlSet *pcs_ptr,
 
         txb_full_distortion[0][DIST_CALC_PREDICTION] <<= 4;
         txb_full_distortion[0][DIST_CALC_RESIDUAL] <<= 4;
+#if FREQUENCY_SPATIAL_DOMAIN
+        } else {
+            // LUMA DISTORTION
+            picture_full_distortion32_bits(
+                context_ptr->trans_quant_buffers_ptr->txb_trans_coeff2_nx2_n_ptr,
+                context_ptr->txb_1d_offset,
+                0,
+                candidate_buffer->recon_coeff_ptr,
+                context_ptr->txb_1d_offset,
+                0,
+                context_ptr->blk_geom->tx_width[context_ptr->tx_depth][context_ptr->txb_itr],
+                context_ptr->blk_geom->tx_height[context_ptr->tx_depth][context_ptr->txb_itr],
+                NOT_USED_VALUE,
+                NOT_USED_VALUE,
+                txb_full_distortion[0],
+                NOT_USED_VALUE,
+                NOT_USED_VALUE,
+                y_count_non_zero_coeffs,
+                0,
+                0,
+                COMPONENT_LUMA);
 
+            txb_full_distortion[0][DIST_CALC_RESIDUAL] += context_ptr->three_quad_energy;
+            txb_full_distortion[0][DIST_CALC_PREDICTION] += context_ptr->three_quad_energy;
+            //assert(context_ptr->three_quad_energy == 0 && context_ptr->cu_stats->size < 64);
+            TxSize tx_size =
+                context_ptr->blk_geom->txsize[context_ptr->tx_depth][context_ptr->txb_itr];
+            int32_t shift = (MAX_TX_SCALE - av1_get_tx_scale(tx_size)) * 2;
+            txb_full_distortion[0][DIST_CALC_RESIDUAL] =
+                RIGHT_SIGNED_SHIFT(txb_full_distortion[0][DIST_CALC_RESIDUAL], shift);
+            txb_full_distortion[0][DIST_CALC_PREDICTION] =
+                RIGHT_SIGNED_SHIFT(txb_full_distortion[0][DIST_CALC_PREDICTION], shift);
+        }
+#endif
         //LUMA-ONLY
         av1_txb_estimate_coeff_bits(
             context_ptr,
@@ -5146,6 +5185,9 @@ void md_stage_1(PictureControlSet *pcs_ptr, SuperBlock *sb_ptr, BlkStruct *blk_p
     context_ptr->md_staging_tx_search        = 0;
     context_ptr->md_staging_skip_full_chroma = EB_TRUE;
     context_ptr->md_staging_skip_rdoq        = EB_TRUE;
+#if FREQUENCY_SPATIAL_DOMAIN
+    context_ptr->md_staging_spatial_sse_full_loop = context_ptr->spatial_sse_full_loop;
+#endif
     for (full_loop_candidate_index = 0;
          full_loop_candidate_index < context_ptr->md_stage_1_count[context_ptr->target_class];
          ++full_loop_candidate_index) {
@@ -5281,6 +5323,9 @@ void md_stage_3(PictureControlSet *pcs_ptr, SuperBlock *sb_ptr, BlkStruct *blk_p
         context_ptr->md_staging_skip_full_chroma = EB_FALSE;
 
         context_ptr->md_staging_skip_rdoq = EB_FALSE;
+#if FREQUENCY_SPATIAL_DOMAIN
+        context_ptr->md_staging_spatial_sse_full_loop = context_ptr->spatial_sse_full_loop;
+#endif
 
         if (pcs_ptr->slice_type != I_SLICE) {
             if ((candidate_ptr->type == INTRA_MODE || context_ptr->full_loop_escape == 2) &&

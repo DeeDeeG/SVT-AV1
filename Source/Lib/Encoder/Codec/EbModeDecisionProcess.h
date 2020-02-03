@@ -306,6 +306,9 @@ typedef struct ModeDecisionContext {
     EbBool md_staging_tx_search; // 0: skip, 1: use ref cost, 2: no shortcuts
     EbBool md_staging_skip_full_chroma;
     EbBool md_staging_skip_rdoq;
+#if FREQUENCY_SPATIAL_DOMAIN
+    EbBool md_staging_spatial_sse_full_loop;
+#endif
     DECLARE_ALIGNED(
         16, uint8_t,
         intrapred_buf[INTERINTRA_MODES][2 * 32 * 32]); //MAX block size for inter intra is 32x32

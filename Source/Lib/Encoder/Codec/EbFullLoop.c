@@ -1955,7 +1955,11 @@ void product_full_loop(ModeDecisionCandidateBuffer *candidate_buffer,
         candidate_buffer->candidate_ptr->use_intrabc,
         EB_FALSE);
 
+#if FREQUENCY_SPATIAL_DOMAIN
+    if (context_ptr->md_staging_spatial_sse_full_loop) {
+#else
     if (context_ptr->spatial_sse_full_loop) {
+#endif
         uint32_t input_txb_origin_index =
             (context_ptr->sb_origin_x + tx_org_x + input_picture_ptr->origin_x) +
             ((context_ptr->sb_origin_y + tx_org_y + input_picture_ptr->origin_y) *
@@ -2964,7 +2968,11 @@ void full_loop_r(SuperBlock *sb_ptr, ModeDecisionCandidateBuffer *candidate_buff
                 candidate_buffer->candidate_ptr->use_intrabc,
                 EB_FALSE);
 
+#if FREQUENCY_SPATIAL_DOMAIN
+            if (context_ptr->md_staging_spatial_sse_full_loop) {
+#else
             if (context_ptr->spatial_sse_full_loop) {
+#endif
                 uint32_t cb_has_coeff = cb_count_non_zero_coeffs[txb_itr] > 0;
 
                 if (cb_has_coeff)
@@ -3051,7 +3059,11 @@ void full_loop_r(SuperBlock *sb_ptr, ModeDecisionCandidateBuffer *candidate_buff
                 candidate_buffer->candidate_ptr->use_intrabc,
                 EB_FALSE);
 
+#if FREQUENCY_SPATIAL_DOMAIN
+            if (context_ptr->md_staging_spatial_sse_full_loop) {
+#else
             if (context_ptr->spatial_sse_full_loop) {
+#endif
                 uint32_t cr_has_coeff = cr_count_non_zero_coeffs[txb_itr] > 0;
 
                 if (cr_has_coeff)
@@ -3164,7 +3176,11 @@ void cu_full_distortion_fast_txb_mode_r(
             count_nonzero_coeffs_all[1] = count_non_zero_coeffs[1][current_txb_index];
             count_nonzero_coeffs_all[2] = count_non_zero_coeffs[2][current_txb_index];
 
+#if FREQUENCY_SPATIAL_DOMAIN
+            if (is_full_loop && context_ptr->md_staging_spatial_sse_full_loop) {
+#else
             if (is_full_loop && context_ptr->spatial_sse_full_loop) {
+#endif
                 uint32_t input_chroma_txb_origin_index =
                     (((context_ptr->sb_origin_y + ((txb_origin_y >> 3) << 3)) >> 1) +
                      (input_picture_ptr->origin_y >> 1)) *

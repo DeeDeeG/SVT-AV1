@@ -63,6 +63,7 @@ extern "C" {
 #define TX_SEARCH_REDUCED 1
 #define REMOVE_COEFF_BASED_SKIP_ATB 1
 #define TX_ORG_INTERINTRA 1
+#define FREQUENCY_SPATIAL_DOMAIN 1
 
 #define HIGH_PRECISION_MV_QTHRESH 150
 // Actions in the second pass: Frame and SB QP assignment and temporal filtering strenght change
