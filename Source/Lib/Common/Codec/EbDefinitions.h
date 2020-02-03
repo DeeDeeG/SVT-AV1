@@ -54,6 +54,10 @@ extern "C" {
 #define MR_MODE 0
 
 #define ALT_REF_QP_THRESH 20
+
+#define FASTER_RDOQ 1
+#define FP_QUANT_BOTH_INTRA_INTER 1
+
 #define HIGH_PRECISION_MV_QTHRESH 150
 // Actions in the second pass: Frame and SB QP assignment and temporal filtering strenght change
 //FOR DEBUGGING - Do not remove
