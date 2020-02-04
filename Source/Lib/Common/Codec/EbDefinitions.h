@@ -42,9 +42,11 @@ extern "C" {
 #if TILES_PARALLEL
 #define MAX_TILE_CNTS 128 // Annex A.3
 #endif
+#define ALTREF_IMPROVEMENT     1 // Enable TF for layer 1 in 1 pass encoding. Adjust the filter strength
 
 #define MR_MODE 0
 
+#define ALT_REF_QP_THRESH 20
 #define HIGH_PRECISION_MV_QTHRESH 150
 // Actions in the second pass: Frame and SB QP assignment and temporal filtering strenght change
 //FOR DEBUGGING - Do not remove
