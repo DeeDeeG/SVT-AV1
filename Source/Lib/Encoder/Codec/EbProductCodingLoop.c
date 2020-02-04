@@ -4011,9 +4011,17 @@ void tx_type_search(PictureControlSet *pcs_ptr,
             if (is_inter) {
                 TxSize          max_tx_size = context_ptr->blk_geom->txsize[0][0];
                 const TxSetType tx_set_type_inter =
+#if TX_SEARCH_REDUCED
+                    get_ext_tx_set_type(max_tx_size, is_inter, pcs_ptr->parent_pcs_ptr->frm_hdr.reduced_tx_set);
+#else
                     get_ext_tx_set_type(max_tx_size, is_inter, context_ptr->tx_search_reduced_set);
+#endif
                 int32_t eset =
+#if TX_SEARCH_REDUCED
+                    get_ext_tx_set(max_tx_size, is_inter, pcs_ptr->parent_pcs_ptr->frm_hdr.reduced_tx_set);
+#else
                     get_ext_tx_set(max_tx_size, is_inter, context_ptr->tx_search_reduced_set);
+#endif
                 // eset == 0 should correspond to a set with only DCT_DCT and there
                 // is no need to send the tx_type
                 if (eset <= 0)
