@@ -3911,8 +3911,11 @@ void tx_type_search(PictureControlSet *pcs_ptr,
                            ? EB_TRUE
                            : EB_FALSE;
     const TxSetType tx_set_type =
+#if TX_SEARCH_REDUCED
+        get_ext_tx_set_type(tx_size, is_inter, pcs_ptr->parent_pcs_ptr->frm_hdr.reduced_tx_set);
+#else
         get_ext_tx_set_type(tx_size, is_inter, context_ptr->tx_search_reduced_set);
-
+#endif
 #if TX_ORG_INTERINTRA
     uint8_t txb_origin_x =
         (uint8_t)
