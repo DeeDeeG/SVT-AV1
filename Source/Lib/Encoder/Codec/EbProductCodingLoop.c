@@ -1280,23 +1280,17 @@ void set_md_stage_counts(PictureControlSet *pcs_ptr, ModeDecisionContext *contex
     SequenceControlSet *scs = (SequenceControlSet *)(pcs_ptr->scs_wrapper_ptr->object_ptr);
 
     // Step 1: derive bypass_stage1 flags
-#if ADD_4TH_MD_STAGE
     if (context_ptr->md_staging_mode == MD_STAGING_MODE_1 ||
         context_ptr->md_staging_mode == MD_STAGING_MODE_2)
-#else
-    if (context_ptr->md_staging_mode == MD_STAGING_MODE_1)
-#endif
         memset(context_ptr->bypass_md_stage_1, EB_FALSE, CAND_CLASS_TOTAL);
     else
         memset(context_ptr->bypass_md_stage_1, EB_TRUE, CAND_CLASS_TOTAL);
 
-#if ADD_4TH_MD_STAGE
     // Step 1: derive bypass_stage_2 flags
     if (context_ptr->md_staging_mode == MD_STAGING_MODE_2)
         memset(context_ptr->bypass_md_stage_2, EB_FALSE, CAND_CLASS_TOTAL);
     else
         memset(context_ptr->bypass_md_stage_2, EB_TRUE, CAND_CLASS_TOTAL);
-#endif
 
     if (context_ptr->md_staging_count_level == 0) {
         // Stage 1 Cand Count
@@ -1321,7 +1315,6 @@ void set_md_stage_counts(PictureControlSet *pcs_ptr, ModeDecisionContext *contex
         context_ptr->md_stage_2_count[CAND_CLASS_7] = 1;
         context_ptr->md_stage_2_count[CAND_CLASS_8] = 1;
 
-#if ADD_4TH_MD_STAGE
         // Stage 3 Cand Count
         context_ptr->md_stage_3_count[CAND_CLASS_0] = 1;
         context_ptr->md_stage_3_count[CAND_CLASS_1] = 1;
@@ -1332,7 +1325,6 @@ void set_md_stage_counts(PictureControlSet *pcs_ptr, ModeDecisionContext *contex
         context_ptr->md_stage_3_count[CAND_CLASS_6] = 1;
         context_ptr->md_stage_3_count[CAND_CLASS_7] = 1;
         context_ptr->md_stage_3_count[CAND_CLASS_8] = 1;
-#endif
     } else if (context_ptr->md_staging_count_level == 1) {
         uint8_t is_ref   = pcs_ptr->parent_pcs_ptr->is_used_as_reference_flag;
         uint8_t is_base  = (pcs_ptr->temporal_layer_index == 0) ? 1 : 0;
@@ -1361,7 +1353,6 @@ void set_md_stage_counts(PictureControlSet *pcs_ptr, ModeDecisionContext *contex
         context_ptr->md_stage_2_count[CAND_CLASS_7] = 7;
         context_ptr->md_stage_2_count[CAND_CLASS_8] = 1;
 
-#if ADD_4TH_MD_STAGE
         // Stage 3 Cand Count
         context_ptr->md_stage_3_count[CAND_CLASS_0] = is_intra ? 10 : is_ref ? 10 : 4;
         context_ptr->md_stage_3_count[CAND_CLASS_1] = is_intra ? 0 : is_ref ? 6 : 3;
@@ -1372,7 +1363,6 @@ void set_md_stage_counts(PictureControlSet *pcs_ptr, ModeDecisionContext *contex
         context_ptr->md_stage_3_count[CAND_CLASS_6] = is_base ? 5 : is_ref ? 3 : 2;
         context_ptr->md_stage_3_count[CAND_CLASS_7] = 7;
         context_ptr->md_stage_3_count[CAND_CLASS_8] = 1;
-#endif
     } else {
         // Step 2: set md_stage count
         context_ptr->md_stage_1_count[CAND_CLASS_0] =
@@ -1607,7 +1597,6 @@ void set_md_stage_counts(PictureControlSet *pcs_ptr, ModeDecisionContext *contex
                         context_ptr->md_stage_1_count[CAND_CLASS_3];
             }
         }
-#if ADD_4TH_MD_STAGE
         // Set md_stage_3 NICs
         context_ptr->md_stage_3_count[CAND_CLASS_0] =
             (context_ptr->md_stage_2_count[CAND_CLASS_0] + 1) >> 1;
@@ -1627,7 +1616,6 @@ void set_md_stage_counts(PictureControlSet *pcs_ptr, ModeDecisionContext *contex
             (context_ptr->md_stage_2_count[CAND_CLASS_7] + 1) >> 1;
         context_ptr->md_stage_3_count[CAND_CLASS_8] =
             (context_ptr->md_stage_2_count[CAND_CLASS_8] + 1) >> 1;
-#endif
     }
     // Step 3: update count for md_stage_1 and d_stage_2 if bypassed (no NIC setting should be done beyond this point)
     context_ptr->md_stage_2_count[CAND_CLASS_0] = context_ptr->bypass_md_stage_1[CAND_CLASS_0]
@@ -1661,7 +1649,6 @@ void set_md_stage_counts(PictureControlSet *pcs_ptr, ModeDecisionContext *contex
                                                       ? context_ptr->md_stage_1_count[CAND_CLASS_7]
                                                       : context_ptr->md_stage_2_count[CAND_CLASS_7];
 
-    #if ADD_4TH_MD_STAGE
     //  Update md_stage_3 NICs if md_stage_2 bypassed
     context_ptr->md_stage_3_count[CAND_CLASS_0] = context_ptr->bypass_md_stage_2[CAND_CLASS_0]
                                                       ? context_ptr->md_stage_2_count[CAND_CLASS_0]
@@ -1690,7 +1677,6 @@ void set_md_stage_counts(PictureControlSet *pcs_ptr, ModeDecisionContext *contex
     context_ptr->md_stage_3_count[CAND_CLASS_8] = context_ptr->bypass_md_stage_2[CAND_CLASS_8]
                                                       ? context_ptr->md_stage_2_count[CAND_CLASS_8]
                                                       : context_ptr->md_stage_3_count[CAND_CLASS_8];
-#endif
 
     // Step 4: zero-out count for CAND_CLASS_3 if CAND_CLASS_1 and CAND_CLASS_2 are merged (i.e. shift to the left)
     if (context_ptr->combine_class12)
@@ -1932,7 +1918,6 @@ void construct_best_sorted_arrays_md_stage_1(struct ModeDecisionContext *  conte
     *ref_fast_cost = *(buffer_ptr_array[sorted_candidate_index_array[0]]->fast_cost_ptr);
 }
 
-#if ADD_4TH_MD_STAGE
 void construct_best_sorted_arrays_md_stage_3(struct ModeDecisionContext *  context_ptr,
                                              ModeDecisionCandidateBuffer **buffer_ptr_array,
                                              uint32_t *best_candidate_index_array,
@@ -1965,39 +1950,6 @@ void construct_best_sorted_arrays_md_stage_3(struct ModeDecisionContext *  conte
     sort_array_index_fast_cost_ptr(
         buffer_ptr_array, sorted_candidate_index_array, fullReconCandidateCount);
 }
-#else
-void construct_best_sorted_arrays_md_stage_2(struct ModeDecisionContext *context_ptr,
-                                             ModeDecisionCandidateBuffer **buffer_ptr_array,
-                                             uint32_t *best_candidate_index_array,
-                                             uint32_t *sorted_candidate_index_array) {
-    //best = union from all classes
-    uint32_t best_candi = 0;
-    for (CandClass class_i = CAND_CLASS_0; class_i < CAND_CLASS_TOTAL; class_i++)
-        for (uint32_t candi = 0; candi < context_ptr->md_stage_2_count[class_i]; candi++)
-            sorted_candidate_index_array[best_candi++] =
-                context_ptr->cand_buff_indices[class_i][candi];
-
-    assert(best_candi == context_ptr->md_stage_2_total_count);
-    uint32_t full_recon_candidate_count = context_ptr->md_stage_2_total_count;
-    //sort best: inter, then intra
-    uint32_t i, id;
-    uint32_t id_inter = 0;
-    uint32_t id_intra = full_recon_candidate_count - 1;
-    for (i = 0; i < full_recon_candidate_count; ++i) {
-        id = sorted_candidate_index_array[i];
-        if (buffer_ptr_array[id]->candidate_ptr->type == INTER_MODE) {
-            best_candidate_index_array[id_inter++] = id;
-        } else {
-            assert(buffer_ptr_array[id]->candidate_ptr->type == INTRA_MODE);
-            best_candidate_index_array[id_intra--] = id;
-        }
-    }
-
-    //sorted best: *(buffer_ptr_array[sorted_candidate_index_array[?]]->fast_cost_ptr)
-    sort_array_index_fast_cost_ptr(
-        buffer_ptr_array, sorted_candidate_index_array, full_recon_candidate_count);
-}
-#endif
 
 void md_stage_0(
 
@@ -2017,22 +1969,13 @@ void md_stage_0(
     int32_t  best_first_fast_cost_search_candidate_index = INVALID_FAST_CANDIDATE_INDEX;
     EbBool   use_ssd = EB_FALSE;
     // Set MD Staging fast_loop_core settings
-#if ADD_4TH_MD_STAGE
     context_ptr->md_staging_skip_interpolation_search =
         (context_ptr->md_staging_mode == MD_STAGING_MODE_1 ||
          context_ptr->md_staging_mode == MD_STAGING_MODE_2)
             ? EB_TRUE
             : context_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? EB_FALSE
                                                                                       : EB_TRUE;
-#else
-    context_ptr->md_staging_skip_interpolation_search =
-        (context_ptr->md_staging_mode == MD_STAGING_MODE_1)
-            ? EB_TRUE
-            : context_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? EB_FALSE
-                                                                                      : EB_TRUE;
-#endif
 
-#if ADD_4TH_MD_STAGE
     context_ptr->md_staging_skip_inter_chroma_pred =
         ((context_ptr->md_staging_mode == MD_STAGING_MODE_1 ||
           context_ptr->md_staging_mode == MD_STAGING_MODE_2) &&
@@ -2040,23 +1983,11 @@ void md_stage_0(
          context_ptr->target_class != CAND_CLASS_7)
             ? EB_TRUE
             : EB_FALSE;
-#else
-    context_ptr->md_staging_skip_inter_chroma_pred =
-        (context_ptr->md_staging_mode == MD_STAGING_MODE_1 &&
-         context_ptr->target_class != CAND_CLASS_0 && context_ptr->target_class != CAND_CLASS_6 &&
-         context_ptr->target_class != CAND_CLASS_7)
-            ? EB_TRUE
-            : EB_FALSE;
-#endif
-#if ADD_4TH_MD_STAGE
+
     context_ptr->md_staging_use_bilinear = (context_ptr->md_staging_mode == MD_STAGING_MODE_1 ||
                                             context_ptr->md_staging_mode == MD_STAGING_MODE_2)
                                                ? EB_TRUE
                                                : EB_FALSE;
-#else
-    context_ptr->md_staging_use_bilinear =
-        (context_ptr->md_staging_mode == MD_STAGING_MODE_1) ? EB_TRUE : EB_FALSE;
-#endif
     // 1st fast loop: src-to-src
     fast_loop_cand_index = fast_candidate_end_index;
     while (fast_loop_cand_index >= fast_candidate_start_index) {
@@ -4980,7 +4911,6 @@ void md_stage_1(PictureControlSet *pcs_ptr, SuperBlock *sb_ptr, BlkStruct *blk_p
     }
 }
 
-#if ADD_4TH_MD_STAGE
 void md_stage_2(PictureControlSet *pcs_ptr, SuperBlock *sb_ptr, BlkStruct *blk_ptr,
                 ModeDecisionContext *context_ptr, EbPictureBufferDesc *input_picture_ptr,
                 uint32_t input_origin_index, uint32_t input_cb_origin_in_index,
@@ -5005,11 +4935,9 @@ void md_stage_2(PictureControlSet *pcs_ptr, SuperBlock *sb_ptr, BlkStruct *blk_p
         candidate_buffer = candidate_buffer_ptr_array[candidateIndex];
         candidate_ptr    = candidate_buffer->candidate_ptr;
 
-#if LOSSLESS_TX_TYPE_OPT // TODO: add if other PR gets in first
-        context_ptr->md_staging_tx_size_mode = 0;
-#else
+        // TODO: change to context_ptr->md_staging_tx_size_mode = 0;
         context_ptr->md_staging_skip_atb = context_ptr->coeff_based_skip_atb;
-#endif
+
         context_ptr->md_staging_tx_search =
             (candidate_ptr->cand_class == CAND_CLASS_0 ||
              candidate_ptr->cand_class == CAND_CLASS_6 || candidate_ptr->cand_class == CAND_CLASS_7)
@@ -5021,13 +4949,8 @@ void md_stage_2(PictureControlSet *pcs_ptr, SuperBlock *sb_ptr, BlkStruct *blk_p
         context_ptr->md_staging_skip_interpolation_search = EB_TRUE;
         context_ptr->md_staging_skip_inter_chroma_pred    = EB_TRUE;
 
-#if FREQUENCY_SPATIAL_DOMAIN // TODO: add if other PR gets in first
-#if SPATIAL_DOMAIN_ONLY_LAST_STAGE
-        context_ptr->md_staging_spatial_sse_full_loop = EB_FALSE;
-#else
-        context_ptr->md_staging_spatial_sse_full_loop = context_ptr->spatial_sse_full_loop;
-#endif
-#endif
+        // TODO: add this line when supporting spatial/freq distortion calc per md stage
+        // context_ptr->md_staging_spatial_sse_full_loop = context_ptr->spatial_sse_full_loop;
 
         full_loop_core(pcs_ptr,
                        sb_ptr,
@@ -5043,12 +4966,8 @@ void md_stage_2(PictureControlSet *pcs_ptr, SuperBlock *sb_ptr, BlkStruct *blk_p
                        ref_fast_cost);
     }
 }
-#endif
-#if ADD_4TH_MD_STAGE
+
 void md_stage_3(PictureControlSet *pcs_ptr, SuperBlock *sb_ptr, BlkStruct *blk_ptr,
-#else
-void md_stage_2(PictureControlSet *pcs_ptr, SuperBlock *sb_ptr, BlkStruct *blk_ptr,
-#endif
                 ModeDecisionContext *context_ptr, EbPictureBufferDesc *input_picture_ptr,
                 uint32_t input_origin_index, uint32_t input_cb_origin_in_index,
                 uint32_t blk_origin_index, uint32_t blk_chroma_origin_index,
@@ -5075,14 +4994,9 @@ void md_stage_2(PictureControlSet *pcs_ptr, SuperBlock *sb_ptr, BlkStruct *blk_p
 
         // Set MD Staging full_loop_core settings
         context_ptr->md_staging_skip_full_pred = context_ptr->md_staging_mode == MD_STAGING_MODE_0;
-#if ADD_4TH_MD_STAGE
         context_ptr->md_staging_skip_interpolation_search =
             (context_ptr->md_staging_mode == MD_STAGING_MODE_1 ||
              context_ptr->md_staging_mode == MD_STAGING_MODE_2);
-#else
-        context_ptr->md_staging_skip_interpolation_search =
-            context_ptr->md_staging_mode == MD_STAGING_MODE_1;
-#endif
         context_ptr->md_staging_skip_inter_chroma_pred = EB_FALSE;
         context_ptr->md_staging_skip_atb               = context_ptr->coeff_based_skip_atb;
         context_ptr->md_staging_tx_search =
@@ -5097,11 +5011,7 @@ void md_stage_2(PictureControlSet *pcs_ptr, SuperBlock *sb_ptr, BlkStruct *blk_p
         if (pcs_ptr->slice_type != I_SLICE) {
             if ((candidate_ptr->type == INTRA_MODE || context_ptr->full_loop_escape == 2) &&
                 best_inter_luma_zero_coeff == 0) {
-#if ADD_4TH_MD_STAGE
                 context_ptr->md_stage_3_total_count = full_loop_candidate_index;
-#else
-                context_ptr->md_stage_2_total_count = full_loop_candidate_index;
-#endif
                 return;
             }
         }
@@ -5998,7 +5908,6 @@ void interintra_class_pruning_2(ModeDecisionContext *context_ptr, uint64_t best_
     }
 }
 
-#if ADD_4TH_MD_STAGE
 void interintra_class_pruning_3(ModeDecisionContext *context_ptr, uint64_t best_md_stage_cost) {
     for (CandClass cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL;
          cand_class_it++) {
@@ -6036,7 +5945,6 @@ void interintra_class_pruning_3(ModeDecisionContext *context_ptr, uint64_t best_
         context_ptr->md_stage_3_total_count += context_ptr->md_stage_3_count[cand_class_it];
     }
 }
-#endif
 
 void md_encode_block(SequenceControlSet *scs_ptr, PictureControlSet *pcs_ptr,
                      ModeDecisionContext *context_ptr, EbPictureBufferDesc *input_picture_ptr,
@@ -6207,13 +6115,10 @@ void md_encode_block(SequenceControlSet *scs_ptr, PictureControlSet *pcs_ptr,
         uint32_t  buffer_total_count        = 0;
         context_ptr->md_stage_1_total_count = 0;
         context_ptr->md_stage_2_total_count = 0;
-#if ADD_4TH_MD_STAGE
         context_ptr->md_stage_3_total_count = 0;
-#endif
         uint64_t best_md_stage_cost = (uint64_t)~0;
-#if ADD_4TH_MD_STAGE // tag
         context_ptr->md_stage = MD_STAGE_0;
-#endif
+
         for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
             //number of next level candidates could not exceed number of curr level candidates
             context_ptr->md_stage_1_count[cand_class_it] =
@@ -6285,9 +6190,7 @@ void md_encode_block(SequenceControlSet *scs_ptr, PictureControlSet *pcs_ptr,
 
         // 1st Full-Loop
         best_md_stage_cost = (uint64_t)~0;
-#if ADD_4TH_MD_STAGE // tag
         context_ptr->md_stage = MD_STAGE_1;
-#endif
         for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
             //number of next level candidates could not exceed number of curr level candidates
             context_ptr->md_stage_2_count[cand_class_it] =
@@ -6324,7 +6227,6 @@ void md_encode_block(SequenceControlSet *scs_ptr, PictureControlSet *pcs_ptr,
         }
         interintra_class_pruning_2(context_ptr, best_md_stage_cost);
 
-#if ADD_4TH_MD_STAGE
         // 2nd Full-Loop
         best_md_stage_cost    = (uint64_t)~0;
         context_ptr->md_stage = MD_STAGE_2;
@@ -6374,23 +6276,10 @@ void md_encode_block(SequenceControlSet *scs_ptr, PictureControlSet *pcs_ptr,
                                                 candidate_buffer_ptr_array,
                                                 context_ptr->best_candidate_index_array,
                                                 context_ptr->sorted_candidate_index_array);
-#else
-        assert(context_ptr->md_stage_2_total_count <= MAX_NFL);
-        assert(context_ptr->md_stage_2_total_count > 0);
-        construct_best_sorted_arrays_md_stage_2(context_ptr,
-                                                candidate_buffer_ptr_array,
-                                                context_ptr->best_candidate_index_array,
-                                                context_ptr->sorted_candidate_index_array);
-#endif
 
-#if ADD_4TH_MD_STAGE
         // 3rd Full-Loop
         context_ptr->md_stage = MD_STAGE_3;
         md_stage_3(pcs_ptr,
-#else
-        // 2nd Full-Loop
-        md_stage_2(pcs_ptr,
-#endif
                    context_ptr->sb_ptr,
                    blk_ptr,
                    context_ptr,
@@ -6399,11 +6288,7 @@ void md_encode_block(SequenceControlSet *scs_ptr, PictureControlSet *pcs_ptr,
                    input_cb_origin_in_index,
                    blk_origin_index,
                    blk_chroma_origin_index,
-#if ADD_4TH_MD_STAGE
                    context_ptr->md_stage_3_total_count,
-#else
-                   context_ptr->md_stage_2_total_count,
-#endif
                    ref_fast_cost); // fullCandidateTotalCount to number of buffers to process
 
         // Full Mode Decision (choose the best mode)
@@ -6411,11 +6296,7 @@ void md_encode_block(SequenceControlSet *scs_ptr, PictureControlSet *pcs_ptr,
             context_ptr,
             blk_ptr,
             candidate_buffer_ptr_array,
-#if ADD_4TH_MD_STAGE
             context_ptr->md_stage_3_total_count,
-#else
-            context_ptr->md_stage_2_total_count,
-#endif
             (context_ptr->full_loop_escape == 2) ? context_ptr->sorted_candidate_index_array
                                                  : context_ptr->best_candidate_index_array,
             context_ptr->prune_ref_frame_for_rec_partitions,

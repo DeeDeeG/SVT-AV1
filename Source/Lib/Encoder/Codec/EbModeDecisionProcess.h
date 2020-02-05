@@ -272,27 +272,19 @@ typedef struct ModeDecisionContext {
     DECLARE_ALIGNED(32, int16_t, diff10[MAX_SB_SQUARE]);
     unsigned int prediction_mse;
     EbBool       variance_ready;
-#if ADD_4TH_MD_STAGE
     MdStage md_stage;
-#endif
     uint32_t     cand_buff_indices[CAND_CLASS_TOTAL][MAX_NFL_BUFF];
     uint8_t      md_staging_mode;
     uint8_t      md_staging_count_level;
     uint8_t      bypass_md_stage_1[CAND_CLASS_TOTAL];
-#if ADD_4TH_MD_STAGE
     uint8_t bypass_md_stage_2[CAND_CLASS_TOTAL];
-#endif
     uint32_t md_stage_0_count[CAND_CLASS_TOTAL];
     uint32_t md_stage_1_count[CAND_CLASS_TOTAL];
     uint32_t md_stage_2_count[CAND_CLASS_TOTAL];
-#if ADD_4TH_MD_STAGE
     uint32_t md_stage_3_count[CAND_CLASS_TOTAL];
-#endif
     uint32_t md_stage_1_total_count;
     uint32_t md_stage_2_total_count;
-#if ADD_4TH_MD_STAGE
     uint32_t md_stage_3_total_count;
-#endif
 
     uint8_t combine_class12; // 1:class1 and 2 are combined.
 

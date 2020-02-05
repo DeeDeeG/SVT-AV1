@@ -46,8 +46,6 @@ extern "C" {
 
 #define MR_MODE 0
 
-#define ADD_4TH_MD_STAGE 1
-
 #define HIGH_PRECISION_MV_QTHRESH 150
 // Actions in the second pass: Frame and SB QP assignment and temporal filtering strenght change
 //FOR DEBUGGING - Do not remove
@@ -472,17 +470,14 @@ typedef enum CandClass {
 } CandClass;
 
 typedef enum MdStage { MD_STAGE_0, MD_STAGE_1, MD_STAGE_2, MD_STAGE_3, MD_STAGE_TOTAL } MdStage;
-#if ADD_4TH_MD_STAGE
+
 typedef enum MdStagingMode {
     MD_STAGING_MODE_0,
     MD_STAGING_MODE_1,
     MD_STAGING_MODE_2,
     MD_STAGING_MODE_TOTAL
 } MdStagingMode;
-#else
-#define MD_STAGING_MODE_0 0
-#define MD_STAGING_MODE_1 1
-#endif
+
 #define INTRA_NFL 16
 #define INTER_NEW_NFL 16
 #define INTER_PRED_NFL 16
