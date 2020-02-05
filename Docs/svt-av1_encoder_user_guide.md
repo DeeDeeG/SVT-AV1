@@ -205,10 +205,28 @@ The encoder parameters present in the `Sample.cfg` file are listed in this table
 | **OlpdRefinement** | -olpd-refinement | [0 - 1] | -1 | Enable open loop partitioning decision refinement (-1: DEFAULT (ON for M0, no SC, OFF otherwise), 0: OFF 1: ON for M0, error otherwise ) |
 | **ChromaMode** | -chroma-mode | [0-3, -1 for default] | DEFAULT | Chroma Mode <br>-1 = DEFAULT<br>0 = Full chroma search @ MD  <br>1 = Fast chroma search @ MD  <br>2 = Chroma blind @ MD + CFL @ EP <br>3 = Chroma blind @ MD + no CFL @ EP |
 | **SquareWeight** | -sqw | 0 for off and any whole number percentage | 100 | Weighting applied to square/h/v shape costs when deciding if a and b shapes could be skipped. Set to 100 for neutral weighting, lesser than 100 for faster encode and BD-Rate loss, and greater than 100 for slower encode and BD-Rate gain|
-| **MDStage1PruneClassThreshold** | -mds1p-class-th | 0 for off and any whole number percentage | 100 | Deviation threshold (expressed as a percentage) of an inter-class class pruning mechanism before MD Stage 1 |
-| **MDStage1PruneCandThreshold** | -mds1p-cand-th | 0 for off and any whole number percentage | 75 | Deviation threshold (expressed as a percentage) of an intra-class candidate pruning mechanism before MD Stage 1 |
-| **MDStage2PruneClassThreshold** | -mds2p-class-th | 0 for off and any whole number percentage | 25 | Deviation threshold (expressed as a percentage) of an inter-class class pruning mechanism before MD Stage 2 |
-| **MDStage2PruneCandThreshold** | -mds2p-cand-th | 0 for off and any whole number percentage | 15 | Deviation threshold (expressed as a percentage) of an intra-class candidate pruning mechanism before MD Stage 2 |
+| **MDFastPruneClassThreshold** | -mds1p-class-th | 0 for off and any whole number percentage | 100 | Deviation threshold (expressed as a percentage) of an inter-class class pruning mechanism before MD Stage 1 |
+| **MDFastPruneCandThreshold** | -mds1p-cand-th | 0 for off and any whole number percentage | 75 | Deviation threshold (expressed as a percentage) of an intra-class candidate pruning mechanism before MD Stage 1 |
+| **MDFullPruneClassThreshold** | -mds2p-class-th | 0 for off and any whole number percentage | 25 | Deviation threshold (expressed as a percentage) of an inter-class class pruning mechanism before MD Stage 2 |
+| **MDFullPruneCandThreshold** | -mds2p-cand-th | 0 for off and any whole number percentage | 15 | Deviation threshold (expressed as a percentage) of an intra-class candidate pruning mechanism before MD Stage 2 |
+| **EncoderColorFormat** | -color-format | [1 for default] | DEFAULT | Set encoder color format(EB_YUV400, EB_YUV420, EB_YUV422, EB_YUV444) |
+| **Profile** | -profile | [0-2, 0 for default] | DEFAULT | Bitstream profile number to use (0: main profile[default], 1: high profile, 2: professional profile) |
+| **PredStructure** | -pred-struct | [0-2, 2 for default] | DEFAULT | Set prediction structure( 0: low delay P, 1: low delay B, 2: random access [default]) |
+| **HighDynamicRangeInput** | -hdr | [0-1, 0 for default] | DEFAULT | Enable high dynamic range(0: OFF[default], ON: 1) |
+| **LoopFilterDisable** | -dlf | [0-1, 0 for default] | DEFAULT | Disable loop filter(0: loop filter enabled[default] ,1: loop filter disabled) |
+| **GlobalMotion** | -global-motion | [0-1, 1 for default] | DEFAULT | Enable global motion (0: OFF, 1: ON [default]) |
+| **Obmc** | -obmc | [0-1, 1 for default] | DEFAULT | Enable OBMC(0: OFF, 1: ON[default]) |
+| **FilterIntra** | -filter-intra | [0-1, 1 for default] | DEFAULT | Enable filter intra prediction mode (0: OFF, 1: ON [default]) |
+| **HighBitDepthModeDecision** | -hbd-md | [0-2, 1 for default] | DEFAULT | Enable high bit depth mode decision(0: OFF, 1: ON partially[default],2: fully ON) |
+| **Injector** | -inj | [0-1, 0 for default] | DEFAULT | Inject pictures at defined frame rate(0: OFF[default],1: ON) |
+| **InjectorFrameRate** | -inj-frm-rt | Null | Null | Set injector frame rate |
+| **SpeedControlFlag** | -speed-ctrl | [0-1, 0 for default] | DEFAULT | Enable speed control(0: OFF[default], 1: ON) |
+| **FilmGrain** | -film-grain | [0-1, 0 for default] | DEFAULT | Enable film grain(0: OFF[default], 1: ON) |
+| **EnableAltRefs** | -enable-altrefs | [0-1, 1 for default] | DEFAULT | Enable automatic alt reference frames(0: OFF, 1: ON[default]) |
+| **AltRefStrength** | -altref-strength | [0-6, 5 for default] | DEFAULT | AltRef filter strength([0-6], default: 5) |
+| **AltRefNframes** | -altref-nframes | [0-10, 7 for default] | DEFAULT | AltRef max frames([0-10], default: 7) |
+| **EnableOverlays** | -enable-overlays | [0-1, 0 for default] | DEFAULT | Enable the insertion of an extra picture called overlayer picture which will be used as an extra reference frame for the base-layer picture(0: OFF[default], 1: ON) |
+| **AutomaxPartition** | -enable-amp | [0-1, 1 for default] | DEFAULT | Auto max partition: Decide whether to skip 128x128 or not(0: OFF, 1: ON[default]) |
 
 ## Appendix A Encoder Parameters
 

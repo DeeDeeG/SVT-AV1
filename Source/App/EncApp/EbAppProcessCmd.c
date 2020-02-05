@@ -1277,7 +1277,26 @@ AppExitConditionType process_output_stream_buffer(EbConfig *config, EbAppContext
 #else
             //++frame_count;
             if (!(header_ptr->flags & EB_BUFFERFLAG_IS_ALT_REF))
-                fprintf(stderr, "\b\b\b\b\b\b\b\b\b%9d", ++frame_count);
+            {
+                double progress = 0;
+                ++frame_count;
+                progress = ((double)frame_count / config->processed_frame_count) * 100;
+                if (progress < 10) {
+                    fprintf(stderr,
+                            "%.2f%% %5d  / %5d",
+                            progress,
+                            frame_count,
+                            (int)config->frames_to_be_encoded);
+                    fprintf(stderr, " \b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+                } else {
+                    fprintf(stderr,
+                            "%.2f%% %5d  / %5d",
+                            progress,
+                            frame_count,
+                            (int)config->frames_to_be_encoded);
+                    fprintf(stderr, " \b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+                }
+            }
 #endif
 
             //++frame_count;
