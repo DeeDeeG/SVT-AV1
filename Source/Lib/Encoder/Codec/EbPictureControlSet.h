@@ -931,9 +931,6 @@ typedef struct PictureParentControlSet {
     FrameHeader       frm_hdr;
     uint8_t           compound_mode;
     uint8_t           prune_unipred_at_me;
-#if !REMOVE_COEFF_BASED_SKIP_ATB
-    uint8_t           coeff_based_skip_atb;
-#endif
     uint16_t *        altref_buffer_highbd[3];
     uint8_t           enable_inter_intra;
     uint8_t           pic_obmc_mode;

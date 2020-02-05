@@ -34,10 +34,7 @@ void product_full_loop(ModeDecisionCandidateBuffer *candidate_buffer,
                        EbPictureBufferDesc *input_picture_ptr, uint32_t qp,
                        uint32_t *y_count_non_zero_coeffs, uint64_t *y_coeff_bits,
                        uint64_t *y_full_distortion);
-#if !LOSSLESS_TX_TYPE_OPT
-void product_full_loop_tx_search(ModeDecisionCandidateBuffer *candidate_buffer,
-                                 ModeDecisionContext *context_ptr, PictureControlSet *pcs_ptr);
-#endif
+
 void inv_transform_recon_wrapper(uint8_t *pred_buffer, uint32_t pred_offset, uint32_t pred_stride,
                                  uint8_t *rec_buffer, uint32_t rec_offset, uint32_t rec_stride,
                                  int32_t *rec_coeff_buffer, uint32_t coeff_offset, EbBool hbd,
