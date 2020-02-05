@@ -1414,6 +1414,11 @@ static const int plane_rd_mult[REF_TYPES][PLANE_TYPES] = {
 };
 
 #if FASTER_RDOQ
+/*
+ * Reduce the number of non-zero quantized coefficients before getting to the main/complex RDOQ stage
+ * (it performs an early check of whether to zero out each of the non-zero quantized coefficients,
+ * and updates the quantized coeffs if it is determined it can be zeroed out).
+ */
 static INLINE void update_coeff_eob_fast(uint16_t *eob, int shift, const int16_t *dequant_ptr,
                                          const int16_t *scan, const TranLow *coeff_ptr,
                                          TranLow *qcoeff_ptr, TranLow *dqcoeff_ptr) {
@@ -1455,7 +1460,8 @@ void eb_av1_optimize_b(ModeDecisionContext *md_context, int16_t txb_skip_context
     // Hsan (Trellis): hardcoded as not supported:
     int                    sharpness       = 0; // No Sharpness
 #if FASTER_RDOQ
-    int                    fast_mode       = (is_inter && plane); // TBD
+    // Perform a fast RDOQ stage for inter and chroma blocks
+    int                    fast_mode       = (is_inter && plane);
 #else
     int                    fast_mode       = 0; // TBD
 #endif
