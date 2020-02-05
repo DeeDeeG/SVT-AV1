@@ -10281,7 +10281,12 @@ EbErrorType bi_prediction_search(SequenceControlSet *scs_ptr, MeContext *context
                     svt_get_ref_frame_type(REF_LIST_1, second_list_ref_pict_idx);
                 uint8_t add_bi = skip_bi_pred(pcs_ptr, to_inject_ref_type_0, ref_type_table);
                 add_bi += skip_bi_pred(pcs_ptr, to_inject_ref_type_1, ref_type_table);
-
+#if MUS_ME
+                //if one of the references is skipped at ME, do not consider bi for this cand
+                if (context_ptr->hme_results[REF_LIST_0][first_list_ref_pict_idx].do_ref == 0 ||
+                    context_ptr->hme_results[REF_LIST_1][second_list_ref_pict_idx].do_ref == 0  )
+                    add_bi = 0;
+#endif
                 if (add_bi) {
                     biprediction_compensation(
                         context_ptr,
@@ -10309,6 +10314,12 @@ EbErrorType bi_prediction_search(SequenceControlSet *scs_ptr, MeContext *context
             uint8_t to_inject_ref_type_0 =
                 svt_get_ref_frame_type(REF_LIST_0, first_list_ref_pict_idx);
             uint8_t add_bi = skip_bi_pred(pcs_ptr, to_inject_ref_type_0, ref_type_table);
+#if MUS_ME
+            //if one of the references is skipped at ME, do not consider bi for this cand
+            if (context_ptr->hme_results[REF_LIST_0][0].do_ref == 0 ||
+                context_ptr->hme_results[REF_LIST_0][first_list_ref_pict_idx].do_ref == 0)
+                add_bi = 0;
+#endif
             if (add_bi) {
                 biprediction_compensation(
                     context_ptr,
@@ -10332,6 +10343,12 @@ EbErrorType bi_prediction_search(SequenceControlSet *scs_ptr, MeContext *context
             uint8_t to_inject_ref_type_0 =
                 svt_get_ref_frame_type(REF_LIST_0, first_list_ref_pict_idx);
             uint8_t add_bi = skip_bi_pred(pcs_ptr, to_inject_ref_type_0, ref_type_table);
+#if MUS_ME
+            //if one of the references is skipped at ME, do not consider bi for this cand
+            if (context_ptr->hme_results[REF_LIST_1][0].do_ref == 0 ||
+                context_ptr->hme_results[REF_LIST_1][first_list_ref_pict_idx].do_ref == 0)
+                add_bi = 0;
+#endif
             if (add_bi) {
                 biprediction_compensation(
                     context_ptr,
@@ -11065,7 +11082,7 @@ static void hme_mv_center_check(EbPictureBufferDesc *ref_pic_ptr, MeContext *con
     mv_d_sad = mv_d_sad << sub_sampled_sad;
 
     uint64_t mv_d_cost = mv_d_sad << COST_PRECISION;
-
+#if !SHUT_HME_L1_CHECK
     if (list_index == 1) {
         search_center_x = list_index ? 0 - (_MVXT(context_ptr->p_sb_best_mv[0][0][0]) >> 2) : 0;
         search_center_y = list_index ? 0 - (_MVYT(context_ptr->p_sb_best_mv[0][0][0]) >> 2) : 0;
@@ -11106,7 +11123,7 @@ static void hme_mv_center_check(EbPictureBufferDesc *ref_pic_ptr, MeContext *con
 
         direct_mv_cost = (direct_mv_sad << COST_PRECISION);
     }
-
+#endif
     best_cost = MIN(zero_mv_cost,
                     MIN(mv_a_cost, MIN(mv_b_cost, MIN(mv_c_cost, MIN(mv_d_cost, direct_mv_cost)))));
 
@@ -11142,7 +11159,1376 @@ void swap_me_candidate(MePredUnit *a, MePredUnit *b) {
     *a       = *b;
     *b       = temp_ptr;
 }
+#if MUS_ME
+#if MUS_ME_FP
+/*******************************************
+ *   performs full_pel ME
+ *******************************************/
+void integer_search_sb(
+    PictureParentControlSet   *picture_control_set_ptr,
+    uint32_t                   sb_index,
+    uint32_t                   sb_origin_x,
+    uint32_t                   sb_origin_y,
+    MeContext                 *context_ptr,
+    EbPictureBufferDesc       *input_ptr) {
+    SequenceControlSet *sequence_control_set_ptr =
+        (SequenceControlSet *)picture_control_set_ptr
+        ->sequence_control_set_wrapper_ptr->object_ptr;
 
+    int16_t xTopLeftSearchRegion;
+    int16_t yTopLeftSearchRegion;
+    uint32_t searchRegionIndex;
+
+    int16_t picture_width =
+        (int16_t)((SequenceControlSet *)picture_control_set_ptr
+            ->sequence_control_set_wrapper_ptr->object_ptr)
+        ->seq_header.max_frame_width;
+    int16_t picture_height =
+        (int16_t)((SequenceControlSet *)picture_control_set_ptr
+            ->sequence_control_set_wrapper_ptr->object_ptr)
+        ->seq_header.max_frame_height;
+    uint32_t sb_width = (input_ptr->width - sb_origin_x) < BLOCK_SIZE_64
+        ? input_ptr->width - sb_origin_x
+        : BLOCK_SIZE_64;
+    uint32_t sb_height = (input_ptr->height - sb_origin_y) < BLOCK_SIZE_64
+        ? input_ptr->height - sb_origin_y
+        : BLOCK_SIZE_64;
+
+    int16_t padWidth = (int16_t)BLOCK_SIZE_64 - 1;
+    int16_t padHeight = (int16_t)BLOCK_SIZE_64 - 1;
+    int16_t search_area_width;
+    int16_t search_area_height;
+    int16_t x_search_area_origin;
+    int16_t y_search_area_origin;
+    int16_t origin_x = (int16_t)sb_origin_x;
+    int16_t origin_y = (int16_t)sb_origin_y;
+    // Final ME Search Center
+    int16_t x_search_center = 0;
+    int16_t y_search_center = 0;
+
+    uint32_t max_number_of_pus_per_sb =
+        picture_control_set_ptr->max_number_of_pus_per_sb;
+
+    uint32_t numOfListToSearch;
+    uint32_t list_index;
+    EbPaReferenceObject
+        *referenceObject;  // input parameter, reference Object Ptr
+
+    uint8_t ref_pic_index;
+    uint8_t num_of_ref_pic_to_search;
+    uint8_t candidate_index = 0;
+    uint32_t next_candidate_index = 0;
+    uint64_t ref0Poc = 0;
+    uint64_t ref1Poc = 0;
+    EbPictureBufferDesc *refPicPtr;
+    numOfListToSearch = (picture_control_set_ptr->slice_type == P_SLICE)
+        ? (uint32_t)REF_LIST_0
+        : (uint32_t)REF_LIST_1;
+
+    EbBool is_nsq_table_used =
+        (picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE &&
+            picture_control_set_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
+            picture_control_set_ptr->nsq_search_level < NSQ_SEARCH_FULL)
+        ? EB_TRUE
+        : EB_FALSE;
+
+#if MULTI_PASS_PD
+#if M1_OPT
+#if JAN31_M2
+    is_nsq_table_used = (picture_control_set_ptr->enc_mode <= ENC_M2 ||
+#else
+    is_nsq_table_used = (picture_control_set_ptr->enc_mode <= ENC_M1 ||
+#endif
+#else
+    is_nsq_table_used = (picture_control_set_ptr->enc_mode == ENC_M0 ||
+#endif
+        picture_control_set_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_0 ||
+        picture_control_set_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_1 ||
+        picture_control_set_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_2 ||
+        picture_control_set_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_3) ? EB_FALSE : is_nsq_table_used;
+#else
+    if (sequence_control_set_ptr->static_config.nsq_table == DEFAULT)
+        is_nsq_table_used = picture_control_set_ptr->enc_mode == ENC_M0 ? EB_FALSE : is_nsq_table_used;
+    else
+        is_nsq_table_used = sequence_control_set_ptr->static_config.nsq_table;
+#endif
+    if (context_ptr->me_alt_ref == EB_FALSE && is_nsq_table_used)
+        printf("NSQTBLE\n");
+    if (context_ptr->me_alt_ref == EB_TRUE)
+        numOfListToSearch = 0;
+    for (list_index = REF_LIST_0; list_index <= numOfListToSearch; ++list_index) {
+
+        if (context_ptr->me_alt_ref == EB_TRUE) {
+            num_of_ref_pic_to_search = 1;
+        }
+        else {
+            num_of_ref_pic_to_search =
+                (picture_control_set_ptr->slice_type == P_SLICE)
+                ? picture_control_set_ptr->ref_list0_count
+                : (list_index == REF_LIST_0)
+                ? picture_control_set_ptr->ref_list0_count
+                : picture_control_set_ptr->ref_list1_count;
+
+            referenceObject = (EbPaReferenceObject *)picture_control_set_ptr
+                ->ref_pa_pic_ptr_array[0][0]
+                ->object_ptr;
+            ref0Poc = picture_control_set_ptr->ref_pic_poc_array[0][0];
+        }
+        // Ref Picture Loop
+        for (ref_pic_index = 0; ref_pic_index < num_of_ref_pic_to_search;
+            ++ref_pic_index)
+        {
+            if (context_ptr->me_alt_ref == EB_TRUE) {
+                referenceObject =
+                    (EbPaReferenceObject *)context_ptr->alt_ref_reference_ptr;
+            }
+            else {
+                if (numOfListToSearch) {
+#if !LOW_DELAY_TUNE
+                    referenceObject =
+                        (EbPaReferenceObject *)picture_control_set_ptr
+                        ->ref_pa_pic_ptr_array[1][0]
+                        ->object_ptr;
+#endif
+                    ref1Poc = picture_control_set_ptr->ref_pic_poc_array[1][0];
+                }
+
+                referenceObject =
+                    (EbPaReferenceObject *)picture_control_set_ptr
+                    ->ref_pa_pic_ptr_array[list_index][ref_pic_index]
+                    ->object_ptr;
+            }
+            refPicPtr = (EbPictureBufferDesc*)referenceObject->input_padded_picture_ptr;
+            // Get hme results
+            if (context_ptr->hme_results[list_index][ref_pic_index].do_ref == 0)
+                continue;  //so will not get ME results for those references. what will happen next, shall we just fill in max sads?
+            //we can also make the ME small and shut subpel
+            x_search_center = context_ptr->hme_results[list_index][ref_pic_index].hme_sc_x;
+            y_search_center = context_ptr->hme_results[list_index][ref_pic_index].hme_sc_y;
+#if DIST_BASED_ME_SEARCH_AREA
+            if (picture_control_set_ptr->distance_me_flag) {
+                search_area_width = context_ptr->search_area_width;
+                search_area_height = context_ptr->search_area_height;
+
+                uint16_t dist = (context_ptr->me_alt_ref == EB_TRUE) ?
+                    ABS((int16_t)(context_ptr->tf_frame_index - context_ptr->tf_index_center)) :
+                    ABS((int16_t)(picture_control_set_ptr->picture_number - picture_control_set_ptr->ref_pic_poc_array[list_index][ref_pic_index]));
+#if DISTANCE_ME_FACTOR
+                if (!picture_control_set_ptr->sc_content_detected && context_ptr->me_alt_ref == 0) {
+                    int8_t round_up = ((dist%8) == 0) ? 0 : 1;
+                    dist = ((dist * 5) / 8) + round_up;
+                }
+#endif
+                search_area_width = MIN((search_area_width  * dist), context_ptr->max_search_area_width);
+                search_area_height = MIN((search_area_height * dist), context_ptr->max_search_area_height);
+
+#if SKIP_ME_BASED_ON_HME
+                // Constrain x_ME to be a multiple of 8 (round up)
+                // Update ME search reagion size based on hme-data
+#if SC_HME_PRUNING
+                if (context_ptr->reduce_me_sr_flag[list_index][ref_pic_index] == SC_HME_TH_STILL) {
+                    search_area_width = ((search_area_width / SC_SR_DENOM_STILL) + 7) & ~0x07;
+                    search_area_height = (search_area_height / SC_SR_DENOM_STILL);
+                }
+                else if (context_ptr->reduce_me_sr_flag[list_index][ref_pic_index] == SC_HME_TH_EASY) {
+                    search_area_width = ((search_area_width / SC_SR_DENOM_EASY) + 7) & ~0x07;
+                    search_area_height = (search_area_height / SC_SR_DENOM_EASY);
+                }else if (context_ptr->reduce_me_sr_flag[list_index][ref_pic_index]) {
+                    search_area_width = ((search_area_width / 8) + 7) & ~0x07;
+                    search_area_height = (search_area_height / 8);
+                }
+                else {
+                    search_area_width = (search_area_width + 7) & ~0x07;
+                    search_area_height = search_area_height;
+                }
+#else
+                if (context_ptr->reduce_me_sr_flag[list_index][ref_pic_index]) {
+                    search_area_width = ((search_area_width / 8) + 7) & ~0x07;
+                    search_area_height = (search_area_height / 8);
+                }
+                else {
+                    search_area_width = (search_area_width + 7) & ~0x07;
+                    search_area_height = search_area_height;
+                }
+#endif
+#else
+                // Constrain x_ME to be a multiple of 8 (round up)
+                search_area_width = (search_area_width + 7) & ~0x07;
+                search_area_height = search_area_height;
+#endif
+        }
+            else {
+                // Constrain x_ME to be a multiple of 8 (round up)
+                search_area_width = (context_ptr->search_area_width + 7) & ~0x07;
+                search_area_height = context_ptr->search_area_height;
+#if SKIP_ME_BASED_ON_HME
+#if SC_HME_PRUNING
+                if (context_ptr->reduce_me_sr_flag[list_index][ref_pic_index] == SC_HME_TH_STILL) {
+                    search_area_width = ((search_area_width / SC_SR_DENOM_STILL) + 7) & ~0x07;
+                    search_area_height = (search_area_height / SC_SR_DENOM_STILL);
+                }
+                else if (context_ptr->reduce_me_sr_flag[list_index][ref_pic_index] == SC_HME_TH_EASY) {
+                    search_area_width = ((search_area_width / SC_SR_DENOM_EASY) + 7) & ~0x07;
+                    search_area_height = (search_area_height / SC_SR_DENOM_EASY);
+                }else if (context_ptr->reduce_me_sr_flag[list_index][ref_pic_index]) {
+                    search_area_width = ((search_area_width / 8) + 7) & ~0x07;
+                    search_area_height = (search_area_height / 8);
+                }
+                else {
+                    search_area_width = (search_area_width + 7) & ~0x07;
+                    search_area_height = search_area_height;
+                }
+#else
+                // Update ME search reagion size based on hme-data
+                if (context_ptr->reduce_me_sr_flag[list_index][ref_pic_index]) {
+                    search_area_width = ((context_ptr->search_area_width/8) + 7) & ~0x07;
+                    search_area_height = (context_ptr->search_area_height/8);
+                }
+#endif
+#endif
+            }
+#else
+            // Constrain x_ME to be a multiple of 8 (round up)
+            search_area_width = (context_ptr->search_area_width + 7) & ~0x07;
+            search_area_height = context_ptr->search_area_height;
+#if SKIP_ME_BASED_ON_HME
+            // Update ME search reagion size based on hme-data
+            if (context_ptr->reduce_me_sr_flag[list_index][ref_pic_index]) {
+                search_area_width = ((context_ptr->search_area_width/8) + 7) & ~0x07;
+                search_area_height = (context_ptr->search_area_height/8);
+            }
+#endif
+#endif
+            if ((x_search_center != 0 || y_search_center != 0) &&
+                (picture_control_set_ptr->is_used_as_reference_flag ==
+                    EB_TRUE)) {
+                CheckZeroZeroCenter(refPicPtr,
+                    context_ptr,
+                    sb_origin_x,
+                    sb_origin_y,
+                    sb_width,
+                    sb_height,
+                    &x_search_center,
+                    &y_search_center);
+            }
+            x_search_area_origin = x_search_center - (search_area_width >> 1);
+            y_search_area_origin = y_search_center - (search_area_height >> 1);
+            if (sequence_control_set_ptr->static_config.unrestricted_motion_vector == 0)
+            {
+                int tile_start_x = sequence_control_set_ptr->sb_params_array[sb_index].tile_start_x;
+                int tile_end_x = sequence_control_set_ptr->sb_params_array[sb_index].tile_end_x;
+                // Correct the left edge of the Search Area if it is not on the
+                // reference Picture
+                x_search_area_origin =
+                    ((origin_x + x_search_area_origin) < tile_start_x)
+                    ? tile_start_x - origin_x
+                    : x_search_area_origin;
+
+                search_area_width =
+                    ((origin_x + x_search_area_origin) < tile_start_x)
+                    ? search_area_width - (tile_start_x - (origin_x + x_search_area_origin))
+                    : search_area_width;
+                // Correct the right edge of the Search Area if its not on the
+                // reference Picture
+                x_search_area_origin =
+                    ((origin_x + x_search_area_origin) > tile_end_x - 1)
+                    ? x_search_area_origin - ((origin_x + x_search_area_origin) - (tile_end_x - 1))
+                    : x_search_area_origin;
+                search_area_width =
+                    ((origin_x + x_search_area_origin + search_area_width) > tile_end_x)
+                    ? MAX(1, search_area_width - ((origin_x + x_search_area_origin + search_area_width) - tile_end_x))
+                    : search_area_width;
+                // Constrain x_ME to be a multiple of 8 (round down as cropping
+                // already performed)
+                search_area_width = (search_area_width < 8)
+                    ? search_area_width
+                    : search_area_width & ~0x07;
+            }
+            else {
+                // Correct the left edge of the Search Area if it is not on the
+                // reference Picture
+                x_search_area_origin =
+                    ((origin_x + x_search_area_origin) < -padWidth)
+                    ? -padWidth - origin_x
+                    : x_search_area_origin;
+                search_area_width =
+                    ((origin_x + x_search_area_origin) < -padWidth)
+                    ? search_area_width -
+                    (-padWidth - (origin_x + x_search_area_origin))
+                    : search_area_width;
+                // Correct the right edge of the Search Area if its not on the
+                // reference Picture
+                x_search_area_origin =
+                    ((origin_x + x_search_area_origin) > picture_width - 1)
+                    ? x_search_area_origin -
+                    ((origin_x + x_search_area_origin) -
+                    (picture_width - 1))
+                    : x_search_area_origin;
+                search_area_width =
+                    ((origin_x + x_search_area_origin + search_area_width) >
+                        picture_width)
+                    ? MAX(1,
+                        search_area_width -
+                        ((origin_x + x_search_area_origin +
+                            search_area_width) -
+                            picture_width))
+                    : search_area_width;
+                // Constrain x_ME to be a multiple of 8 (round down as cropping
+                // already performed)
+                search_area_width = (search_area_width < 8)
+                    ? search_area_width
+                    : search_area_width & ~0x07;
+            }
+            if (sequence_control_set_ptr->static_config.unrestricted_motion_vector == 0)
+            {
+                int tile_start_y = sequence_control_set_ptr->sb_params_array[sb_index].tile_start_y;
+                int tile_end_y = sequence_control_set_ptr->sb_params_array[sb_index].tile_end_y;
+
+                // Correct the top edge of the Search Area if it is not on the
+                // reference Picture
+                y_search_area_origin =
+                    ((origin_y + y_search_area_origin) < tile_start_y)
+                    ? tile_start_y - origin_y
+                    : y_search_area_origin;
+                search_area_height =
+                    ((origin_y + y_search_area_origin) < tile_start_y)
+                    ? search_area_height - (tile_start_y - (origin_y + y_search_area_origin))
+                    : search_area_height;
+                // Correct the bottom edge of the Search Area if its not on the
+                // reference Picture
+                y_search_area_origin =
+                    ((origin_y + y_search_area_origin) > tile_end_y - 1)
+                    ? y_search_area_origin - ((origin_y + y_search_area_origin) - (tile_end_y - 1))
+                    : y_search_area_origin;
+                search_area_height =
+                    (origin_y + y_search_area_origin + search_area_height > tile_end_y)
+                    ? MAX(1, search_area_height - ((origin_y + y_search_area_origin + search_area_height) - tile_end_y))
+                    : search_area_height;
+            }
+            else {
+                // Correct the top edge of the Search Area if it is not on the
+                // reference Picture
+                y_search_area_origin =
+                    ((origin_y + y_search_area_origin) < -padHeight)
+                    ? -padHeight - origin_y
+                    : y_search_area_origin;
+                search_area_height =
+                    ((origin_y + y_search_area_origin) < -padHeight)
+                    ? search_area_height -
+                    (-padHeight - (origin_y + y_search_area_origin))
+                    : search_area_height;
+                // Correct the bottom edge of the Search Area if its not on the
+                // reference Picture
+                y_search_area_origin =
+                    ((origin_y + y_search_area_origin) > picture_height - 1)
+                    ? y_search_area_origin -
+                    ((origin_y + y_search_area_origin) -
+                    (picture_height - 1))
+                    : y_search_area_origin;
+                search_area_height =
+                    (origin_y + y_search_area_origin + search_area_height >
+                        picture_height)
+                    ? MAX(1,
+                        search_area_height -
+                        ((origin_y + y_search_area_origin +
+                            search_area_height) -
+                            picture_height))
+                    : search_area_height;
+            }
+            context_ptr->x_search_area_origin[list_index][ref_pic_index] =
+                x_search_area_origin;
+            context_ptr->y_search_area_origin[list_index][ref_pic_index] =
+                y_search_area_origin;
+            context_ptr->adj_search_area_width = search_area_width;
+            context_ptr->adj_search_area_height = search_area_height;
+            xTopLeftSearchRegion =
+                (int16_t)(refPicPtr->origin_x + sb_origin_x) -
+                (ME_FILTER_TAP >> 1) + x_search_area_origin;
+            yTopLeftSearchRegion =
+                (int16_t)(refPicPtr->origin_y + sb_origin_y) -
+                (ME_FILTER_TAP >> 1) + y_search_area_origin;
+            searchRegionIndex = (xTopLeftSearchRegion)+
+                (yTopLeftSearchRegion)*refPicPtr->stride_y;
+            context_ptr->integer_buffer_ptr[list_index][ref_pic_index] =
+                &(refPicPtr->buffer_y[searchRegionIndex]);
+            context_ptr->interpolated_full_stride[list_index][ref_pic_index] =
+                refPicPtr->stride_y;
+            // Move to the top left of the search region
+            xTopLeftSearchRegion =
+                (int16_t)(refPicPtr->origin_x + sb_origin_x) +
+                x_search_area_origin;
+            yTopLeftSearchRegion =
+                (int16_t)(refPicPtr->origin_y + sb_origin_y) +
+                y_search_area_origin;
+            searchRegionIndex = xTopLeftSearchRegion +
+                yTopLeftSearchRegion * refPicPtr->stride_y;
+            if (picture_control_set_ptr->pic_depth_mode <=
+                PIC_ALL_C_DEPTH_MODE) {
+                initialize_buffer_32bits(
+                    context_ptr
+                    ->p_sb_best_sad[list_index][ref_pic_index],
+                    52,
+                    1,
+                    MAX_SAD_VALUE);
+                context_ptr->p_best_sad64x64 = &(
+                    context_ptr->p_sb_best_sad[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_64x64]);
+                context_ptr->p_best_sad32x32 =
+                    &(context_ptr
+                        ->p_sb_best_sad[list_index][ref_pic_index]
+                        [ME_TIER_ZERO_PU_32x32_0]);
+                context_ptr->p_best_sad16x16 =
+                    &(context_ptr
+                        ->p_sb_best_sad[list_index][ref_pic_index]
+                        [ME_TIER_ZERO_PU_16x16_0]);
+                context_ptr->p_best_sad8x8 = &(
+                    context_ptr->p_sb_best_sad[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_8x8_0]);
+                context_ptr->p_best_sad64x32 =
+                    &(context_ptr
+                        ->p_sb_best_sad[list_index][ref_pic_index]
+                        [ME_TIER_ZERO_PU_64x32_0]);
+                context_ptr->p_best_sad32x16 =
+                    &(context_ptr
+                        ->p_sb_best_sad[list_index][ref_pic_index]
+                        [ME_TIER_ZERO_PU_32x16_0]);
+                context_ptr->p_best_sad16x8 = &(
+                    context_ptr->p_sb_best_sad[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_16x8_0]);
+                context_ptr->p_best_sad32x64 =
+                    &(context_ptr
+                        ->p_sb_best_sad[list_index][ref_pic_index]
+                        [ME_TIER_ZERO_PU_32x64_0]);
+                context_ptr->p_best_sad16x32 =
+                    &(context_ptr
+                        ->p_sb_best_sad[list_index][ref_pic_index]
+                        [ME_TIER_ZERO_PU_16x32_0]);
+                context_ptr->p_best_sad8x16 = &(
+                    context_ptr->p_sb_best_sad[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_8x16_0]);
+                context_ptr->p_best_sad32x8 = &(
+                    context_ptr->p_sb_best_sad[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_32x8_0]);
+                context_ptr->p_best_sad8x32 = &(
+                    context_ptr->p_sb_best_sad[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_8x32_0]);
+                context_ptr->p_best_sad64x16 =
+                    &(context_ptr
+                        ->p_sb_best_sad[list_index][ref_pic_index]
+                        [ME_TIER_ZERO_PU_64x16_0]);
+                context_ptr->p_best_sad16x64 =
+                    &(context_ptr
+                        ->p_sb_best_sad[list_index][ref_pic_index]
+                        [ME_TIER_ZERO_PU_16x64_0]);
+
+                context_ptr->p_best_mv64x64 = &(
+                    context_ptr->p_sb_best_mv[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_64x64]);
+                context_ptr->p_best_mv32x32 = &(
+                    context_ptr->p_sb_best_mv[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_32x32_0]);
+                context_ptr->p_best_mv16x16 = &(
+                    context_ptr->p_sb_best_mv[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_16x16_0]);
+                context_ptr->p_best_mv8x8 = &(
+                    context_ptr->p_sb_best_mv[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_8x8_0]);
+                context_ptr->p_best_mv64x32 = &(
+                    context_ptr->p_sb_best_mv[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_64x32_0]);
+                context_ptr->p_best_mv32x16 = &(
+                    context_ptr->p_sb_best_mv[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_32x16_0]);
+                context_ptr->p_best_mv16x8 = &(
+                    context_ptr->p_sb_best_mv[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_16x8_0]);
+                context_ptr->p_best_mv32x64 = &(
+                    context_ptr->p_sb_best_mv[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_32x64_0]);
+                context_ptr->p_best_mv16x32 = &(
+                    context_ptr->p_sb_best_mv[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_16x32_0]);
+                context_ptr->p_best_mv8x16 = &(
+                    context_ptr->p_sb_best_mv[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_8x16_0]);
+                context_ptr->p_best_mv32x8 = &(
+                    context_ptr->p_sb_best_mv[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_32x8_0]);
+                context_ptr->p_best_mv8x32 = &(
+                    context_ptr->p_sb_best_mv[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_8x32_0]);
+                context_ptr->p_best_mv64x16 = &(
+                    context_ptr->p_sb_best_mv[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_64x16_0]);
+                context_ptr->p_best_mv16x64 = &(
+                    context_ptr->p_sb_best_mv[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_16x64_0]);
+
+                context_ptr->p_best_ssd64x64 = &(
+                    context_ptr->p_sb_best_ssd[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_64x64]);
+                context_ptr->p_best_ssd32x32 =
+                    &(context_ptr
+                        ->p_sb_best_ssd[list_index][ref_pic_index]
+                        [ME_TIER_ZERO_PU_32x32_0]);
+                context_ptr->p_best_ssd16x16 =
+                    &(context_ptr
+                        ->p_sb_best_ssd[list_index][ref_pic_index]
+                        [ME_TIER_ZERO_PU_16x16_0]);
+                context_ptr->p_best_ssd8x8 = &(
+                    context_ptr->p_sb_best_ssd[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_8x8_0]);
+                context_ptr->p_best_ssd64x32 =
+                    &(context_ptr
+                        ->p_sb_best_ssd[list_index][ref_pic_index]
+                        [ME_TIER_ZERO_PU_64x32_0]);
+                context_ptr->p_best_ssd32x16 =
+                    &(context_ptr
+                        ->p_sb_best_ssd[list_index][ref_pic_index]
+                        [ME_TIER_ZERO_PU_32x16_0]);
+                context_ptr->p_best_ssd16x8 = &(
+                    context_ptr->p_sb_best_ssd[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_16x8_0]);
+                context_ptr->p_best_ssd32x64 =
+                    &(context_ptr
+                        ->p_sb_best_ssd[list_index][ref_pic_index]
+                        [ME_TIER_ZERO_PU_32x64_0]);
+                context_ptr->p_best_ssd16x32 =
+                    &(context_ptr
+                        ->p_sb_best_ssd[list_index][ref_pic_index]
+                        [ME_TIER_ZERO_PU_16x32_0]);
+                context_ptr->p_best_ssd8x16 = &(
+                    context_ptr->p_sb_best_ssd[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_8x16_0]);
+                context_ptr->p_best_ssd32x8 = &(
+                    context_ptr->p_sb_best_ssd[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_32x8_0]);
+                context_ptr->p_best_ssd8x32 = &(
+                    context_ptr->p_sb_best_ssd[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_8x32_0]);
+                context_ptr->p_best_ssd64x16 =
+                    &(context_ptr
+                        ->p_sb_best_ssd[list_index][ref_pic_index]
+                        [ME_TIER_ZERO_PU_64x16_0]);
+                context_ptr->p_best_ssd16x64 =
+                    &(context_ptr
+                        ->p_sb_best_ssd[list_index][ref_pic_index]
+                        [ME_TIER_ZERO_PU_16x64_0]);
+
+                open_loop_me_fullpel_search_sblock(context_ptr,
+                    list_index,
+                    ref_pic_index,
+                    x_search_area_origin,
+                    y_search_area_origin,
+                    search_area_width,
+                    search_area_height);
+
+            }
+            else {
+                initialize_buffer_32bits(
+                    context_ptr
+                    ->p_sb_best_sad[list_index][ref_pic_index],
+                    21,
+                    1,
+                    MAX_SAD_VALUE);
+                context_ptr->full_quarter_pel_refinement = 0;
+                context_ptr->p_best_sad64x64 = &(
+                    context_ptr->p_sb_best_sad[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_64x64]);
+                context_ptr->p_best_sad32x32 =
+                    &(context_ptr
+                        ->p_sb_best_sad[list_index][ref_pic_index]
+                        [ME_TIER_ZERO_PU_32x32_0]);
+                context_ptr->p_best_sad16x16 =
+                    &(context_ptr
+                        ->p_sb_best_sad[list_index][ref_pic_index]
+                        [ME_TIER_ZERO_PU_16x16_0]);
+                context_ptr->p_best_sad8x8 = &(
+                    context_ptr->p_sb_best_sad[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_8x8_0]);
+
+                context_ptr->p_best_mv64x64 = &(
+                    context_ptr->p_sb_best_mv[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_64x64]);
+                context_ptr->p_best_mv32x32 = &(
+                    context_ptr->p_sb_best_mv[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_32x32_0]);
+                context_ptr->p_best_mv16x16 = &(
+                    context_ptr->p_sb_best_mv[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_16x16_0]);
+                context_ptr->p_best_mv8x8 = &(
+                    context_ptr->p_sb_best_mv[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_8x8_0]);
+
+                context_ptr->p_best_ssd64x64 = &(
+                    context_ptr->p_sb_best_ssd[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_64x64]);
+                context_ptr->p_best_ssd32x32 =
+                    &(context_ptr
+                        ->p_sb_best_ssd[list_index][ref_pic_index]
+                        [ME_TIER_ZERO_PU_32x32_0]);
+                context_ptr->p_best_ssd16x16 =
+                    &(context_ptr
+                        ->p_sb_best_ssd[list_index][ref_pic_index]
+                        [ME_TIER_ZERO_PU_16x16_0]);
+                context_ptr->p_best_ssd8x8 = &(
+                    context_ptr->p_sb_best_ssd[list_index][ref_pic_index]
+                    [ME_TIER_ZERO_PU_8x8_0]);
+                FullPelSearch_LCU(context_ptr,
+                    list_index,
+                    ref_pic_index,
+                    x_search_area_origin,
+                    y_search_area_origin,
+                    search_area_width,
+                    search_area_height);
+            }
+            context_ptr->x_search_area_origin[list_index][ref_pic_index] = x_search_area_origin;
+            context_ptr->y_search_area_origin[list_index][ref_pic_index] = y_search_area_origin;
+            context_ptr->sa_width[list_index][ref_pic_index] = search_area_width;
+            context_ptr->sa_height[list_index][ref_pic_index] = search_area_height;
+        }
+    }
+}
+
+#endif
+#if MUS_ME_FP_SB
+void prune_references_fp(
+    PictureParentControlSet   *picture_control_set_ptr,
+    uint32_t                   sb_index,
+    uint32_t                   sb_origin_x,
+    uint32_t                   sb_origin_y,
+    MeContext                 *context_ptr,
+    EbPictureBufferDesc       *input_ptr
+)
+{
+    HmeResults sorted[MAX_NUM_OF_REF_PIC_LIST][REF_LIST_MAX_DEPTH];
+    uint32_t num_of_cand_to_sort = MAX_NUM_OF_REF_PIC_LIST * REF_LIST_MAX_DEPTH;
+    uint8_t list_index, ref_pic_index;
+    uint8_t num_of_ref_pic_to_search, num_of_list_to_search;
+    uint32_t idx;
+    uint32_t pu_index;
+    num_of_list_to_search = (picture_control_set_ptr->slice_type == P_SLICE)
+        ? (uint32_t)REF_LIST_0
+        : (uint32_t)REF_LIST_1;
+
+    if (context_ptr->me_alt_ref == EB_TRUE)
+        num_of_list_to_search = 0;
+
+    for (list_index = REF_LIST_0; list_index <= num_of_list_to_search; ++list_index) {
+
+        if (context_ptr->me_alt_ref == EB_TRUE) {
+            num_of_ref_pic_to_search = 1;
+        }
+        else {
+            num_of_ref_pic_to_search =
+                (picture_control_set_ptr->slice_type == P_SLICE)
+                ? picture_control_set_ptr->ref_list0_count
+                : (list_index == REF_LIST_0)
+                ? picture_control_set_ptr->ref_list0_count
+                : picture_control_set_ptr->ref_list1_count;
+        }
+        // Ref Picture Loop
+        for (ref_pic_index = 0; ref_pic_index < num_of_ref_pic_to_search; ++ref_pic_index) {
+            context_ptr->hme_results[list_index][ref_pic_index].hme_sad = 0;
+            // Get hme results
+            if (context_ptr->hme_results[list_index][ref_pic_index].do_ref == 0) {
+                context_ptr->hme_results[list_index][ref_pic_index].hme_sad = MAX_SAD_VALUE * 64;
+                continue;
+            }
+            context_ptr->p_best_sad8x8 = &(context_ptr->p_sb_best_sad[list_index][ref_pic_index][ME_TIER_ZERO_PU_8x8_0]);
+            // 8x8   [64 partitions]
+            for (pu_index = 0; pu_index < 64; ++pu_index) {
+                idx = tab8x8[pu_index];
+                context_ptr->hme_results[list_index][ref_pic_index].hme_sad += context_ptr->p_best_sad8x8[idx];
+            }
+        }
+    }
+
+    memcpy(sorted, context_ptr->hme_results, sizeof(HmeResults)*MAX_NUM_OF_REF_PIC_LIST*REF_LIST_MAX_DEPTH);
+
+    HmeResults     * res_p = sorted[0];
+
+#if 0
+    printf("before \n ");
+    for (uint32_t li = 0; li < MAX_NUM_OF_REF_PIC_LIST; li++)
+        for (uint32_t ri = 0; ri < REF_LIST_MAX_DEPTH; ri++)
+            printf( "%i(%i,%i)  ", context_ptr->hme_results[li][ri].hme_sad, context_ptr->hme_results[li][ri].list_i, context_ptr->hme_results[li][ri].ref_i) ;
+#endif
+
+    uint32_t i, j;
+    for (i = 0; i < num_of_cand_to_sort - 1; ++i) {
+        for (j = i + 1; j < num_of_cand_to_sort; ++j) {
+            if (res_p[j].hme_sad < res_p[i].hme_sad) {
+                HmeResults temp = res_p[i];
+                res_p[i] = res_p[j];
+                res_p[j]= temp;
+            }
+        }
+    }
+
+#if 1
+    uint8_t  BIGGER_THAN_TH = 30;
+    uint64_t best = sorted[0][0].hme_sad;//is this always the best?
+    for (uint32_t li = 0; li < MAX_NUM_OF_REF_PIC_LIST; li++) {
+        for (uint32_t ri = 0; ri < REF_LIST_MAX_DEPTH; ri++){
+           // uint32_t dev = ((context_ptr->hme_results[li][ri].hme_sad - best) * 100) / best;
+            if ((context_ptr->hme_results[li][ri].hme_sad - best) * 100  > BIGGER_THAN_TH*best)
+                context_ptr->hme_results[li][ri].do_ref = 0;
+#if SWITCHED_HALF_PEL_MODE
+            if (context_ptr->switched_half_pel_mode)
+                if (context_ptr->hme_results[li][ri].hme_sad > sorted[0][1].hme_sad)
+                    context_ptr->local_hp_mode[li][ri] = REFINMENT_HP_MODE;
+#endif
+        }
+    }
+#endif
+
+#if 0
+    printf("\n after \n");
+    for (uint32_t li = 0; li < MAX_NUM_OF_REF_PIC_LIST; li++)
+        for (uint32_t ri = 0; ri < REF_LIST_MAX_DEPTH; ri++)
+            if(context_ptr->hme_results[li][ri].do_ref==0)
+              printf("%i(%i,%i)NON  ", context_ptr->hme_results[li][ri].hme_sad, context_ptr->hme_results[li][ri].list_i, context_ptr->hme_results[li][ri].ref_i);
+            else
+                printf("%i(%i,%i)  ", context_ptr->hme_results[li][ri].hme_sad, context_ptr->hme_results[li][ri].list_i, context_ptr->hme_results[li][ri].ref_i);
+
+    printf("\n ");
+#endif
+
+}
+
+#endif
+/*******************************************
+ *   performs hierarchical ME
+ *******************************************/
+void hme_sb(
+    PictureParentControlSet   *pcs_ptr,
+    uint32_t                   sb_index,
+    uint32_t                   sb_origin_x,
+    uint32_t                   sb_origin_y,
+    MeContext                 *context_ptr,
+    EbPictureBufferDesc       *input_ptr
+){
+    EbErrorType return_error = EB_ErrorNone;
+    SequenceControlSet *scs_ptr = (SequenceControlSet *)pcs_ptr->scs_wrapper_ptr->object_ptr;
+    int16_t picture_width = pcs_ptr->aligned_width;
+    int16_t picture_height = pcs_ptr->aligned_height;
+    uint32_t sb_width = (input_ptr->width - sb_origin_x) < BLOCK_SIZE_64
+                            ? input_ptr->width - sb_origin_x
+                            : BLOCK_SIZE_64;
+    uint32_t sb_height = (input_ptr->height - sb_origin_y) < BLOCK_SIZE_64
+                             ? input_ptr->height - sb_origin_y
+                             : BLOCK_SIZE_64;
+    int16_t pad_width  = (int16_t)BLOCK_SIZE_64 - 1;
+    int16_t pad_height = (int16_t)BLOCK_SIZE_64 - 1;
+    int16_t origin_x = (int16_t)sb_origin_x;
+    int16_t origin_y = (int16_t)sb_origin_y;
+    uint32_t num_of_list_to_search;
+    uint32_t list_index;
+    uint8_t ref_pic_index;
+    uint8_t num_of_ref_pic_to_search;
+    EbPaReferenceObject *reference_object; // input parameter, reference Object Ptr
+    // HME
+    uint32_t search_region_number_in_width  = 0;
+    uint32_t search_region_number_in_height = 0;
+    int16_t  x_hme_level_0_search_center[EB_HME_SEARCH_AREA_COLUMN_MAX_COUNT]
+                                       [EB_HME_SEARCH_AREA_ROW_MAX_COUNT];
+    int16_t y_hme_level_0_search_center[EB_HME_SEARCH_AREA_COLUMN_MAX_COUNT]
+                                       [EB_HME_SEARCH_AREA_ROW_MAX_COUNT];
+    uint64_t hme_level0_sad[EB_HME_SEARCH_AREA_COLUMN_MAX_COUNT][EB_HME_SEARCH_AREA_ROW_MAX_COUNT];
+    int16_t  x_hme_level_1_search_center[EB_HME_SEARCH_AREA_COLUMN_MAX_COUNT]
+                                       [EB_HME_SEARCH_AREA_ROW_MAX_COUNT];
+    int16_t y_hme_level_1_search_center[EB_HME_SEARCH_AREA_COLUMN_MAX_COUNT]
+                                       [EB_HME_SEARCH_AREA_ROW_MAX_COUNT];
+    uint64_t hme_level1_sad[EB_HME_SEARCH_AREA_COLUMN_MAX_COUNT][EB_HME_SEARCH_AREA_ROW_MAX_COUNT];
+    int16_t  x_hme_level_2_search_center[EB_HME_SEARCH_AREA_COLUMN_MAX_COUNT]
+                                       [EB_HME_SEARCH_AREA_ROW_MAX_COUNT];
+    int16_t y_hme_level_2_search_center[EB_HME_SEARCH_AREA_COLUMN_MAX_COUNT]
+                                       [EB_HME_SEARCH_AREA_ROW_MAX_COUNT];
+    uint64_t hme_level2_sad[EB_HME_SEARCH_AREA_COLUMN_MAX_COUNT][EB_HME_SEARCH_AREA_ROW_MAX_COUNT];
+    // Final ME Search Center
+    int16_t x_search_center = 0;
+    int16_t y_search_center = 0;
+    // Hierarchical ME Search Center
+    int16_t x_hme_search_center = 0;
+    int16_t y_hme_search_center = 0;
+    // Search Center SADs
+    uint64_t hme_mv_sad = 0;
+    EbPictureBufferDesc *ref_pic_ptr;
+    EbPictureBufferDesc *quarter_ref_pic_ptr;
+    EbPictureBufferDesc *sixteenth_ref_pic_ptr;
+    int16_t temp_x_hme_search_center = 0;
+    int16_t temp_y_hme_search_center = 0;
+    uint32_t num_quad_in_width;
+    uint32_t total_me_quad;
+    uint32_t quad_index;
+    uint32_t next_quad_index;
+    uint64_t temp_x_hme_sad;
+    uint64_t ref_0_poc = 0;
+    uint64_t ref_1_poc = 0;
+    int16_t hme_level1_search_area_in_width;
+    int16_t hme_level1_search_area_in_height;
+    // Configure HME level 0, level 1 and level 2 from static config parameters
+    EbBool enable_hme_level0_flag = context_ptr->enable_hme_level0_flag;
+    EbBool enable_hme_level1_flag = context_ptr->enable_hme_level1_flag;
+    EbBool enable_hme_level2_flag = context_ptr->enable_hme_level2_flag;
+    EbBool enable_half_pel_32x32 = EB_FALSE;
+    EbBool enable_half_pel_16x16 = EB_FALSE;
+    EbBool enable_half_pel_8x8   = EB_FALSE;
+    EbBool enable_quarter_pel    = EB_FALSE;
+    EbBool one_quadrant_hme      = EB_FALSE;
+    one_quadrant_hme = scs_ptr->input_resolution < INPUT_SIZE_4K_RANGE ? 0 : one_quadrant_hme;
+    num_of_list_to_search =
+        (pcs_ptr->slice_type == P_SLICE) ? (uint32_t)REF_LIST_0 : (uint32_t)REF_LIST_1;
+    EbBool is_nsq_table_used = (pcs_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE &&
+                                pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
+                                pcs_ptr->nsq_search_level < NSQ_SEARCH_FULL)
+                                   ? EB_TRUE
+                                   : EB_FALSE;
+    is_nsq_table_used =
+        (pcs_ptr->enc_mode == ENC_M0 || pcs_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_0 ||
+         pcs_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_1 ||
+         pcs_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_2 ||
+         pcs_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_3)
+            ? EB_FALSE
+            : is_nsq_table_used;
+    if (context_ptr->me_alt_ref == EB_FALSE && is_nsq_table_used)
+        printf("NSQTBLE\n");
+    if (context_ptr->me_alt_ref == EB_TRUE) num_of_list_to_search = 0;
+    // Uni-Prediction motion estimation loop
+    // List Loop
+    for (list_index = REF_LIST_0; list_index <= num_of_list_to_search; ++list_index) {
+        if (context_ptr->me_alt_ref == EB_TRUE)
+            num_of_ref_pic_to_search = 1;
+        else {
+            num_of_ref_pic_to_search = (pcs_ptr->slice_type == P_SLICE)
+                                           ? pcs_ptr->ref_list0_count
+                                           : (list_index == REF_LIST_0) ? pcs_ptr->ref_list0_count
+                                                                        : pcs_ptr->ref_list1_count;
+            reference_object =
+                (EbPaReferenceObject *)pcs_ptr->ref_pa_pic_ptr_array[0][0]->object_ptr;
+            ref_0_poc = pcs_ptr->ref_pic_poc_array[0][0];
+        }
+        // Ref Picture Loop
+        for (ref_pic_index = 0; ref_pic_index < num_of_ref_pic_to_search; ++ref_pic_index) {
+            if (context_ptr->me_alt_ref == EB_TRUE)
+                reference_object = (EbPaReferenceObject *)context_ptr->alt_ref_reference_ptr;
+            else {
+                if (num_of_list_to_search) {
+                    reference_object =
+                        (EbPaReferenceObject *)pcs_ptr->ref_pa_pic_ptr_array[1][0]->object_ptr;
+                    ref_1_poc = pcs_ptr->ref_pic_poc_array[1][0];
+                }
+                reference_object =
+                    (EbPaReferenceObject *)pcs_ptr->ref_pa_pic_ptr_array[list_index][ref_pic_index]
+                        ->object_ptr;
+            }
+            ref_pic_ptr = (EbPictureBufferDesc *)reference_object->input_padded_picture_ptr;
+            // Set 1/4 and 1/16 ME reference buffer(s); filtered or decimated
+            quarter_ref_pic_ptr =
+                (scs_ptr->down_sampling_method_me_search == ME_FILTERED_DOWNSAMPLED)
+                    ? (EbPictureBufferDesc *)reference_object->quarter_filtered_picture_ptr
+                    : (EbPictureBufferDesc *)reference_object->quarter_decimated_picture_ptr;
+
+            sixteenth_ref_pic_ptr =
+                (scs_ptr->down_sampling_method_me_search == ME_FILTERED_DOWNSAMPLED)
+                    ? (EbPictureBufferDesc *)reference_object->sixteenth_filtered_picture_ptr
+                    : (EbPictureBufferDesc *)reference_object->sixteenth_decimated_picture_ptr;
+            if (pcs_ptr->temporal_layer_index > 0 || list_index == 0) {
+                if (context_ptr->update_hme_search_center_flag)
+                    hme_mv_center_check(ref_pic_ptr,
+                                        context_ptr,
+                                        &x_search_center,
+                                        &y_search_center,
+                                        list_index,
+                                        origin_x,
+                                        origin_y,
+                                        sb_width,
+                                        sb_height);
+                else {
+                    x_search_center = 0;
+                    y_search_center = 0;
+                }
+                if (context_ptr->enable_hme_flag && sb_height == BLOCK_SIZE_64) { 
+                    while (search_region_number_in_height <
+                           context_ptr->number_hme_search_region_in_height) {
+                        while (search_region_number_in_width <
+                               context_ptr->number_hme_search_region_in_width) {
+                            x_hme_level_0_search_center[search_region_number_in_width]
+                                                       [search_region_number_in_height] =
+                                                           x_search_center;
+                            y_hme_level_0_search_center[search_region_number_in_width]
+                                                       [search_region_number_in_height] =
+                                                           y_search_center;
+
+                            x_hme_level_1_search_center[search_region_number_in_width]
+                                                       [search_region_number_in_height] =
+                                                           x_search_center;
+                            y_hme_level_1_search_center[search_region_number_in_width]
+                                                       [search_region_number_in_height] =
+                                                           y_search_center;
+
+                            x_hme_level_2_search_center[search_region_number_in_width]
+                                                       [search_region_number_in_height] =
+                                                           x_search_center;
+                            y_hme_level_2_search_center[search_region_number_in_width]
+                                                       [search_region_number_in_height] =
+                                                           y_search_center;
+
+                            search_region_number_in_width++;
+                        }
+                        search_region_number_in_width = 0;
+                        search_region_number_in_height++;
+                    }
+                    // HME: Level0 search
+                    if (enable_hme_level0_flag) {
+                        if (one_quadrant_hme && !enable_hme_level1_flag &&
+                            !enable_hme_level2_flag) {
+                            search_region_number_in_height = 0;
+                            search_region_number_in_width  = 0;
+                            hme_one_quadrant_level_0(
+                                pcs_ptr,
+                                context_ptr,
+                                origin_x >> 2,
+                                origin_y >> 2,
+                                sb_width >> 2,
+                                sb_height >> 2,
+                                x_search_center >> 2,
+                                y_search_center >> 2,
+                                sixteenth_ref_pic_ptr,
+                                &(hme_level0_sad[search_region_number_in_width]
+                                               [search_region_number_in_height]),
+                                &(x_hme_level_0_search_center[search_region_number_in_width]
+                                                             [search_region_number_in_height]),
+                                &(y_hme_level_0_search_center[search_region_number_in_width]
+                                                             [search_region_number_in_height]),
+                                hme_level_0_search_area_multiplier_x[pcs_ptr->hierarchical_levels]
+                                                                    [pcs_ptr->temporal_layer_index],
+                                hme_level_0_search_area_multiplier_y
+                                    [pcs_ptr->hierarchical_levels][pcs_ptr->temporal_layer_index]);
+                        } else {
+                            search_region_number_in_height = 0;
+                            search_region_number_in_width  = 0;
+                            while (search_region_number_in_height <
+                                context_ptr->number_hme_search_region_in_height) {
+                                while (search_region_number_in_width <
+                                    context_ptr->number_hme_search_region_in_width) {
+                                    hme_level_0(
+                                        pcs_ptr,
+                                        context_ptr,
+                                        origin_x >> 2,
+                                        origin_y >> 2,
+                                        sb_width >> 2,
+                                        sb_height >> 2,
+                                        x_search_center >> 2,
+                                        y_search_center >> 2,
+                                        sixteenth_ref_pic_ptr,
+                                        search_region_number_in_width,
+                                        search_region_number_in_height,
+                                        &(hme_level0_sad[search_region_number_in_width]
+                                        [search_region_number_in_height]),
+                                        &(x_hme_level_0_search_center
+                                        [search_region_number_in_width]
+                                        [search_region_number_in_height]),
+                                        &(y_hme_level_0_search_center
+                                        [search_region_number_in_width]
+                                        [search_region_number_in_height]),
+                                        hme_level_0_search_area_multiplier_x
+                                        [pcs_ptr->hierarchical_levels]
+                                        [pcs_ptr->temporal_layer_index],
+                                        hme_level_0_search_area_multiplier_y
+                                        [pcs_ptr->hierarchical_levels]
+                                        [pcs_ptr->temporal_layer_index]);
+                                    search_region_number_in_width++;
+                                }
+                                search_region_number_in_width = 0;
+                                search_region_number_in_height++;
+                            }
+                        }
+                    }
+                    // HME: Level1 search
+                    if (enable_hme_level1_flag) {
+                        search_region_number_in_height = 0;
+                        search_region_number_in_width  = 0;
+                        while (search_region_number_in_height <
+                            context_ptr->number_hme_search_region_in_height) {
+                            while (search_region_number_in_width <
+                                context_ptr->number_hme_search_region_in_width) {
+                                // When HME level 0 has been disabled,
+                                // increase the search area width and height
+                                hme_level1_search_area_in_width =
+                                    (int16_t)context_ptr->hme_level1_search_area_in_width_array
+                                    [search_region_number_in_width];
+                                hme_level1_search_area_in_height =
+                                    (int16_t)context_ptr->hme_level1_search_area_in_height_array
+                                    [search_region_number_in_height];
+                                hme_level_1(context_ptr,
+                                    origin_x >> 1,
+                                    origin_y >> 1,
+                                    sb_width >> 1,
+                                    sb_height >> 1,
+                                    quarter_ref_pic_ptr,
+                                    hme_level1_search_area_in_width,
+                                    hme_level1_search_area_in_height,
+                                    x_hme_level_0_search_center
+                                    [search_region_number_in_width]
+                                    [search_region_number_in_height] >>
+                                        1,
+                                    y_hme_level_0_search_center
+                                    [search_region_number_in_width]
+                                    [search_region_number_in_height] >>
+                                        1,
+                                    &(hme_level1_sad[search_region_number_in_width]
+                                    [search_region_number_in_height]),
+                                    &(x_hme_level_1_search_center
+                                    [search_region_number_in_width]
+                                    [search_region_number_in_height]),
+                                    &(y_hme_level_1_search_center
+                                    [search_region_number_in_width]
+                                    [search_region_number_in_height]));
+                                    search_region_number_in_width++;
+                            }
+                            search_region_number_in_width = 0;
+                            search_region_number_in_height++;
+                        }
+                    }
+                    // HME: Level2 search
+                    if (enable_hme_level2_flag) {
+                        search_region_number_in_height = 0;
+                        search_region_number_in_width  = 0;
+                        {
+                            while (search_region_number_in_height <
+                                   context_ptr->number_hme_search_region_in_height) {
+                                while (search_region_number_in_width <
+                                       context_ptr->number_hme_search_region_in_width) {
+                                    hme_level_2(
+                                        pcs_ptr,
+                                        context_ptr,
+                                        origin_x,
+                                        origin_y,
+                                        sb_width,
+                                        sb_height,
+                                        ref_pic_ptr,
+                                        search_region_number_in_width,
+                                        search_region_number_in_height,
+                                        x_hme_level_1_search_center[search_region_number_in_width]
+                                                                   [search_region_number_in_height],
+                                        y_hme_level_1_search_center[search_region_number_in_width]
+                                                                   [search_region_number_in_height],
+                                        &(hme_level2_sad[search_region_number_in_width]
+                                                       [search_region_number_in_height]),
+                                        &(x_hme_level_2_search_center
+                                              [search_region_number_in_width]
+                                              [search_region_number_in_height]),
+                                        &(y_hme_level_2_search_center
+                                              [search_region_number_in_width]
+                                              [search_region_number_in_height]));
+
+                                    search_region_number_in_width++;
+                                }
+                                search_region_number_in_width = 0;
+                                search_region_number_in_height++;
+                            }
+                        }
+                    }
+                    // Hierarchical ME - Search Center
+                    if (enable_hme_level0_flag && !enable_hme_level1_flag &&
+                        !enable_hme_level2_flag) {
+                        if (one_quadrant_hme) {
+                            x_hme_search_center = x_hme_level_0_search_center[0][0];
+                            y_hme_search_center = y_hme_level_0_search_center[0][0];
+                            hme_mv_sad           = hme_level0_sad[0][0];
+                        } else {
+                            x_hme_search_center = x_hme_level_0_search_center[0][0];
+                            y_hme_search_center = y_hme_level_0_search_center[0][0];
+                            hme_mv_sad           = hme_level0_sad[0][0];
+                            search_region_number_in_width  = 1;
+                            search_region_number_in_height = 0;
+                            while (search_region_number_in_height <
+                                   context_ptr->number_hme_search_region_in_height) {
+                                while (search_region_number_in_width <
+                                       context_ptr->number_hme_search_region_in_width) {
+                                    x_hme_search_center =
+                                        (hme_level0_sad[search_region_number_in_width]
+                                                      [search_region_number_in_height] < hme_mv_sad)
+                                            ? x_hme_level_0_search_center
+                                                  [search_region_number_in_width]
+                                                  [search_region_number_in_height]
+                                            : x_hme_search_center;
+                                    y_hme_search_center =
+                                        (hme_level0_sad[search_region_number_in_width]
+                                                      [search_region_number_in_height] < hme_mv_sad)
+                                            ? y_hme_level_0_search_center
+                                                  [search_region_number_in_width]
+                                                  [search_region_number_in_height]
+                                            : y_hme_search_center;
+                                    hme_mv_sad =
+                                        (hme_level0_sad[search_region_number_in_width]
+                                                      [search_region_number_in_height] < hme_mv_sad)
+                                            ? hme_level0_sad[search_region_number_in_width]
+                                                           [search_region_number_in_height]
+                                            : hme_mv_sad;
+                                    search_region_number_in_width++;
+                                }
+                                search_region_number_in_width = 0;
+                                search_region_number_in_height++;
+                            }
+                        }
+                    }
+                    if (enable_hme_level1_flag && !enable_hme_level2_flag) {
+                        x_hme_search_center = x_hme_level_1_search_center[0][0];
+                        y_hme_search_center = y_hme_level_1_search_center[0][0];
+                        hme_mv_sad           = hme_level1_sad[0][0];
+                        search_region_number_in_width  = 1;
+                        search_region_number_in_height = 0;
+                        while (search_region_number_in_height <
+                               context_ptr->number_hme_search_region_in_height) {
+                            while (search_region_number_in_width <
+                                   context_ptr->number_hme_search_region_in_width) {
+                                x_hme_search_center =
+                                    (hme_level1_sad[search_region_number_in_width]
+                                                  [search_region_number_in_height] < hme_mv_sad)
+                                        ? x_hme_level_1_search_center
+                                              [search_region_number_in_width]
+                                              [search_region_number_in_height]
+                                        : x_hme_search_center;
+                                y_hme_search_center =
+                                    (hme_level1_sad[search_region_number_in_width]
+                                                  [search_region_number_in_height] < hme_mv_sad)
+                                        ? y_hme_level_1_search_center
+                                              [search_region_number_in_width]
+                                              [search_region_number_in_height]
+                                        : y_hme_search_center;
+                                hme_mv_sad =
+                                    (hme_level1_sad[search_region_number_in_width]
+                                                  [search_region_number_in_height] < hme_mv_sad)
+                                        ? hme_level1_sad[search_region_number_in_width]
+                                                       [search_region_number_in_height]
+                                        : hme_mv_sad;
+                                search_region_number_in_width++;
+                            }
+                            search_region_number_in_width = 0;
+                            search_region_number_in_height++;
+                        }
+                    }
+                    if (enable_hme_level2_flag) {
+                        x_hme_search_center = x_hme_level_2_search_center[0][0];
+                        y_hme_search_center = y_hme_level_2_search_center[0][0];
+                        hme_mv_sad           = hme_level2_sad[0][0];
+                        search_region_number_in_width  = 1;
+                        search_region_number_in_height = 0;
+                        while (search_region_number_in_height <
+                               context_ptr->number_hme_search_region_in_height) {
+                            while (search_region_number_in_width <
+                                   context_ptr->number_hme_search_region_in_width) {
+                                x_hme_search_center =
+                                    (hme_level2_sad[search_region_number_in_width]
+                                                  [search_region_number_in_height] < hme_mv_sad)
+                                        ? x_hme_level_2_search_center
+                                              [search_region_number_in_width]
+                                              [search_region_number_in_height]
+                                        : x_hme_search_center;
+                                y_hme_search_center =
+                                    (hme_level2_sad[search_region_number_in_width]
+                                                  [search_region_number_in_height] < hme_mv_sad)
+                                        ? y_hme_level_2_search_center
+                                              [search_region_number_in_width]
+                                              [search_region_number_in_height]
+                                        : y_hme_search_center;
+                                hme_mv_sad =
+                                    (hme_level2_sad[search_region_number_in_width]
+                                                  [search_region_number_in_height] < hme_mv_sad)
+                                        ? hme_level2_sad[search_region_number_in_width]
+                                                       [search_region_number_in_height]
+                                        : hme_mv_sad;
+                                search_region_number_in_width++;
+                            }
+                            search_region_number_in_width = 0;
+                            search_region_number_in_height++;
+                        }
+
+                        num_quad_in_width = context_ptr->number_hme_search_region_in_width;
+                        total_me_quad     = context_ptr->number_hme_search_region_in_height *
+                                        context_ptr->number_hme_search_region_in_width;
+                        if ((ref_0_poc == ref_1_poc) && (list_index == 1) && (total_me_quad > 1)) {
+                            for (quad_index = 0; quad_index < total_me_quad - 1; ++quad_index) {
+                                for (next_quad_index = quad_index + 1;
+                                     next_quad_index < total_me_quad;
+                                     ++next_quad_index) {
+                                    if (hme_level2_sad[quad_index / num_quad_in_width]
+                                                     [quad_index % num_quad_in_width] >
+                                        hme_level2_sad[next_quad_index / num_quad_in_width]
+                                                     [next_quad_index % num_quad_in_width]) {
+                                        temp_x_hme_search_center =
+                                            x_hme_level_2_search_center[quad_index /
+                                                                        num_quad_in_width]
+                                                                       [quad_index %
+                                                                        num_quad_in_width];
+                                        temp_y_hme_search_center =
+                                            y_hme_level_2_search_center[quad_index /
+                                                                        num_quad_in_width]
+                                                                       [quad_index %
+                                                                        num_quad_in_width];
+                                        temp_x_hme_sad =
+                                            hme_level2_sad[quad_index / num_quad_in_width]
+                                                         [quad_index % num_quad_in_width];
+
+                                        x_hme_level_2_search_center
+                                            [quad_index / num_quad_in_width]
+                                            [quad_index % num_quad_in_width] =
+                                                x_hme_level_2_search_center[next_quad_index /
+                                                                            num_quad_in_width]
+                                                                           [next_quad_index %
+                                                                            num_quad_in_width];
+                                        y_hme_level_2_search_center
+                                            [quad_index / num_quad_in_width]
+                                            [quad_index % num_quad_in_width] =
+                                                y_hme_level_2_search_center[next_quad_index /
+                                                                            num_quad_in_width]
+                                                                           [next_quad_index %
+                                                                            num_quad_in_width];
+                                        hme_level2_sad[quad_index /
+                                                      num_quad_in_width][quad_index %
+                                                                         num_quad_in_width] =
+                                            hme_level2_sad[next_quad_index / num_quad_in_width]
+                                                         [next_quad_index % num_quad_in_width];
+
+                                        x_hme_level_2_search_center[next_quad_index /
+                                                                    num_quad_in_width]
+                                                                   [next_quad_index %
+                                                                    num_quad_in_width] =
+                                                                       temp_x_hme_search_center;
+                                        y_hme_level_2_search_center[next_quad_index /
+                                                                    num_quad_in_width]
+                                                                   [next_quad_index %
+                                                                    num_quad_in_width] =
+                                                                       temp_y_hme_search_center;
+                                        hme_level2_sad[next_quad_index / num_quad_in_width]
+                                                     [next_quad_index % num_quad_in_width] =
+                                                         temp_x_hme_sad;
+                                    }
+                                }
+                            }
+                            x_hme_search_center = x_hme_level_2_search_center[0][1];
+                            y_hme_search_center = y_hme_level_2_search_center[0][1];
+                        }
+                    }
+                    x_search_center = x_hme_search_center;
+                    y_search_center = y_hme_search_center;
+                }
+            }else {
+                x_search_center = 0;
+                y_search_center = 0;
+            }
+            //sc valid for all cases. 0,0 if hme not done.
+            context_ptr->hme_results[list_index][ref_pic_index].hme_sc_x = x_search_center;
+            context_ptr->hme_results[list_index][ref_pic_index].hme_sc_y = y_search_center;
+            context_ptr->hme_results[list_index][ref_pic_index].hme_sad = hme_mv_sad;//this is not valid in all cases. only when HME is done, and when HMELevel2 is done
+            //also for base layer some references are redundant!!
+            context_ptr->hme_results[list_index][ref_pic_index].do_ref = 1;
+        }
+    }
+}
+
+#if SC_HME_PRUNING
+void prune_references_sc(
+    PictureParentControlSet   *picture_control_set_ptr,
+    uint32_t                   sb_index,
+    uint32_t                   sb_origin_x,
+    uint32_t                   sb_origin_y,
+    MeContext                 *context_ptr,
+    EbPictureBufferDesc       *input_ptr
+)
+{
+    for (uint32_t li = 0; li < MAX_NUM_OF_REF_PIC_LIST; li++) {
+        for (uint32_t ri = 0; ri < REF_LIST_MAX_DEPTH; ri++){
+            if (context_ptr->hme_results[li][ri].hme_sc_x == 0 && context_ptr->hme_results[li][ri].hme_sc_y == 0 && context_ptr->hme_results[li][ri].hme_sad < SC_HME_TH_EASY)
+                context_ptr->reduce_me_sr_flag[li][ri] = SC_HME_TH_STILL;
+            else if (context_ptr->hme_results[li][ri].hme_sad < SC_HME_TH_EASY)
+                context_ptr->reduce_me_sr_flag[li][ri] = SC_HME_TH_EASY;
+        }
+    }
+}
+#endif
+void prune_references(
+    PictureParentControlSet   *picture_control_set_ptr,
+    uint32_t                   sb_index,
+    uint32_t                   sb_origin_x,
+    uint32_t                   sb_origin_y,
+    MeContext                 *context_ptr,
+    EbPictureBufferDesc       *input_ptr
+)
+{
+    HmeResults    sorted[MAX_NUM_OF_REF_PIC_LIST][REF_LIST_MAX_DEPTH];
+    uint32_t      num_of_cand_to_sort = MAX_NUM_OF_REF_PIC_LIST * REF_LIST_MAX_DEPTH;
+
+
+    memcpy(sorted, context_ptr->hme_results, sizeof(HmeResults)*MAX_NUM_OF_REF_PIC_LIST*REF_LIST_MAX_DEPTH);
+
+
+    HmeResults     * res_p = sorted[0];
+
+
+
+
+#if 0
+    printf("before \n ");
+    for (uint32_t li = 0; li < MAX_NUM_OF_REF_PIC_LIST; li++)
+        for (uint32_t ri = 0; ri < REF_LIST_MAX_DEPTH; ri++)
+            printf( "%i(%i,%i)  ", context_ptr->hme_results[li][ri].hme_sad, context_ptr->hme_results[li][ri].list_i, context_ptr->hme_results[li][ri].ref_i) ;
+#endif
+
+    uint32_t i, j;
+    for (i = 0; i < num_of_cand_to_sort - 1; ++i) {
+        for (j = i + 1; j < num_of_cand_to_sort; ++j) {
+            if (res_p[j].hme_sad < res_p[i].hme_sad) {
+                HmeResults temp = res_p[i];
+                res_p[i] = res_p[j];
+                res_p[j]= temp;
+            }
+        }
+    }
+
+#if 1
+    uint8_t  BIGGER_THAN_TH = 80;
+    uint64_t best = sorted[0][0].hme_sad;//is this always the best?
+#if SKIP_ME_BASED_ON_HME
+    uint64_t REDUCE_SR_TH = 6000;
+#endif
+
+    for (uint32_t li = 0; li < MAX_NUM_OF_REF_PIC_LIST; li++) {
+        for (uint32_t ri = 0; ri < REF_LIST_MAX_DEPTH; ri++){
+
+           // uint32_t dev = ((context_ptr->hme_results[li][ri].hme_sad - best) * 100) / best;
+            if ((context_ptr->hme_results[li][ri].hme_sad - best) * 100  > BIGGER_THAN_TH*best)
+                context_ptr->hme_results[li][ri].do_ref = 0;
+#if SKIP_ME_BASED_ON_HME
+            if (context_ptr->hme_results[li][ri].hme_sad < REDUCE_SR_TH)
+                context_ptr->reduce_me_sr_flag[li][ri] = 1;
+#endif
+#if REDUCE_ME_FOR_LOW_M_SB
+            if (context_ptr->hme_results[li][ri].hme_sc_x <= 4 && context_ptr->hme_results[li][ri].hme_sc_y <= 4 && context_ptr->hme_results[li][ri].hme_sad < (2*REDUCE_SR_TH))
+                context_ptr->reduce_me_sr_flag[li][ri] = 1;
+#endif
+        }
+    }
+#endif
+
+#if 0
+    printf("\n after \n");
+    for (uint32_t li = 0; li < MAX_NUM_OF_REF_PIC_LIST; li++)
+        for (uint32_t ri = 0; ri < REF_LIST_MAX_DEPTH; ri++)
+            if(context_ptr->hme_results[li][ri].do_ref==0)
+              printf("%i(%i,%i)NON  ", context_ptr->hme_results[li][ri].hme_sad, context_ptr->hme_results[li][ri].list_i, context_ptr->hme_results[li][ri].ref_i);
+            else
+                printf("%i(%i,%i)  ", context_ptr->hme_results[li][ri].hme_sad, context_ptr->hme_results[li][ri].list_i, context_ptr->hme_results[li][ri].ref_i);
+
+    printf("\n ");
+#endif
+
+}
+
+#endif
 /*******************************************
  * motion_estimate_sb
  *   performs ME (SB)
@@ -11186,6 +12572,7 @@ EbErrorType motion_estimate_sb(
     // HME
     uint32_t search_region_number_in_width  = 0;
     uint32_t search_region_number_in_height = 0;
+#if !MUS_ME
     int16_t  x_hme_level_0_search_center[EB_HME_SEARCH_AREA_COLUMN_MAX_COUNT]
                                        [EB_HME_SEARCH_AREA_ROW_MAX_COUNT];
     int16_t y_hme_level_0_search_center[EB_HME_SEARCH_AREA_COLUMN_MAX_COUNT]
@@ -11201,7 +12588,7 @@ EbErrorType motion_estimate_sb(
     int16_t y_hme_level_2_search_center[EB_HME_SEARCH_AREA_COLUMN_MAX_COUNT]
                                        [EB_HME_SEARCH_AREA_ROW_MAX_COUNT];
     uint64_t hme_level2_sad[EB_HME_SEARCH_AREA_COLUMN_MAX_COUNT][EB_HME_SEARCH_AREA_ROW_MAX_COUNT];
-
+#endif
     // Hierarchical ME Search Center
     int16_t x_hme_search_center = 0;
     int16_t y_hme_search_center = 0;
@@ -11230,25 +12617,29 @@ EbErrorType motion_estimate_sb(
 
     MePredUnit *         me_candidate;
     EbPictureBufferDesc *ref_pic_ptr;
+#if !MUS_ME
     EbPictureBufferDesc *quarter_ref_pic_ptr;
     EbPictureBufferDesc *sixteenth_ref_pic_ptr;
+#endif
 
     int16_t temp_x_hme_search_center = 0;
     int16_t temp_y_hme_search_center = 0;
-
+#if !MUS_ME
     uint32_t num_quad_in_width;
     uint32_t total_me_quad;
     uint32_t quad_index;
     uint32_t next_quad_index;
     uint64_t temp_x_hme_sad;
+#endif
 
     uint64_t ref_0_poc = 0;
     uint64_t ref_1_poc = 0;
 
     uint64_t i;
-
+#if !MUS_ME
     int16_t hme_level1_search_area_in_width;
     int16_t hme_level1_search_area_in_height;
+#endif
     // Configure HME level 0, level 1 and level 2 from static config parameters
     EbBool enable_hme_level0_flag = context_ptr->enable_hme_level0_flag;
     EbBool enable_hme_level1_flag = context_ptr->enable_hme_level1_flag;
@@ -11277,6 +12668,76 @@ EbErrorType motion_estimate_sb(
          pcs_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_3)
             ? EB_FALSE
             : is_nsq_table_used;
+#if MUS_ME
+    //pruning of the references is not done for alt-ref / Base-Layer (HME not done for list1 refs) / non-complete-SBs when HMeLevel2 is done
+    uint8_t prune_ref = (context_ptr->enable_hme_flag && context_ptr->enable_hme_level2_flag &&
+        context_ptr->me_alt_ref == EB_FALSE && sb_height == BLOCK_SIZE_64 &&
+        pcs_ptr->temporal_layer_index > 0) ? 1 : 0;
+    //init hme results buffer
+    for (uint32_t li = 0; li < MAX_NUM_OF_REF_PIC_LIST; li++) {
+        for (uint32_t ri = 0; ri < REF_LIST_MAX_DEPTH; ri++) {
+            context_ptr->hme_results[li][ri].list_i = li;
+            context_ptr->hme_results[li][ri].ref_i = ri;
+            context_ptr->hme_results[li][ri].do_ref = 1;
+            context_ptr->hme_results[li][ri].hme_sad = 0xFFFFFFFF;
+#if SKIP_ME_BASED_ON_HME
+            context_ptr->reduce_me_sr_flag[li][ri] = 0;
+#endif
+#if SWITCHED_HALF_PEL_MODE
+            context_ptr->local_hp_mode[li][ri] = context_ptr->half_pel_mode;
+#endif
+        }
+    }
+    // HME: Perform Hierachical Motion Estimation for all refrence frames.
+    hme_sb(
+        pcs_ptr,
+        sb_index,
+        sb_origin_x,
+        sb_origin_y,
+        context_ptr,
+        input_ptr);
+    // prune the refrence frames based on the HME outputs.
+    if (pcs_ptr->prune_ref_based_me && prune_ref)
+        prune_references(
+            pcs_ptr,
+            sb_index,
+            sb_origin_x,
+            sb_origin_y,
+            context_ptr,
+            input_ptr);
+#if SC_HME_PRUNING && !SC_REDUCE_DIFF // prune_references_sc
+    else if (picture_control_set_ptr->sc_content_detected)
+        prune_references_sc(
+            pcs_ptr,
+            sb_index,
+            sb_origin_x,
+            sb_origin_y,
+            context_ptr,
+            input_ptr);
+#endif
+
+#if MUS_ME_FP
+    // Full pel: Perform the Integer Motion Estimation on the allowed refrence frames.
+    integer_search_sb(
+        pcs_ptr,
+        sb_index,
+        sb_origin_x,
+        sb_origin_y,
+        context_ptr,
+        input_ptr);
+#if MUS_ME_FP_SB
+    // prune the refrence frames based on the Full pel outputs.
+    if (picture_control_set_ptr->prune_ref_based_me && prune_ref)
+        prune_references_fp(
+            pcs_ptr,
+            sb_index,
+            sb_origin_x,
+            sb_origin_y,
+            context_ptr,
+            input_ptr );
+#endif
+#endif
+#endif
 
     if (context_ptr->me_alt_ref == EB_TRUE) num_of_list_to_search = 0;
 
@@ -11313,6 +12774,15 @@ EbErrorType motion_estimate_sb(
             }
 
             ref_pic_ptr = (EbPictureBufferDesc *)reference_object->input_padded_picture_ptr;
+#if MUS_ME
+            if (context_ptr->hme_results[list_index][ref_pic_index].do_ref == 0)
+                continue;  //so will not get ME results for those references. what will happen next, shall we just fill in max sads?
+                           //we can also make the ME small and shut subpel
+#if !MUS_ME_FP
+            x_search_center = context_ptr->hme_results[list_index][ref_pic_index].hme_sc_x;
+            y_search_center = context_ptr->hme_results[list_index][ref_pic_index].hme_sc_y;
+#endif
+#else
             // Set 1/4 and 1/16 ME reference buffer(s); filtered or decimated
             quarter_ref_pic_ptr =
                 (scs_ptr->down_sampling_method_me_search == ME_FILTERED_DOWNSAMPLED)
@@ -11748,6 +13218,7 @@ EbErrorType motion_estimate_sb(
                 x_search_center = 0;
                 y_search_center = 0;
             }
+#endif
             // Constrain x_ME to be a multiple of 8 (round up)
             search_area_width  = (context_ptr->search_area_width + 7) & ~0x07;
             search_area_height = context_ptr->search_area_height;
@@ -12382,6 +13853,11 @@ EbErrorType motion_estimate_sb(
 
                 // Ref Picture Loop
                 for (ref_pic_index = 0; ref_pic_index < num_of_ref_pic_to_search; ++ref_pic_index) {
+#if MUS_ME
+                    //ME was skipped, so do not add this Unipred candidate
+                    if (context_ptr->hme_results[list_index][ref_pic_index].do_ref == 0)
+                        continue;
+#endif
                     me_candidate = &(context_ptr->me_candidate[cand_index].pu[pu_index]);
                     me_candidate->prediction_direction  = list_index;
                     me_candidate->ref_index[list_index] = ref_pic_index;
