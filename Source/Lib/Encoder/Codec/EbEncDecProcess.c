@@ -1621,7 +1621,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(SequenceControlSet * scs_ptr,
     // |________|_____________________________|________________________________|_________________________________________|
     // |CLASS_0 |Prediction for Luma & Chroma |T, Q, Q-1, T-1 for Luma Only    |T, Q, Q-1, T-1 or Luma & Chroma          |
     // |CLASS_6 |                             |No RDOQ                         |RDOQ                                     |
-    // |        |                             |No Tx Type Search               |Tx Type Search                           |
+    // |CLASS_7 |                             |No Tx Type Search               |Tx Type Search                           |
     // |        |                             |No Tx Size Search               |Tx Size Search                           |
     // |        |                             |                                |CFL vs. Independent                      |
     // |________|_____________________________|________________________________|_________________________________________|
@@ -1630,7 +1630,26 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(SequenceControlSet * scs_ptr,
     // |CLASS_3 |Bilinear Interpolation       |No Tx Type Search               |Tx Type Search                           |
     // |CLASS_4 |                             |No Tx Size Search               |Tx Size Search                           |
     // |CLASS_5 |                             |Interpolation Search            |                                         |
+    // |CLASS_8 |                             |                                |                                         |
     // |________|_____________________________|________________________________|_________________________________________|
+    //
+    // MD_STAGING_MODE_2
+    //  ____________________________________________________________________________________________________________________________________________________________
+    // |        | md_stage_0                  | md_stage_1                     | md_stage_2                              | md_stage_3                              |
+    // |________|_____________________________|________________________________|_________________________________________|_________________________________________|
+    // |CLASS_0 |Prediction for Luma & Chroma |T, Q, Q-1, T-1 for Luma Only    |T, Q, Q-1, T-1 or Luma                   |T, Q, Q-1, T-1 or Luma & Chroma          |
+    // |CLASS_6 |                             |No RDOQ                         |RDOQ                                     |RDOQ                                     |
+    // |CLASS_7 |                             |No Tx Type Search               |Tx Type Search                           |Tx Type Search                           |
+    // |        |                             |No Tx Size Search               |                                         |Tx Size Search                           |
+    // |        |                             |                                |                                         |CFL vs. Independent                      |
+    // |________|_____________________________|________________________________|_________________________________________|_________________________________________|
+    // |CLASS_1 |Prediction for Luma Only     |T, Q, Q-1, T-1 for Luma Only    |T, Q, Q-1, T-1 or Luma                   |T, Q, Q-1, T-1 for Luma & Chroma         |
+    // |CLASS_2 |No Interpolation Search      |No RDOQ                         |RDOQ                                     |RDOQ                                     |
+    // |CLASS_3 |Bilinear Interpolation       |No Tx Type Search               |Tx Type Search                           |Tx Type Search                           |
+    // |CLASS_4 |                             |No Tx Size Search               |                                         |Tx Size Search                           |
+    // |CLASS_5 |                             |Interpolation Search            |                                         |                                         |
+    // |CLASS_8 |                             |                                |                                         |                                         |
+    // |________|_____________________________|________________________________|_________________________________________|_________________________________________|
     if (context_ptr->pd_pass == PD_PASS_0) {
         context_ptr->md_staging_mode = MD_STAGING_MODE_0;
     } else if (context_ptr->pd_pass == PD_PASS_1) {
