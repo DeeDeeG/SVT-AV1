@@ -1,7 +1,5 @@
-/*
-* Copyright(c) 2019 Intel Corporation
-* SPDX - License - Identifier: BSD - 2 - Clause - Patent
-*/
+/*!< Copyright(c) 2019 Intel Corporation
+ * SPDX - License - Identifier: BSD - 2 - Clause - Patent */
 
 #ifndef EBAVCSTYLEMCP_H
 #define EBAVCSTYLEMCP_H
@@ -67,4 +65,4 @@ void avc_style_luma_interpolation_filter_helper_c(EbByte ref_pic, uint32_t src_s
 #ifdef __cplusplus
 }
 #endif
-#endif //EBAVCSTYLEMCP_H
+#endif // EBAVCSTYLEMCP_H

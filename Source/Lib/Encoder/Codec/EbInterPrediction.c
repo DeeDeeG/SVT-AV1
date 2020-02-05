@@ -1,18 +1,14 @@
-/*
-* Copyright(c) 2019 Intel Corporation
-* SPDX - License - Identifier: BSD - 2 - Clause - Patent
-*/
+/*!< Copyright(c) 2019 Intel Corporation
+ * SPDX - License - Identifier: BSD - 2 - Clause - Patent */
 
-/*
-* Copyright (c) 2016, Alliance for Open Media. All rights reserved
-*
-* This source code is subject to the terms of the BSD 2 Clause License and
-* the Alliance for Open Media Patent License 1.0. If the BSD 2 Clause License
-* was not distributed with this source code in the LICENSE file, you can
-* obtain it at www.aomedia.org/license/software. If the Alliance for Open
-* Media Patent License 1.0 was not distributed with this source code in the
-* PATENTS file, you can obtain it at www.aomedia.org/license/patent.
-*/
+/*!< Copyright (c) 2016, Alliance for Open Media. All rights reserved
+ *
+ * This source code is subject to the terms of the BSD 2 Clause License and
+ * the Alliance for Open Media Patent License 1.0. If the BSD 2 Clause License
+ * was not distributed with this source code in the LICENSE file, you can
+ * obtain it at www.aomedia.org/license/software. If the Alliance for Open
+ * Media Patent License 1.0 was not distributed with this source code in the
+ * PATENTS file, you can obtain it at www.aomedia.org/license/patent. */
 
 #include <stdlib.h>
 
@@ -22,9 +18,11 @@
 #include "EbRateDistortionCost.h"
 
 #define MVBOUNDLOW \
-    36 //  (80-71)<<2 // 80 = ReferencePadding ; minus 71 is derived from the expression -64 + 1 - 8, and plus 7 is derived from expression -1 + 8
-#define MVBOUNDHIGH 348 //  (80+7)<<2
-#define REFPADD_QPEL 320 //  (16+64)<<2
+    36 /*!< (80-71)<<2 // 80 = ReferencePadding ;
+        *   minus 71 is derived from the expression -64 + 1 - 8,
+        *   and plus 7 is derived from expression -1 + 8 */
+#define MVBOUNDHIGH 348 /*!< (80+7)<<2 */
+#define REFPADD_QPEL 320 /*!< (16+64)<<2 */
 
 #define AOM_INTERP_EXTEND 4
 
@@ -45,41 +43,41 @@
 static EbAv1InterPredictionFuncPtr av1_inter_prediction_function_table[2] = {
     av1_inter_prediction, av1_inter_prediction_hbd};
 
-/* TODO: Add scaling of reference frame support later */
-// Note: Expect val to be in q4 precision
+/*!< TODO: Add scaling of reference frame support later */
+/*!< Note: Expect val to be in q4 precision */
 static INLINE int32_t scaled_x(int32_t val, const ScaleFactors *sf) {
     const int     off  = (sf->x_scale_fp - (1 << REF_SCALE_SHIFT)) * (1 << (SUBPEL_BITS - 1));
     const int64_t tval = (int64_t)val * sf->x_scale_fp + off;
     return (int)ROUND_POWER_OF_TWO_SIGNED_64(tval, REF_SCALE_SHIFT - SCALE_EXTRA_BITS);
 }
 
-// Note: Expect val to be in q4 precision
+/*!< Note: Expect val to be in q4 precision */
 static INLINE int32_t scaled_y(int32_t val, const ScaleFactors *sf) {
     const int32_t off  = (sf->y_scale_fp - (1 << REF_SCALE_SHIFT)) * (1 << (SUBPEL_BITS - 1));
     const int64_t tval = (int64_t)val * sf->y_scale_fp + off;
     return (int32_t)ROUND_POWER_OF_TWO_SIGNED_64(tval, REF_SCALE_SHIFT - SCALE_EXTRA_BITS);
 }
 
-// Note: Expect val to be in q4 precision
+/*!< Note: Expect val to be in q4 precision */
 static int32_t unscaled_value(int32_t val, const ScaleFactors *sf) {
     (void)sf;
     return val << SCALE_EXTRA_BITS;
 }
 
 static int32_t get_fixed_point_scale_factor(int32_t other_size, int32_t this_size) {
-    // Calculate scaling factor once for each reference frame
-    // and use fixed point scaling factors in decoding and encoding routines.
-    // Hardware implementations can calculate scale factor in device driver
-    // and use multiplication and shifting on hardware instead of division.
+    /*!< Calculate scaling factor once for each reference frame
+     *   and use fixed point scaling factors in decoding and encoding routines.
+     *   Hardware implementations can calculate scale factor in device driver
+     *   and use multiplication and shifting on hardware instead of division. */
     return ((other_size << REF_SCALE_SHIFT) + this_size / 2) / this_size;
 }
 
-// Given the fixed point scale, calculate coarse point scale.
+/*!< Given the fixed point scale, calculate coarse point scale. */
 static int32_t fixed_point_scale_to_coarse_point_scale(int32_t scale_fp) {
     return ROUND_POWER_OF_TWO(scale_fp, REF_SCALE_SHIFT - SCALE_SUBPEL_BITS);
 }
 
-// Note: x and y are integer precision, mvq4 is q4 precision.
+/*!< Note: x and y are integer precision, mvq4 is q4 precision. */
 MV32 av1_scale_mv(const MV *mvq4, int x, int y, const ScaleFactors *sf) {
     const int  x_off_q4 = scaled_x(x << SUBPEL_BITS, sf);
     const int  y_off_q4 = scaled_y(y << SUBPEL_BITS, sf);
@@ -130,9 +128,9 @@ extern void av1_set_ref_frame(MvReferenceFrame *rf, int8_t ref_frame_type);
 
 static INLINE MV clamp_mv_to_umv_border_sb(const MacroBlockD *xd, const MV *src_mv, int32_t bw,
                                            int32_t bh, int32_t ss_x, int32_t ss_y) {
-    // If the MV points so far into the UMV border that no visible pixels
-    // are used for reconstruction, the subpel part of the MV can be
-    // discarded and the MV limited to 16 pixels with equivalent results.
+    /*!< If the MV points so far into the UMV border that no visible pixels
+     *   are used for reconstruction, the subpel part of the MV can be
+     *   discarded and the MV limited to 16 pixels with equivalent results. */
     const int32_t spel_left   = (AOM_INTERP_EXTEND + bw) << SUBPEL_BITS;
     const int32_t spel_right  = spel_left - SUBPEL_SHIFTS;
     const int32_t spel_top    = (AOM_INTERP_EXTEND + bh) << SUBPEL_BITS;
@@ -255,7 +253,7 @@ void eb_av1_convolve_2d_sr_c(const uint8_t *src, int32_t src_stride, uint8_t *ds
     const int32_t bd        = 8;
     const int32_t bits      = FILTER_BITS * 2 - conv_params->round_0 - conv_params->round_1;
 
-    // horizontal filter
+    /*!< horizontal filter */
     const uint8_t *src_horiz = src - fo_vert * src_stride;
     const int16_t *x_filter =
         av1_get_interp_filter_subpel_kernel(*filter_params_x, subpel_x_q4 & SUBPEL_MASK);
@@ -269,7 +267,7 @@ void eb_av1_convolve_2d_sr_c(const uint8_t *src, int32_t src_stride, uint8_t *ds
         }
     }
 
-    // vertical filter
+    /*!< vertical filter */
     int16_t *      src_vert = im_block + fo_vert * im_stride;
     const int16_t *y_filter =
         av1_get_interp_filter_subpel_kernel(*filter_params_y, subpel_y_q4 & SUBPEL_MASK);
@@ -303,7 +301,7 @@ void eb_av1_convolve_y_sr_c(const uint8_t *src, int32_t src_stride, uint8_t *dst
     assert(((conv_params->round_0 + conv_params->round_1) <= (FILTER_BITS + 1)) ||
            ((conv_params->round_0 + conv_params->round_1) == (2 * FILTER_BITS)));
 
-    // vertical filter
+    /*!< vertical filter */
     const int16_t *y_filter =
         av1_get_interp_filter_subpel_kernel(*filter_params_y, subpel_y_q4 & SUBPEL_MASK);
 
@@ -333,7 +331,7 @@ void eb_av1_convolve_x_sr_c(const uint8_t *src, int32_t src_stride, uint8_t *dst
     assert((FILTER_BITS - conv_params->round_1) >= 0 ||
            ((conv_params->round_0 + conv_params->round_1) == 2 * FILTER_BITS));
 
-    // horizontal filter
+    /*!< horizontal filter */
     const int16_t *x_filter =
         av1_get_interp_filter_subpel_kernel(*filter_params_x, subpel_x_q4 & SUBPEL_MASK);
 
@@ -380,7 +378,7 @@ void eb_av1_convolve_2d_scale_c(const uint8_t *src, int src_stride, uint8_t *dst
     const int fo_horiz  = filter_params_x->taps / 2 - 1;
     const int bd        = 8;
 
-    // horizontal filter
+    /*!< horizontal filter */
     const uint8_t *src_horiz = src - fo_vert * src_stride;
     for (int y = 0; y < im_h; ++y) {
         int x_qn = subpel_x_qn;
@@ -400,7 +398,7 @@ void eb_av1_convolve_2d_scale_c(const uint8_t *src, int src_stride, uint8_t *dst
         src_horiz += src_stride;
     }
 
-    // vertical filter
+    /*!< vertical filter */
     int16_t * src_vert    = im_block + fo_vert * im_stride;
     const int offset_bits = bd + 2 * FILTER_BITS - conv_params->round_0;
     for (int x = 0; x < w; ++x) {
@@ -427,7 +425,7 @@ void eb_av1_convolve_2d_scale_c(const uint8_t *src, int src_stride, uint8_t *dst
                         tmp += res;
                         tmp = tmp >> 1;
                     }
-                    /* Subtract round offset and convolve round */
+                    /*!< Subtract round offset and convolve round */
                     tmp                       = tmp - ((1 << (offset_bits - conv_params->round_1)) +
                                  (1 << (offset_bits - conv_params->round_1 - 1)));
                     dst8[y * dst8_stride + x] = clip_pixel(ROUND_POWER_OF_TWO(tmp, bits));
@@ -435,7 +433,7 @@ void eb_av1_convolve_2d_scale_c(const uint8_t *src, int src_stride, uint8_t *dst
                     dst16[y * dst16_stride + x] = res;
                 }
             } else {
-                /* Subtract round offset and convolve round */
+                /*!< Subtract round offset and convolve round */
                 int32_t tmp               = res - ((1 << (offset_bits - conv_params->round_1)) +
                                      (1 << (offset_bits - conv_params->round_1 - 1)));
                 dst8[y * dst8_stride + x] = clip_pixel(ROUND_POWER_OF_TWO(tmp, bits));
@@ -460,7 +458,7 @@ void eb_av1_jnt_convolve_2d_c(const uint8_t *src, int32_t src_stride, uint8_t *d
     const int32_t bd         = 8;
     const int32_t round_bits = 2 * FILTER_BITS - conv_params->round_0 - conv_params->round_1;
 
-    // horizontal filter
+    /*!< horizontal filter */
     const uint8_t *src_horiz = src - fo_vert * src_stride;
     const int16_t *x_filter =
         av1_get_interp_filter_subpel_kernel(*filter_params_x, subpel_x_q4 & SUBPEL_MASK);
@@ -474,7 +472,7 @@ void eb_av1_jnt_convolve_2d_c(const uint8_t *src, int32_t src_stride, uint8_t *d
         }
     }
 
-    // vertical filter
+    /*!< vertical filter */
     int16_t *      src_vert = im_block + fo_vert * im_stride;
     const int16_t *y_filter =
         av1_get_interp_filter_subpel_kernel(*filter_params_y, subpel_y_q4 & SUBPEL_MASK);
@@ -522,7 +520,7 @@ void eb_av1_jnt_convolve_y_c(const uint8_t *src, int32_t src_stride, uint8_t *ds
     (void)filter_params_x;
     (void)subpel_x_q4;
 
-    // vertical filter
+    /*!< vertical filter */
     const int16_t *y_filter =
         av1_get_interp_filter_subpel_kernel(*filter_params_y, subpel_y_q4 & SUBPEL_MASK);
     for (int32_t y = 0; y < h; ++y) {
@@ -568,7 +566,7 @@ void eb_av1_jnt_convolve_x_c(const uint8_t *src, int32_t src_stride, uint8_t *ds
     (void)filter_params_y;
     (void)subpel_y_q4;
 
-    // horizontal filter
+    /*!< horizontal filter */
     const int16_t *x_filter =
         av1_get_interp_filter_subpel_kernel(*filter_params_x, subpel_x_q4 & SUBPEL_MASK);
     for (int32_t y = 0; y < h; ++y) {
@@ -670,7 +668,7 @@ void eb_av1_highbd_convolve_x_sr_c(const uint16_t *src, int32_t src_stride, uint
     assert((FILTER_BITS - conv_params->round_1) >= 0 ||
            ((conv_params->round_0 + conv_params->round_1) == 2 * FILTER_BITS));
 
-    // horizontal filter
+    /*!< horizontal filter */
     const int16_t *x_filter =
         av1_get_interp_filter_subpel_kernel(*filter_params_x, subpel_x_q4 & SUBPEL_MASK);
     for (int32_t y = 0; y < h; ++y) {
@@ -699,7 +697,7 @@ void eb_av1_highbd_convolve_y_sr_c(const uint16_t *src, int32_t src_stride, uint
     assert(conv_params->round_0 <= FILTER_BITS);
     assert(((conv_params->round_0 + conv_params->round_1) <= (FILTER_BITS + 1)) ||
            ((conv_params->round_0 + conv_params->round_1) == (2 * FILTER_BITS)));
-    // vertical filter
+    /*!< vertical filter */
     const int16_t *y_filter =
         av1_get_interp_filter_subpel_kernel(*filter_params_y, subpel_y_q4 & SUBPEL_MASK);
     for (int32_t y = 0; y < h; ++y) {
@@ -726,7 +724,7 @@ void eb_av1_highbd_convolve_2d_sr_c(const uint16_t *src, int32_t src_stride, uin
     const int32_t bits      = FILTER_BITS * 2 - conv_params->round_0 - conv_params->round_1;
     assert(bits >= 0);
 
-    // horizontal filter
+    /*!< horizontal filter */
     const uint16_t *src_horiz = src - fo_vert * src_stride;
     const int16_t * x_filter =
         av1_get_interp_filter_subpel_kernel(*filter_params_x, subpel_x_q4 & SUBPEL_MASK);
@@ -741,7 +739,7 @@ void eb_av1_highbd_convolve_2d_sr_c(const uint16_t *src, int32_t src_stride, uin
         }
     }
 
-    // vertical filter
+    /*!< vertical filter */
     int16_t *      src_vert = im_block + fo_vert * im_stride;
     const int16_t *y_filter =
         av1_get_interp_filter_subpel_kernel(*filter_params_y, subpel_y_q4 & SUBPEL_MASK);
@@ -776,7 +774,7 @@ void eb_av1_highbd_convolve_2d_scale_c(const uint16_t *src, int src_stride, uint
     const int      dst16_stride = conv_params->dst_stride;
     const int      bits         = FILTER_BITS * 2 - conv_params->round_0 - conv_params->round_1;
     assert(bits >= 0);
-    // horizontal filter
+    /*!< horizontal filter */
     const uint16_t *src_horiz = src - fo_vert * src_stride;
     for (int y = 0; y < im_h; ++y) {
         int x_qn = subpel_x_qn;
@@ -796,7 +794,7 @@ void eb_av1_highbd_convolve_2d_scale_c(const uint16_t *src, int src_stride, uint
         src_horiz += src_stride;
     }
 
-    // vertical filter
+    /*!< vertical filter */
     int16_t * src_vert    = im_block + fo_vert * im_stride;
     const int offset_bits = bd + 2 * FILTER_BITS - conv_params->round_0;
     for (int x = 0; x < w; ++x) {
@@ -823,7 +821,7 @@ void eb_av1_highbd_convolve_2d_scale_c(const uint16_t *src, int src_stride, uint
                         tmp += res;
                         tmp = tmp >> 1;
                     }
-                    /* Subtract round offset and convolve round */
+                    /*!< Subtract round offset and convolve round */
                     tmp                     = tmp - ((1 << (offset_bits - conv_params->round_1)) +
                                  (1 << (offset_bits - conv_params->round_1 - 1)));
                     dst[y * dst_stride + x] = clip_pixel_highbd(ROUND_POWER_OF_TWO(tmp, bits), bd);
@@ -831,7 +829,7 @@ void eb_av1_highbd_convolve_2d_scale_c(const uint16_t *src, int src_stride, uint
                     dst16[y * dst16_stride + x] = res;
                 }
             } else {
-                /* Subtract round offset and convolve round */
+                /*!< Subtract round offset and convolve round */
                 int32_t tmp             = res - ((1 << (offset_bits - conv_params->round_1)) +
                                      (1 << (offset_bits - conv_params->round_1 - 1)));
                 dst[y * dst_stride + x] = clip_pixel_highbd(ROUND_POWER_OF_TWO(tmp, bits), bd);
@@ -859,7 +857,7 @@ void eb_av1_highbd_jnt_convolve_x_c(const uint16_t *src, int32_t src_stride, uin
     (void)filter_params_y;
     (void)subpel_y_q4;
     assert(bits >= 0);
-    // horizontal filter
+    /*!< horizontal filter */
     const int16_t *x_filter =
         av1_get_interp_filter_subpel_kernel(*filter_params_x, subpel_x_q4 & SUBPEL_MASK);
     for (int32_t y = 0; y < h; ++y) {
@@ -906,7 +904,7 @@ void eb_av1_highbd_jnt_convolve_y_c(const uint16_t *src, int32_t src_stride, uin
     (void)filter_params_x;
     (void)subpel_x_q4;
     assert(bits >= 0);
-    // vertical filter
+    /*!< vertical filter */
     const int16_t *y_filter =
         av1_get_interp_filter_subpel_kernel(*filter_params_y, subpel_y_q4 & SUBPEL_MASK);
     for (int32_t y = 0; y < h; ++y) {
@@ -994,7 +992,7 @@ void eb_av1_highbd_jnt_convolve_2d_c(const uint16_t *src, int32_t src_stride, ui
     const int32_t round_bits = 2 * FILTER_BITS - conv_params->round_0 - conv_params->round_1;
     assert(round_bits >= 0);
 
-    // horizontal filter
+    /*!< horizontal filter */
     const uint16_t *src_horiz = src - fo_vert * src_stride;
     const int16_t * x_filter =
         av1_get_interp_filter_subpel_kernel(*filter_params_x, subpel_x_q4 & SUBPEL_MASK);
@@ -1009,7 +1007,7 @@ void eb_av1_highbd_jnt_convolve_2d_c(const uint16_t *src, int32_t src_stride, ui
         }
     }
 
-    // vertical filter
+    /*!< vertical filter */
     int16_t *      src_vert    = im_block + fo_vert * im_stride;
     const int32_t  offset_bits = bd + 2 * FILTER_BITS - conv_params->round_0;
     const int16_t *y_filter =
@@ -1040,7 +1038,7 @@ void eb_av1_highbd_jnt_convolve_2d_c(const uint16_t *src, int32_t src_stride, ui
     }
 }
 
-aom_highbd_convolve_fn_t convolveHbd[/*subX*/ 2][/*subY*/ 2][/*bi*/ 2];
+aom_highbd_convolve_fn_t convolveHbd[/*!< subX */ 2][/*!< subY */ 2][/*!< bi */ 2];
 void asm_set_convolve_hbd_asm_table(void) {
     convolveHbd[0][0][0] = eb_av1_highbd_convolve_2d_copy_sr;
     convolveHbd[0][0][1] = eb_av1_highbd_jnt_convolve_2d_copy;
@@ -1055,7 +1053,7 @@ void asm_set_convolve_hbd_asm_table(void) {
     convolveHbd[1][1][1] = eb_av1_highbd_jnt_convolve_2d;
 }
 
-AomConvolveFn convolve[/*subX*/ 2][/*subY*/ 2][/*bi*/ 2];
+AomConvolveFn convolve[/*!< subX */ 2][/*!< subY */ 2][/*!< bi */ 2];
 void asm_set_convolve_asm_table(void) {
     convolve[0][0][0] = eb_av1_convolve_2d_copy_sr;
     convolve[0][0][1] = eb_av1_jnt_convolve_2d_copy;
@@ -1450,12 +1448,12 @@ static void shift_copy(const uint8_t *src, uint8_t *dst, int shift, int width) {
 }
 #endif // USE_PRECOMPUTED_WEDGE_MASK
 
-// [negative][direction]
+/*!< [negative][direction] */
 DECLARE_ALIGNED(16, static uint8_t,
                 wedge_mask_obl[2][WEDGE_DIRECTIONS][MASK_MASTER_SIZE * MASK_MASTER_SIZE]);
 
-// 4 * MAX_WEDGE_SQUARE is an easy to compute and fairly tight upper bound
-// on the sum of all mask sizes up to an including MAX_WEDGE_SQUARE.
+/*!< 4 * MAX_WEDGE_SQUARE is an easy to compute and fairly tight upper bound
+ *   on the sum of all mask sizes up to an including MAX_WEDGE_SQUARE. */
 DECLARE_ALIGNED(16, static uint8_t, wedge_mask_buf[2 * MAX_WEDGE_TYPES * 4 * MAX_WEDGE_SQUARE]);
 
 static void init_wedge_master_masks() {
@@ -1463,9 +1461,9 @@ static void init_wedge_master_masks() {
     const int w      = MASK_MASTER_SIZE;
     const int h      = MASK_MASTER_SIZE;
     const int stride = MASK_MASTER_STRIDE;
-    // Note: index [0] stores the masters, and [1] its complement.
+    /*!< Note: index [0] stores the masters, and [1] its complement. */
 #if USE_PRECOMPUTED_WEDGE_MASK
-    // Generate prototype by shifting the masters
+    /*!< Generate prototype by shifting the masters */
     int shift = h / 4;
     for (i = 0; i < h; i += 2) {
         shift_copy(wedge_master_oblique_even,
@@ -1521,9 +1519,9 @@ static void init_wedge_master_masks() {
 }
 
 #if !USE_PRECOMPUTED_WEDGE_SIGN
-// If the signs for the wedges for various blocksizes are
-// inconsistent flip the sign flag. Do it only once for every
-// wedge codebook.
+/*!< If the signs for the wedges for various blocksizes are
+ *   inconsistent flip the sign flag. Do it only once for every
+ *   wedge codebook. */
 static void init_wedge_signs() {
     BLOCK_SIZE sb_type;
     memset(wedge_signflip_lookup, 0, sizeof(wedge_signflip_lookup));
@@ -1536,21 +1534,21 @@ static void init_wedge_signs() {
         int                     i, w;
         if (wbits) {
             for (w = 0; w < wtypes; ++w) {
-                // Get the mask master, i.e. index [0]
+                /*!< Get the mask master, i.e. index [0] */
                 const uint8_t *mask = get_wedge_mask_inplace(w, 0, sb_type);
                 int            avg  = 0;
                 for (i = 0; i < bw; ++i) avg += mask[i];
                 for (i = 1; i < bh; ++i) avg += mask[i * MASK_MASTER_STRIDE];
                 avg = (avg + (bw + bh - 1) / 2) / (bw + bh - 1);
-                // Default sign of this wedge is 1 if the average < 32, 0 otherwise.
-                // If default sign is 1:
-                //   If sign requested is 0, we need to flip the sign and return
-                //   the complement i.e. index [1] instead. If sign requested is 1
-                //   we need to flip the sign and return index [0] instead.
-                // If default sign is 0:
-                //   If sign requested is 0, we need to return index [0] the master
-                //   if sign requested is 1, we need to return the complement index [1]
-                //   instead.
+                /*!< Default sign of this wedge is 1 if the average < 32, 0 otherwise.
+                 * If default sign is 1:
+                 *    If sign requested is 0, we need to flip the sign and return
+                 *    the complement i.e. index [1] instead. If sign requested is 1
+                 *    we need to flip the sign and return index [0] instead.
+                 * If default sign is 0:
+                 *    If sign requested is 0, we need to return index [0] the master
+                 *    if sign requested is 1, we need to return the complement index [1]
+                 *    instead. */
                 wedge_params.signflip[w] = (avg < 32);
             }
         }
@@ -1606,7 +1604,7 @@ static void init_wedge_masks() {
     }
 }
 
-// Equation of line: f(x, y) = a[0]*(x - a[2]*w/8) + a[1]*(y - a[3]*h/8) = 0
+/*!< Equation of line: f(x, y) = a[0]*(x - a[2]*w/8) + a[1]*(y - a[3]*h/8) = 0 */
 void av1_init_wedge_masks() {
     init_wedge_master_masks();
 #if !USE_PRECOMPUTED_WEDGE_SIGN
@@ -1647,7 +1645,7 @@ void av1_build_compound_diffwtd_mask_d16_c(uint8_t *mask, DIFFWTD_MASK_TYPE mask
 
 int is_masked_compound_type(COMPOUND_TYPE type);
 
-/* clang-format off */
+// clang-format off
 static const uint8_t ii_weights1d[MAX_SB_SIZE] = {
   60, 58, 56, 54, 52, 50, 48, 47, 45, 44, 42, 41, 39, 38, 37, 35, 34, 33, 32,
   31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 22, 21, 20, 19, 19, 18, 18, 17, 16,
@@ -1662,7 +1660,7 @@ static uint8_t ii_size_scales[BlockSizeS_ALL] = {
     4,  4,  2,  2,  2, 1, 1, 1,
     8,  8,  4,  4,  2, 2
 };
-/* clang-format on */
+// clang-format on
 
 static void build_smooth_interintra_mask(uint8_t *mask, int stride, BlockSize plane_bsize,
                                          InterIntraMode mode) {
@@ -1772,8 +1770,8 @@ void build_masked_compound_no_round(uint8_t *dst, int dst_stride, const CONV_BUF
                                     const InterInterCompoundData *const comp_data,
                                     uint8_t *seg_mask, BlockSize sb_type, int h, int w,
                                     ConvolveParams *conv_params, uint8_t bit_depth) {
-    // Derive subsampling from h and w passed in. May be refactored to
-    // pass in subsampling factors directly.
+    /*!< Derive subsampling from h and w passed in. May be refactored to
+     *   pass in subsampling factors directly. */
     const int      subh = (2 << mi_size_high_log2[sb_type]) == h;
     const int      subw = (2 << mi_size_wide_log2[sb_type]) == w;
     const uint8_t *mask = av1_get_compound_type_mask(comp_data, seg_mask, sb_type);
@@ -1817,9 +1815,9 @@ void av1_make_masked_inter_predictor(uint8_t *src_ptr, uint32_t src_stride, uint
                                      int32_t subpel_y, ConvolveParams *conv_params,
                                      InterInterCompoundData *comp_data, uint8_t bitdepth,
                                      uint8_t plane) {
-    //We come here when we have a prediction done using regular path for the ref0 stored in conv_param.dst.
-    //use regular path to generate a prediction for ref1 into  a temporary buffer,
-    //then  blend that temporary buffer with that from  the first reference.
+    /*!< We come here when we have a prediction done using regular path for the ref0 stored in conv_param.dst.
+     *   use regular path to generate a prediction for ref1 into  a temporary buffer,
+     *   then  blend that temporary buffer with that from  the first reference. */
 
     DECLARE_ALIGNED(16, uint8_t, seg_mask[2 * MAX_SB_SQUARE]);
 
@@ -1829,7 +1827,7 @@ void av1_make_masked_inter_predictor(uint8_t *src_ptr, uint32_t src_stride, uint
     //uint8_t *tmp_dst =  tmp_buf;
     const int tmp_buf_stride = MAX_SB_SIZE;
 
-    CONV_BUF_TYPE *org_dst        = conv_params->dst; //save the ref0 prediction pointer
+    CONV_BUF_TYPE *org_dst        = conv_params->dst; /*!< save the ref0 prediction pointer */
     int            org_dst_stride = conv_params->dst_stride;
     CONV_BUF_TYPE *tmp_buf16      = (CONV_BUF_TYPE *)tmp_buf;
     conv_params->dst              = tmp_buf16;
@@ -1863,8 +1861,8 @@ void av1_make_masked_inter_predictor(uint8_t *src_ptr, uint32_t src_stride, uint
                                                      bitdepth);
 
     if (!plane && comp_data->type == COMPOUND_DIFFWTD) {
-        //CHKN  for DIFF: need to compute the mask  comp_data->seg_mask is the output computed from the two preds org_dst and tmp_buf16
-        //for WEDGE the mask is fixed from the table based on wedge_sign/index
+        /*!< CHKN  for DIFF: need to compute the mask  comp_data->seg_mask is the output computed from the two preds org_dst and tmp_buf16
+         *   for WEDGE the mask is fixed from the table based on wedge_sign/index */
         av1_build_compound_diffwtd_mask_d16(seg_mask,
                                             comp_data->mask_type,
                                             org_dst,
@@ -1902,9 +1900,9 @@ void av1_make_masked_warp_inter_predictor(uint8_t *src_ptr, uint32_t src_stride,
                                           EbWarpedMotionParams *wm_params_l1) {
     EbBool is16bit = (EbBool)(bitdepth > EB_8BIT);
 
-    //We come here when we have a prediction done using regular path for the ref0 stored in conv_param.dst.
-    //use regular path to generate a prediction for ref1 into  a temporary buffer,
-    //then  blend that temporary buffer with that from  the first reference.
+    /*!< We come here when we have a prediction done using regular path for the ref0 stored in conv_param.dst.
+     *   use regular path to generate a prediction for ref1 into  a temporary buffer,
+     *   then  blend that temporary buffer with that from  the first reference. */
 
     DECLARE_ALIGNED(16, uint8_t, seg_mask[2 * MAX_SB_SQUARE]);
 
@@ -1914,14 +1912,14 @@ void av1_make_masked_warp_inter_predictor(uint8_t *src_ptr, uint32_t src_stride,
     uint8_t * tmp_dst        = tmp_buf;
     const int tmp_buf_stride = MAX_SB_SIZE;
 
-    CONV_BUF_TYPE *org_dst        = conv_params->dst; //save the ref0 prediction pointer
+    CONV_BUF_TYPE *org_dst        = conv_params->dst; /*!< save the ref0 prediction pointer */
     int            org_dst_stride = conv_params->dst_stride;
     CONV_BUF_TYPE *tmp_buf16      = (CONV_BUF_TYPE *)tmp_buf;
     conv_params->dst              = tmp_buf16;
     conv_params->dst_stride       = tmp_buf_stride;
     assert(conv_params->do_average == 0);
 
-    uint8_t ss_x = plane == 0 ? 0 : 1; // subsamplings
+    uint8_t ss_x = plane == 0 ? 0 : 1; /*!< subsamplings */
     uint8_t ss_y = plane == 0 ? 0 : 1;
 
     eb_av1_warp_plane(wm_params_l1,
@@ -1942,8 +1940,8 @@ void av1_make_masked_warp_inter_predictor(uint8_t *src_ptr, uint32_t src_stride,
                       conv_params);
 
     if (!plane && comp_data->type == COMPOUND_DIFFWTD) {
-        //CHKN  for DIFF: need to compute the mask  comp_data->seg_mask is the output computed from the two preds org_dst and tmp_buf16
-        //for WEDGE the mask is fixed from the table based on wedge_sign/index
+        /*!< CHKN  for DIFF: need to compute the mask  comp_data->seg_mask is the output computed from the two preds org_dst and tmp_buf16
+         *   for WEDGE the mask is fixed from the table based on wedge_sign/index */
         av1_build_compound_diffwtd_mask_d16(seg_mask,
                                             comp_data->mask_type,
                                             org_dst,
@@ -2102,7 +2100,7 @@ void av1_build_compound_diffwtd_mask_c(uint8_t *mask, DIFFWTD_MASK_TYPE mask_typ
 }
 #define MAX_MASK_VALUE (1 << WEDGE_WEIGHT_BITS)
 
-/**
+/*!<
  * Computes SSE of a compound predictor constructed from 2 fundamental
  * predictors p0 and p1 using blending with mask.
  *
@@ -2128,8 +2126,7 @@ void av1_build_compound_diffwtd_mask_c(uint8_t *mask, DIFFWTD_MASK_TYPE mask_typ
  * to facilitate equivalent SIMD implementation. It should have no effect if
  * residuals are within 16 - WEDGE_WEIGHT_BITS (=10) signed, which always
  * holds for 8 bit input, and on real input, it should hold practically always,
- * as residuals are expected to be small.
- */
+ * as residuals are expected to be small. */
 uint64_t av1_wedge_sse_from_residuals_c(const int16_t *r1, const int16_t *d, const uint8_t *m,
                                         int N) {
     uint64_t csse = 0;
@@ -2221,27 +2218,26 @@ static const double interp_dgrid_curv[2][65] = {
     },
 };
 
-/*
-  Precalucation factors to interp_cubic()
-    interp_cubic() OUT is: p[1] + 0.5 * x * (p[2] - p[0] +
-                      x * (2.0 * p[0] - 5.0 * p[1] + 4.0 * p[2] - p[3] +
-                      x * (3.0 * (p[1] - p[2]) + p[3] - p[0])));
-  Precalucation:
-    interp_cubic() OUT is: D + x * (C + x * (B + x * A))
-    For precalculated factors:
-    double A = 0.5 *(3.0 * (p[1] - p[2]) + p[3] - p[0]);
-    double B = 0.5 *(2.0 * p[0] - 5.0 * p[1] + 4.0 * p[2] - p[3]);
-    double C = 0.5 * (p[2] - p[0]);
-    double D = p[1];
-
-    Precalculated values of array factors:
-    A is: (0 to sizeof(ARRAY[])-1)
-    B is: (0 to sizeof(ARRAY[A][])-4)
-    PRECALC[A][B][0] = 0.5 *(3.0 * (ARRAY[A][B+1] - ARRAY[A][B+2]) + ARRAY[A][B+3] - ARRAY[A][B])
-    PRECALC[A][B][1] = 0.5 *(2.0 * p[0] - 5.0 * ARRAY[A][B+1] + 4.0 * ARRAY[A][B+2]) - ARRAY[A][B+3]);
-    PRECALC[A][B][2] = 0.5 * (ARRAY[A][B+2] - ARRAY[A][B]);
-    PRECALC[A][B][3] = ARRAY[A][B+1]
-*/
+/*!<
+ * Precalucation factors to interp_cubic()
+ *   interp_cubic() OUT is: p[1] + 0.5 * x * (p[2] - p[0] +
+ *                     x * (2.0 * p[0] - 5.0 * p[1] + 4.0 * p[2] - p[3] +
+ *                     x * (3.0 * (p[1] - p[2]) + p[3] - p[0])));
+ * Precalucation:
+ *   interp_cubic() OUT is: D + x * (C + x * (B + x * A))
+ *   For precalculated factors:
+ *   double A = 0.5 *(3.0 * (p[1] - p[2]) + p[3] - p[0]);
+ *   double B = 0.5 *(2.0 * p[0] - 5.0 * p[1] + 4.0 * p[2] - p[3]);
+ *   double C = 0.5 * (p[2] - p[0]);
+ *   double D = p[1];
+ *
+ *   Precalculated values of array factors:
+ *   A is: (0 to sizeof(ARRAY[])-1)
+ *   B is: (0 to sizeof(ARRAY[A][])-4)
+ *   PRECALC[A][B][0] = 0.5 *(3.0 * (ARRAY[A][B+1] - ARRAY[A][B+2]) + ARRAY[A][B+3] - ARRAY[A][B])
+ *   PRECALC[A][B][1] = 0.5 *(2.0 * p[0] - 5.0 * ARRAY[A][B+1] + 4.0 * ARRAY[A][B+2]) - ARRAY[A][B+3]);
+ *   PRECALC[A][B][2] = 0.5 * (ARRAY[A][B+2] - ARRAY[A][B]);
+ *   PRECALC[A][B][3] = ARRAY[A][B+1] */
 
 void av1_model_rd_curvfit(BlockSize bsize, double sse_norm, double xqr, double *rate_f,
                           double *distbysse_f) {
@@ -2265,8 +2261,8 @@ void av1_model_rd_curvfit(BlockSize bsize, double sse_norm, double xqr, double *
     *distbysse_f        = pdist[1];
 }
 
-// Fits a curve for rate and distortion using as feature:
-// log2(sse_norm/qstep^2)
+/*!< Fits a curve for rate and distortion using as feature: */
+/*!< log2(sse_norm/qstep^2) */
 static void model_rd_with_curvfit(PictureControlSet *picture_control_set_ptr, BlockSize plane_bsize,
                                   int64_t sse, int num_samples, int *rate, int64_t *dist,
                                   uint32_t rdmult) {
@@ -2296,7 +2292,7 @@ static void model_rd_with_curvfit(PictureControlSet *picture_control_set_ptr, Bl
     int64_t      dist_i = (int64_t)((dist_f * num_samples) + 0.5);
     aom_clear_system_state();
 
-    // Check if skip is better
+    /*!< Check if skip is better */
     if (rate_i == 0) {
         dist_i = sse << 4;
     } else if (RDCOST(rdmult, rate_i, dist_i) >= RDCOST(rdmult, 0, sse << 4)) {
@@ -2308,7 +2304,7 @@ static void model_rd_with_curvfit(PictureControlSet *picture_control_set_ptr, Bl
     if (dist) *dist = dist_i;
 }
 
-/**
+/*!<
  * Compute the element-wise difference of the squares of 2 arrays.
  *
  * d: Difference of the squares of the inputs: a**2 - b**2
@@ -2318,8 +2314,7 @@ static void model_rd_with_curvfit(PictureControlSet *picture_control_set_ptr, Bl
  *
  * 'd', 'a', and 'b' are contiguous.
  *
- * The result is saturated to signed 16 bits.
- */
+ * The result is saturated to signed 16 bits. */
 void av1_wedge_compute_delta_squares_c(int16_t *d, const int16_t *a, const int16_t *b, int N) {
     int i;
 
@@ -2335,7 +2330,7 @@ uint64_t aom_sum_squares_i16_c(const int16_t *src, uint32_t n) {
 
     return ss;
 }
-/**
+/*!<
  * Choose the mask sign for a compound predictor.
  *
  * ds:    Difference of the squares of the residuals.
@@ -2364,8 +2359,7 @@ uint64_t aom_sum_squares_i16_c(const int16_t *src, uint32_t n) {
  *  hand side is simply a scalar product between an int16_t and uint8_t vector.
  *
  *  Note that for efficiency, ds is stored on 16 bits. Real input residuals
- *  being small, this should not cause a noticeable issue.
- */
+ *  being small, this should not cause a noticeable issue. */
 int8_t av1_wedge_sign_from_residuals_c(const int16_t *ds, const uint8_t *m, int N, int64_t limit) {
     int64_t acc = 0;
 
@@ -2397,7 +2391,7 @@ static void pick_wedge(PictureControlSet *picture_control_set_ptr, ModeDecisionC
     const uint8_t *mask;
     uint64_t       sse;
     const int      bd_round = 0;
-    DECLARE_ALIGNED(32, int16_t, residual0[MAX_SB_SQUARE]); // src - pred0
+    DECLARE_ALIGNED(32, int16_t, residual0[MAX_SB_SQUARE]); /*!< src - pred0 */
     if (hbd_mode_decision) {
         uint16_t *src_buf_hbd = (uint16_t *)src_pic->buffer_y +
                                 (context_ptr->blk_origin_x + src_pic->origin_x) +
@@ -2455,33 +2449,33 @@ static int8_t estimate_wedge_sign(PictureControlSet *  picture_control_set_ptr,
     uint8_t hbd_mode_decision = context_ptr->hbd_mode_decision == EB_DUAL_BIT_MD
                                     ? EB_8_BIT_MD
                                     : context_ptr->hbd_mode_decision;
-    static const BlockSize split_qtr[BlockSizeS_ALL] = {//                            4X4
+    static const BlockSize split_qtr[BlockSizeS_ALL] = {/*!<                            4X4 */
                                                         BLOCK_INVALID,
-                                                        // 4X8,        8X4,           8X8
+                                                        /*!< 4X8,        8X4,           8X8 */
                                                         BLOCK_INVALID,
                                                         BLOCK_INVALID,
                                                         BLOCK_4X4,
-                                                        // 8X16,       16X8,          16X16
+                                                        /*!< 8X16,       16X8,          16X16 */
                                                         BLOCK_4X8,
                                                         BLOCK_8X4,
                                                         BLOCK_8X8,
-                                                        // 16X32,      32X16,         32X32
+                                                        /*!< 16X32,      32X16,         32X32 */
                                                         BLOCK_8X16,
                                                         BLOCK_16X8,
                                                         BLOCK_16X16,
-                                                        // 32X64,      64X32,         64X64
+                                                        /*!< 32X64,      64X32,         64X64 */
                                                         BLOCK_16X32,
                                                         BLOCK_32X16,
                                                         BLOCK_32X32,
-                                                        // 64x128,     128x64,        128x128
+                                                        /*!< 64x128,     128x64,        128x128 */
                                                         BLOCK_32X64,
                                                         BLOCK_64X32,
                                                         BLOCK_64X64,
-                                                        // 4X16,       16X4,          8X32
+                                                        /*!< 4X16,       16X4,          8X32 */
                                                         BLOCK_INVALID,
                                                         BLOCK_INVALID,
                                                         BLOCK_4X16,
-                                                        // 32X8,       16X64,         64X16
+                                                        /*!< 32X8,       16X64,         64X16 */
                                                         BLOCK_16X4,
                                                         BLOCK_8X32,
                                                         BLOCK_32X8};
@@ -2533,7 +2527,7 @@ static int8_t estimate_wedge_sign(PictureControlSet *  picture_control_set_ptr,
         ((int64_t)esq[1][3] + esq[1][1] + esq[1][2]) - ((int64_t)esq[0][3] + esq[0][1] + esq[0][2]);
     return (tl + br > 0);
 }
-// Choose the best wedge index the specified sign
+/*!< Choose the best wedge index the specified sign */
 int64_t pick_wedge_fixed_sign(ModeDecisionCandidate *candidate_ptr,
                               PictureControlSet *    picture_control_set_ptr,
                               ModeDecisionContext *  context_ptr,
@@ -2589,10 +2583,10 @@ static void pick_interinter_wedge(ModeDecisionCandidate * candidate_ptr,
     int8_t wedge_sign  = 0;
 
     assert(is_interinter_compound_used(COMPOUND_WEDGE, bsize));
-    //TODO: OMK+CHKN to check on FIX_RATE_E_WEDGE
+    /*!< TODO: OMK+CHKN to check on FIX_RATE_E_WEDGE */
 
-    // Two method
-    // Fast seatch method to be added  OMK
+    /*!< Two method */
+    /*!< Fast seatch method to be added  OMK */
     if (picture_control_set_ptr->parent_pcs_ptr->wedge_mode == 2 ||
         picture_control_set_ptr->parent_pcs_ptr->wedge_mode == 3) {
         wedge_sign =
@@ -2633,16 +2627,16 @@ static void pick_interinter_seg(PictureControlSet *     picture_control_set_ptr,
     uint8_t *tmp_mask[2] = {seg_mask0, seg_mask1};
 
     const int bd_round = 0;
-    // try each mask type and its inverse
+    /*!< try each mask type and its inverse */
     for (cur_mask_type = 0; cur_mask_type < DIFFWTD_MASK_TYPES; cur_mask_type++) {
-        // build mask and inverse
+        /*!< build mask and inverse */
         if (hbd_mode_decision)
             av1_build_compound_diffwtd_mask_highbd(
                 tmp_mask[cur_mask_type], cur_mask_type, p0, bw, p1, bw, bh, bw, EB_10BIT);
         else
             av1_build_compound_diffwtd_mask(
                 tmp_mask[cur_mask_type], cur_mask_type, p0, bw, p1, bw, bh, bw);
-        // compute rd for mask
+        /*!< compute rd for mask */
         uint64_t sse = av1_wedge_sse_from_residuals(residual1, diff10, tmp_mask[cur_mask_type], N);
 
         sse = ROUND_POWER_OF_TWO(sse, bd_round);
@@ -2753,15 +2747,15 @@ void search_compound_diff_wedge(PictureControlSet *    picture_control_set_ptr,
         else
             ref_pic_list1 = (EbPictureBufferDesc *)EB_NULL;
 
-        //CHKN get seperate prediction of each ref(Luma only)
-        //ref0 prediction
+        /*!< CHKN get seperate prediction of each ref(Luma only) */
+        /*!< ref0 prediction */
         mv_unit.pred_direction = UNI_PRED_LIST_0;
         pred_desc.buffer_y     = context_ptr->pred0;
 
-        //we call the regular inter prediction path here(no compound)
+        /*!< we call the regular inter prediction path here(no compound) */
         av1_inter_prediction_function_table[hbd_mode_decision > EB_8_BIT_MD](
             picture_control_set_ptr,
-            0, //fixed interpolation filter for compound search
+            0, /*!< fixed interpolation filter for compound search */
             context_ptr->blk_ptr,
             candidate_ptr->ref_frame_type,
             &mv_unit,
@@ -2769,8 +2763,8 @@ void search_compound_diff_wedge(PictureControlSet *    picture_control_set_ptr,
             SIMPLE_TRANSLATION,
             0,
             0,
-            1, //compound_idx not used
-            NULL, // interinter_comp not used
+            1, /*!< compound_idx not used */
+            NULL, /*!< interinter_comp not used */
             NULL,
             NULL,
             NULL,
@@ -2785,20 +2779,20 @@ void search_compound_diff_wedge(PictureControlSet *    picture_control_set_ptr,
             bheight,
             ref_pic_list0,
             ref_pic_list1,
-            &pred_desc, //output
-            0, //output origin_x,
-            0, //output origin_y,
-            0, //do chroma
+            &pred_desc, /*!< output */
+            0, /*!< output origin_x, */
+            0, /*!< output origin_y, */
+            0, /*!< do chroma */
             hbd_mode_decision ? EB_10BIT : EB_8BIT);
 
-        //ref1 prediction
+        /*!< ref1 prediction */
         mv_unit.pred_direction = UNI_PRED_LIST_1;
         pred_desc.buffer_y     = context_ptr->pred1;
 
-        //we call the regular inter prediction path here(no compound)
+        /*!< we call the regular inter prediction path here(no compound) */
         av1_inter_prediction_function_table[hbd_mode_decision > EB_8_BIT_MD](
             picture_control_set_ptr,
-            0, //fixed interpolation filter for compound search
+            0, /*!< fixed interpolation filter for compound search */
             context_ptr->blk_ptr,
             candidate_ptr->ref_frame_type,
             &mv_unit,
@@ -2806,8 +2800,8 @@ void search_compound_diff_wedge(PictureControlSet *    picture_control_set_ptr,
             SIMPLE_TRANSLATION,
             0,
             0,
-            1, //compound_idx not used
-            NULL, // interinter_comp not useds
+            1, /*!< compound_idx not used */
+            NULL, /*!< interinter_comp not useds */
             NULL,
             NULL,
             NULL,
@@ -2822,10 +2816,10 @@ void search_compound_diff_wedge(PictureControlSet *    picture_control_set_ptr,
             bheight,
             ref_pic_list0,
             ref_pic_list1,
-            &pred_desc, //output
-            0, //output origin_x,
-            0, //output origin_y,
-            0, //do chroma
+            &pred_desc, /*!< output */
+            0, /*!<output origin_x, */
+            0, /*!<output origin_y, */
+            0, /*!<do chroma */
             hbd_mode_decision ? EB_10BIT : EB_8BIT);
         if (hbd_mode_decision) {
             uint16_t *src_buf_hbd =
@@ -2896,7 +2890,7 @@ void search_compound_diff_wedge(PictureControlSet *    picture_control_set_ptr,
                          context_ptr->residual1,
                          context_ptr->diff10);
 }
-//
+
 int64_t aom_highbd_sse_c(const uint8_t *a8, int a_stride, const uint8_t *b8, int b_stride,
                          int width, int height) {
     int       y, x;
@@ -2940,9 +2934,9 @@ void model_rd_for_sb_with_curvfit(PictureControlSet *  picture_control_set_ptr,
                                   int64_t *plane_sse, int64_t *plane_dist) {
     (void)mi_row;
     (void)mi_col;
-    // Note our transform coeffs are 8 times an orthogonal transform.
-    // Hence quantizer step is also 8 times. To get effective quantizer
-    // we need to divide by 8 before sending to modeling function.
+    /*!< Note our transform coeffs are 8 times an orthogonal transform.
+     *   Hence quantizer step is also 8 times. To get effective quantizer
+     *   we need to divide by 8 before sending to modeling function. */
     const int bd_round = 0;
 
     int64_t rate_sum  = 0;
@@ -2954,7 +2948,7 @@ void model_rd_for_sb_with_curvfit(PictureControlSet *  picture_control_set_ptr,
         const BlockSize plane_bsize = get_plane_block_size(bsize, subsampling, subsampling);
         int64_t         dist, sse;
         int             rate;
-        if (context_ptr->hbd_mode_decision) // CCODE
+        if (context_ptr->hbd_mode_decision) /*!< CCODE */
             sse = aom_highbd_sse(src_buf, src_stride, pred_buf, pred_stride, bw, bh);
         else
             sse = aom_sse(src_buf, src_stride, pred_buf, pred_stride, bw, bh);
@@ -3088,7 +3082,7 @@ struct build_prediction_ctxt {
     uint16_t             dst_origin_y;
     EbBool               perform_chroma;
 };
-// input: log2 of length, 0(4), 1(8), ...
+/*!< input: log2 of length, 0(4), 1(8), ... */
 static const int max_neighbor_obmc[6] = {0, 1, 2, 3, 4, 4};
 
 typedef void (*overlappable_nb_visitor_t)(uint8_t is16bit, MacroBlockD *xd, int rel_mi_pos,
@@ -3103,8 +3097,7 @@ static INLINE void foreach_overlappable_nb_above(uint8_t is16bit, const AV1_COMM
 
     int nb_count = 0;
 
-    // prev_row_mi points into the mi array, starting at the beginning of the
-    // previous row.
+    /*!< prev_row_mi points into the mi array, starting at the beginning of the previous row. */
     ModeInfo **prev_row_mi = xd->mi - mi_col - 1 * xd->mi_stride;
     const int  end_col     = AOMMIN(mi_col + xd->n4_w, cm->mi_cols);
     uint8_t    mi_step;
@@ -3113,11 +3106,11 @@ static INLINE void foreach_overlappable_nb_above(uint8_t is16bit, const AV1_COMM
         ModeInfo /*MbModeInfo*/ **above_mi = prev_row_mi + above_mi_col;
         mi_step =
             AOMMIN(mi_size_wide[above_mi[0]->mbmi.block_mi.sb_type], mi_size_wide[BLOCK_64X64]);
-        // If we're considering a block with width 4, it should be treated as
-        // half of a pair of blocks with chroma information in the second. Move
-        // above_mi_col back to the start of the pair if needed, set above_mbmi
-        // to point at the block with chroma information, and set mi_step to 2 to
-        // step over the entire pair at the end of the iteration.
+        /*!< If we're considering a block with width 4, it should be treated as
+         *   half of a pair of blocks with chroma information in the second. Move
+         *   above_mi_col back to the start of the pair if needed, set above_mbmi
+         *   to point at the block with chroma information, and set mi_step to 2 to
+         *   step over the entire pair at the end of the iteration. */
         if (mi_step == 1) {
             above_mi_col &= ~1;
             above_mi = prev_row_mi + above_mi_col + 1;
@@ -3145,8 +3138,7 @@ static INLINE void foreach_overlappable_nb_left(uint8_t is16bit, const AV1_COMMO
 
     int nb_count = 0;
 
-    // prev_col_mi points into the mi array, starting at the top of the
-    // previous column
+    /*!< prev_col_mi points into the mi array, starting at the top of the previous column */
 
     ModeInfo **prev_col_mi = xd->mi - 1 - mi_row * xd->mi_stride;
     const int  end_row     = AOMMIN(mi_row + xd->n4_h, cm->mi_rows);
@@ -3174,10 +3166,10 @@ static INLINE void foreach_overlappable_nb_left(uint8_t is16bit, const AV1_COMMO
         }
     }
 }
-// HW does not support < 4x4 prediction. To limit the bandwidth requirement, if
-// block-size of current plane is smaller than 8x8, always only blend with the
-// left neighbor(s) (skip blending with the above side).
-#define DISABLE_CHROMA_U8X8_OBMC 0 // 0: one-sided obmc; 1: disable
+/*!< HW does not support < 4x4 prediction. To limit the bandwidth requirement, if
+ *   block-size of current plane is smaller than 8x8, always only blend with the
+ *   left neighbor(s) (skip blending with the above side). */
+#define DISABLE_CHROMA_U8X8_OBMC 0 /*!< 0: one-sided obmc; 1: disable */
 
 int av1_skip_u4x4_pred_in_obmc(BlockSize bsize, int dir, int subsampling_x, int subsampling_y) {
     assert(is_motion_variation_allowed_bsize(bsize));
@@ -3204,7 +3196,7 @@ void av1_setup_build_prediction_by_above_pred(MacroBlockD *xd, int rel_mi_col,
     (void)num_planes;
     const int above_mi_col = ctxt->mi_col + rel_mi_col;
 
-    //use above mbmi  to set up the reference object from where to read
+    /*!< use above mbmi  to set up the reference object from where to read */
 
     ctxt->mv_unit.mv[0].x        = above_mbmi->block_mi.mv[0].as_mv.col;
     ctxt->mv_unit.mv[0].y        = above_mbmi->block_mi.mv[0].as_mv.row;
@@ -3265,7 +3257,7 @@ EbErrorType get_single_prediction_for_obmc_luma_hbd(
     EbErrorType return_error = EB_ErrorNone;
     uint8_t     is_compound  = 0;
     DECLARE_ALIGNED(
-        32, uint16_t, tmp_dstY[128 * 128]); //move this to context if stack does not hold.
+        32, uint16_t, tmp_dstY[128 * 128]); /*!< move this to context if stack does not hold. */
 
     MV                 mv, mv_q4;
     int32_t            subpel_x, subpel_y;
@@ -3277,7 +3269,7 @@ EbErrorType get_single_prediction_for_obmc_luma_hbd(
     InterpFilterParams filter_params_x, filter_params_y;
 
     {
-        //List0-Y
+        /*!< List0-Y */
         mv.col = mv_unit->mv[REF_LIST_0].x;
         mv.row = mv_unit->mv[REF_LIST_0].y;
         assert(ref_pic_list0 != NULL);
@@ -3294,7 +3286,7 @@ EbErrorType get_single_prediction_for_obmc_luma_hbd(
             bwidth,
             bheight,
             0,
-            0); //mv_q4 has 1 extra bit for fractionnal to accomodate chroma when accessing filter coeffs.
+            0); /*!< mv_q4 has 1 extra bit for fractionnal to accomodate chroma when accessing filter coeffs. */
         subpel_x = mv_q4.col & SUBPEL_MASK;
         subpel_y = mv_q4.row & SUBPEL_MASK;
         src_ptr  = src_ptr + (mv_q4.row >> SUBPEL_BITS) * src_stride + (mv_q4.col >> SUBPEL_BITS);
@@ -3336,13 +3328,13 @@ EbErrorType get_single_prediction_for_obmc_chroma_hbd(
     ConvolveParams     conv_params;
     InterpFilterParams filter_params_x, filter_params_y;
     {
-        //List0-Y
+        /*!< List0-Y */
         mv.col = mv_unit->mv[REF_LIST_0].x;
         mv.row = mv_unit->mv[REF_LIST_0].y;
         assert(ref_pic_list0 != NULL);
 
         {
-            //List0-Cb
+            /*!< List0-Cb */
             src_ptr = (uint16_t *)ref_pic_list0->buffer_cb +
                       (ref_pic_list0->origin_x + ((pu_origin_x >> 3) << 3)) / 2 +
                       (ref_pic_list0->origin_y + ((pu_origin_y >> 3) << 3)) / 2 *
@@ -3377,7 +3369,7 @@ EbErrorType get_single_prediction_for_obmc_chroma_hbd(
                                                                    &conv_params,
                                                                    10);
 
-            //List0-Cr
+            /*!< List0-Cr */
             src_ptr = (uint16_t *)ref_pic_list0->buffer_cr +
                       (ref_pic_list0->origin_x + ((pu_origin_x >> 3) << 3)) / 2 +
                       (ref_pic_list0->origin_y + ((pu_origin_y >> 3) << 3)) / 2 *
@@ -3425,7 +3417,7 @@ EbErrorType get_single_prediction_for_obmc_luma(uint32_t interp_filters, MacroBl
     EbErrorType return_error = EB_ErrorNone;
     uint8_t     is_compound  = 0;
     DECLARE_ALIGNED(
-        32, uint16_t, tmp_dstY[128 * 128]); //move this to context if stack does not hold.
+        32, uint16_t, tmp_dstY[128 * 128]); /*!< move this to context if stack does not hold. */
 
     MV                 mv, mv_q4;
     int32_t            subpel_x, subpel_y;
@@ -3437,7 +3429,7 @@ EbErrorType get_single_prediction_for_obmc_luma(uint32_t interp_filters, MacroBl
     InterpFilterParams filter_params_x, filter_params_y;
 
     {
-        //List0-Y
+        /*!< List0-Y */
         mv.col = mv_unit->mv[REF_LIST_0].x;
         mv.row = mv_unit->mv[REF_LIST_0].y;
         assert(ref_pic_list0 != NULL);
@@ -3454,7 +3446,7 @@ EbErrorType get_single_prediction_for_obmc_luma(uint32_t interp_filters, MacroBl
             bwidth,
             bheight,
             0,
-            0); //mv_q4 has 1 extra bit for fractionnal to accomodate chroma when accessing filter coeffs.
+            0); /*!< mv_q4 has 1 extra bit for fractionnal to accomodate chroma when accessing filter coeffs. */
         subpel_x = mv_q4.col & SUBPEL_MASK;
         subpel_y = mv_q4.row & SUBPEL_MASK;
         src_ptr  = src_ptr + (mv_q4.row >> SUBPEL_BITS) * src_stride + (mv_q4.col >> SUBPEL_BITS);
@@ -3497,14 +3489,14 @@ EbErrorType get_single_prediction_for_obmc_chroma(
     InterpFilterParams filter_params_x, filter_params_y;
 
     {
-        //List0-Y
+        /*!< List0-Y */
 
         mv.col = mv_unit->mv[REF_LIST_0].x;
         mv.row = mv_unit->mv[REF_LIST_0].y;
         assert(ref_pic_list0 != NULL);
 
         {
-            //List0-Cb
+            /*!< List0-Cb */
             src_ptr = ref_pic_list0->buffer_cb +
                       (ref_pic_list0->origin_x + ((pu_origin_x >> 3) << 3)) / 2 +
                       (ref_pic_list0->origin_y + ((pu_origin_y >> 3) << 3)) / 2 *
@@ -3538,7 +3530,7 @@ EbErrorType get_single_prediction_for_obmc_chroma(
                                                                 subpel_y,
                                                                 &conv_params);
 
-            //List0-Cr
+            /*!< List0-Cr */
             src_ptr = ref_pic_list0->buffer_cr +
                       (ref_pic_list0->origin_x + ((pu_origin_x >> 3) << 3)) / 2 +
                       (ref_pic_list0->origin_y + ((pu_origin_y >> 3) << 3)) / 2 *
@@ -3762,9 +3754,9 @@ static void build_prediction_by_above_preds_hbd(EbBool perform_chroma, BlockSize
     if (!xd->up_available) return;
 
     uint8_t is16bit = 1;
-    // Adjust mb_to_bottom_edge to have the correct value for the OBMC
-    // prediction block. This is half the height of the original block,
-    // except for 128-wide blocks, where we only use a height of 32.
+    /*!< Adjust mb_to_bottom_edge to have the correct value for the OBMC
+     *   prediction block. This is half the height of the original block,
+     *   except for 128-wide blocks, where we only use a height of 32. */
     int this_height = xd->n4_h * MI_SIZE;
     int pred_height = AOMMIN(this_height / 2, 32);
     xd->mb_to_bottom_edge += (this_height - pred_height) * 8;
@@ -3805,9 +3797,9 @@ static void build_prediction_by_above_preds(EbBool perform_chroma, BlockSize bsi
     if (!xd->up_available) return;
 
     uint8_t is16bit = 0;
-    // Adjust mb_to_bottom_edge to have the correct value for the OBMC
-    // prediction block. This is half the height of the original block,
-    // except for 128-wide blocks, where we only use a height of 32.
+    /*!< Adjust mb_to_bottom_edge to have the correct value for the OBMC
+     *   prediction block. This is half the height of the original block,
+     *   except for 128-wide blocks, where we only use a height of 32. */
     int this_height = xd->n4_h * MI_SIZE;
     int pred_height = AOMMIN(this_height / 2, 32);
     xd->mb_to_bottom_edge += (this_height - pred_height) * 8;
@@ -3848,9 +3840,9 @@ static void build_prediction_by_left_preds_hbd(EbBool perform_chroma, BlockSize 
     if (!xd->left_available) return;
 
     uint8_t is16bit = 1;
-    // Adjust mb_to_right_edge to have the correct value for the OBMC
-    // prediction block. This is half the width of the original block,
-    // except for 128-wide blocks, where we only use a width of 32.
+    /*!< Adjust mb_to_right_edge to have the correct value for the OBMC
+     *   prediction block. This is half the width of the original block,
+     *   except for 128-wide blocks, where we only use a width of 32. */
     int this_width = xd->n4_w * MI_SIZE;
     int pred_width = AOMMIN(this_width / 2, 32);
     xd->mb_to_right_edge += (this_width - pred_width) * 8;
@@ -3892,9 +3884,9 @@ static void build_prediction_by_left_preds(EbBool perform_chroma, BlockSize bsiz
     if (!xd->left_available) return;
 
     uint8_t is16bit = 0;
-    // Adjust mb_to_right_edge to have the correct value for the OBMC
-    // prediction block. This is half the width of the original block,
-    // except for 128-wide blocks, where we only use a width of 32.
+    /*!< Adjust mb_to_right_edge to have the correct value for the OBMC
+     *   prediction block. This is half the width of the original block,
+     *   except for 128-wide blocks, where we only use a width of 32. */
     int this_width = xd->n4_w * MI_SIZE;
     int pred_width = AOMMIN(this_width / 2, 32);
     xd->mb_to_right_edge += (this_width - pred_width) * 8;
@@ -3939,7 +3931,7 @@ struct obmc_inter_pred_ctxt {
     uint16_t  final_dst_stride_v;
     EbBool    perform_chroma;
 };
-// obmc_mask_N[overlap_position]
+/*!< obmc_mask_N[overlap_position] */
 static const uint8_t obmc_mask_1[1]                      = {64};
 DECLARE_ALIGNED(2, static const uint8_t, obmc_mask_2[2]) = {45, 64};
 
@@ -4123,10 +4115,10 @@ static INLINE void build_obmc_inter_pred_left(uint8_t is16bit, MacroBlockD *xd, 
     }
 }
 
-// This function combines motion compensated predictions that are generated by
-// top/left neighboring blocks' inter predictors with the regular inter
-// prediction. We assume the original prediction (bmc) is stored in
-// xd->plane[].dst.buf
+/*!< This function combines motion compensated predictions that are generated by
+ *   top/left neighboring blocks' inter predictors with the regular inter
+ *   prediction. We assume the original prediction (bmc) is stored in
+ *   xd->plane[].dst.buf */
 void av1_build_obmc_inter_prediction(uint8_t *final_dst_ptr_y, uint16_t final_dst_stride_y,
                                      uint8_t *final_dst_ptr_u, uint16_t final_dst_stride_u,
                                      uint8_t *final_dst_ptr_v, uint16_t final_dst_stride_v,
@@ -4135,7 +4127,7 @@ void av1_build_obmc_inter_prediction(uint8_t *final_dst_ptr_y, uint16_t final_ds
                                      int mi_row, int mi_col, uint8_t *above[MAX_MB_PLANE],
                                      int above_stride[MAX_MB_PLANE], uint8_t *left[MAX_MB_PLANE],
                                      int left_stride[MAX_MB_PLANE], uint8_t is16bit) {
-    // handle above row
+    /*!< handle above row */
     struct obmc_inter_pred_ctxt ctxt_above;
 
     ctxt_above.adjacent        = above;
@@ -4157,7 +4149,7 @@ void av1_build_obmc_inter_prediction(uint8_t *final_dst_ptr_y, uint16_t final_ds
                                   build_obmc_inter_pred_above,
                                   &ctxt_above);
 
-    // handle left column
+    /*!< handle left column */
     struct obmc_inter_pred_ctxt ctxt_left;
 
     ctxt_left.adjacent        = left;
@@ -4248,29 +4240,29 @@ static INLINE void calc_target_weighted_pred_left(uint8_t is16bit, MacroBlockD *
         }
     }
 }
-// This function has a structure similar to av1_build_obmc_inter_prediction
-//
-// The OBMC predictor is computed as:
+/*!< This function has a structure similar to av1_build_obmc_inter_prediction */
+
+/*!< The OBMC predictor is computed as: */
 //
 //  PObmc(x,y) =
 //    AOM_BLEND_A64(Mh(x),
 //                  AOM_BLEND_A64(Mv(y), P(x,y), PAbove(x,y)),
 //                  PLeft(x, y))
 //
-// Scaling up by AOM_BLEND_A64_MAX_ALPHA ** 2 and omitting the intermediate
-// rounding, this can be written as:
+/*!< Scaling up by AOM_BLEND_A64_MAX_ALPHA ** 2 and omitting the intermediate
+ *   rounding, this can be written as: */
 //
 //  AOM_BLEND_A64_MAX_ALPHA * AOM_BLEND_A64_MAX_ALPHA * Pobmc(x,y) =
 //    Mh(x) * Mv(y) * P(x,y) +
 //      Mh(x) * Cv(y) * Pabove(x,y) +
 //      AOM_BLEND_A64_MAX_ALPHA * Ch(x) * PLeft(x, y)
 //
-// Where :
+/*!< Where : */
 //
 //  Cv(y) = AOM_BLEND_A64_MAX_ALPHA - Mv(y)
 //  Ch(y) = AOM_BLEND_A64_MAX_ALPHA - Mh(y)
 //
-// This function computes 'wsrc' and 'mask' as:
+/*!< This function computes 'wsrc' and 'mask' as: */
 //
 //  wsrc(x, y) =
 //    AOM_BLEND_A64_MAX_ALPHA * AOM_BLEND_A64_MAX_ALPHA * src(x, y) -
@@ -4279,9 +4271,9 @@ static INLINE void calc_target_weighted_pred_left(uint8_t is16bit, MacroBlockD *
 //
 //  mask(x, y) = Mh(x) * Mv(y)
 //
-// These can then be used to efficiently approximate the error for any
-// predictor P in the context of the provided neighbouring predictors by
-// computing:
+/*!< These can then be used to efficiently approximate the error for any
+ *   predictor P in the context of the provided neighbouring predictors by
+ *   computing: */
 //
 //  error(x, y) =
 //    wsrc(x, y) - mask(x, y) * P(x, y) / (AOM_BLEND_A64_MAX_ALPHA ** 2)
@@ -4303,7 +4295,7 @@ static void calc_target_weighted_pred(PictureControlSet *  picture_control_set_p
     memset(wsrc_buf, 0, sizeof(int32_t) * bw * bh);
     for (int i = 0; i < bw * bh; ++i) mask_buf[i] = AOM_BLEND_A64_MAX_ALPHA;
 
-    // handle above row
+    /*!< handle above row */
     if (xd->up_available) {
         const int overlap = AOMMIN(block_size_high[bsize], block_size_high[BLOCK_64X64]) >> 1;
         struct calc_target_weighted_pred_ctxt ctxt = {
@@ -4323,7 +4315,7 @@ static void calc_target_weighted_pred(PictureControlSet *  picture_control_set_p
         mask_buf[i] *= AOM_BLEND_A64_MAX_ALPHA;
     }
 
-    // handle left column
+    /*!< handle left column */
     if (xd->left_available) {
         const int overlap = AOMMIN(block_size_wide[bsize], block_size_wide[BLOCK_64X64]) >> 1;
         struct calc_target_weighted_pred_ctxt ctxt = {
@@ -4348,9 +4340,8 @@ static void calc_target_weighted_pred(PictureControlSet *  picture_control_set_p
         src += src_pic->stride_y;
     }
 }
-/* perform all neigh predictions and get wighted src to be used for obmc
-motion refinement
-*/
+/*!< perform all neigh predictions and get wighted src to be used for obmc
+ *   motion refinement */
 void precompute_obmc_data(PictureControlSet *  picture_control_set_ptr,
                           ModeDecisionContext *context_ptr) {
     uint8_t *tmp_obmc_bufs_8b[2];
@@ -4479,7 +4470,7 @@ EbErrorType av1_inter_prediction(
     EbErrorType return_error = EB_ErrorNone;
     uint8_t     is_compound  = (mv_unit->pred_direction == BI_PRED) ? 1 : 0;
     DECLARE_ALIGNED(
-        32, uint16_t, tmp_dstY[128 * 128]); //move this to context if stack does not hold.
+        32, uint16_t, tmp_dstY[128 * 128]); /*!< move this to context if stack does not hold. */
     DECLARE_ALIGNED(32, uint16_t, tmp_dstCb[64 * 64]);
     DECLARE_ALIGNED(32, uint16_t, tmp_dstCr[64 * 64]);
 
@@ -4500,22 +4491,22 @@ EbErrorType av1_inter_prediction(
         assert(is_compound == 0);
         assert(blk_geom->bwidth > 4 && blk_geom->bheight > 4);
     }
-    //special treatment for chroma in 4XN/NX4 blocks
-    //if one of the neighbour blocks of the parent square is intra the chroma prediction will follow the normal path using the luma MV of the current nsq block which is the latest sub8x8.
-    //for this case: only uniPred is allowed.
+    /*!< special treatment for chroma in 4XN/NX4 blocks
+     *   if one of the neighbour blocks of the parent square is intra the chroma prediction will follow the normal path using the luma MV of the current nsq block which is the latest sub8x8.
+     *   for this case: only uniPred is allowed. */
 
     int32_t sub8x8_inter = 0;
     if (perform_chroma && (blk_geom->has_uv && (blk_geom->bwidth == 4 || blk_geom->bheight == 4)))
 
     {
-        //CHKN setup input param
+        /*!< CHKN setup input param */
 
         int32_t bw = blk_geom->bwidth_uv;
         int32_t bh = blk_geom->bheight_uv;
         UNUSED(bw);
         UNUSED(bh);
 
-        uint32_t mi_x = pu_origin_x; //these are luma picture wise
+        uint32_t mi_x = pu_origin_x; /*!< these are luma picture wise */
         uint32_t mi_y = pu_origin_y;
 
         MacroBlockD *xd      = blk_ptr->av1xd;
@@ -4523,7 +4514,7 @@ EbErrorType av1_inter_prediction(
         const int32_t offset = (mi_y >> MI_SIZE_LOG2) * xd->mi_stride + (mi_x >> MI_SIZE_LOG2);
         xd->mi               = picture_control_set_ptr->mi_grid_base + offset;
 
-        //CHKN fill current mi from current block
+        /*!< CHKN fill current mi from current block */
         {
             ModeInfo *       miPtr = *xd->mi;
             uint8_t          miX, miY;
@@ -4567,10 +4558,10 @@ EbErrorType av1_inter_prediction(
 
         if (use_intrabc) sub8x8_inter = 0;
 
-        // For sub8x8 chroma blocks, we may be covering more than one luma block's
-        // worth of pixels. Thus (mi_x, mi_y) may not be the correct coordinates for
-        // the top-left corner of the prediction source - the correct top-left corner
-        // is at (pre_x, pre_y).
+        /*!< For sub8x8 chroma blocks, we may be covering more than one luma block's
+         *   worth of pixels. Thus (mi_x, mi_y) may not be the correct coordinates for
+         *   the top-left corner of the prediction source - the correct top-left corner
+         *   is at (pre_x, pre_y). */
         const int32_t row_start = (block_size_high[bsize] == 4) && ss_y && !build_for_obmc ? -1 : 0;
         const int32_t col_start = (block_size_wide[bsize] == 4) && ss_x && !build_for_obmc ? -1 : 0;
 
@@ -4592,7 +4583,7 @@ EbErrorType av1_inter_prediction(
         }
 
         if (sub8x8_inter) {
-            // block size
+            /*!< block size */
             const int32_t   b4_w        = block_size_wide[bsize] >> ss_x;
             const int32_t   b4_h        = block_size_high[bsize] >> ss_y;
             const BlockSize plane_bsize = scale_chroma_bsize(bsize, ss_x, ss_y);
@@ -4671,7 +4662,7 @@ EbErrorType av1_inter_prediction(
                                                                         subpel_y,
                                                                         &conv_params);
 
-                    //Cr
+                    /*!< Cr */
                     conv_params = get_conv_params_no_round(
                         0, 0, 0, tmp_dstCr, BLOCK_SIZE_64, is_compound, bit_depth);
                     conv_params.use_jnt_comp_avg = 0;
@@ -4724,7 +4715,7 @@ EbErrorType av1_inter_prediction(
     MvReferenceFrame rf[2];
     av1_set_ref_frame(rf, ref_frame_type);
     if (mv_unit->pred_direction == UNI_PRED_LIST_0 || mv_unit->pred_direction == BI_PRED) {
-        //List0-Y
+        /*!< List0-Y */
         mv.col = mv_unit->mv[REF_LIST_0].x;
         mv.row = mv_unit->mv[REF_LIST_0].y;
         assert(ref_pic_list0 != NULL);
@@ -4741,7 +4732,7 @@ EbErrorType av1_inter_prediction(
             bwidth,
             bheight,
             0,
-            0); //mv_q4 has 1 extra bit for fractionnal to accomodate chroma when accessing filter coeffs.
+            0); /*!< mv_q4 has 1 extra bit for fractionnal to accomodate chroma when accessing filter coeffs. */
         subpel_x = mv_q4.col & SUBPEL_MASK;
         subpel_y = mv_q4.row & SUBPEL_MASK;
         src_ptr  = src_ptr + (mv_q4.row >> SUBPEL_BITS) * src_stride + (mv_q4.col >> SUBPEL_BITS);
@@ -4761,7 +4752,7 @@ EbErrorType av1_inter_prediction(
                                                             subpel_y,
                                                             &conv_params);
         if (perform_chroma && blk_geom->has_uv && sub8x8_inter == 0) {
-            //List0-Cb
+            /*!< List0-Cb */
             src_ptr = ref_pic_list0->buffer_cb +
                       (ref_pic_list0->origin_x + ((pu_origin_x >> 3) << 3)) / 2 +
                       (ref_pic_list0->origin_y + ((pu_origin_y >> 3) << 3)) / 2 *
@@ -4810,7 +4801,7 @@ EbErrorType av1_inter_prediction(
                                                                     subpel_y,
                                                                     &conv_params);
 
-            //List0-Cr
+            /*!< List0-Cr */
             src_ptr = ref_pic_list0->buffer_cr +
                       (ref_pic_list0->origin_x + ((pu_origin_x >> 3) << 3)) / 2 +
                       (ref_pic_list0->origin_y + ((pu_origin_y >> 3) << 3)) / 2 *
@@ -4856,7 +4847,7 @@ EbErrorType av1_inter_prediction(
     }
 
     if (mv_unit->pred_direction == UNI_PRED_LIST_1 || mv_unit->pred_direction == BI_PRED) {
-        //List0-Y
+        /*!< List0-Y */
         mv.col = mv_unit->mv[REF_LIST_1].x;
         mv.row = mv_unit->mv[REF_LIST_1].y;
         assert(ref_pic_list1 != NULL);
@@ -4873,7 +4864,7 @@ EbErrorType av1_inter_prediction(
             bwidth,
             bheight,
             0,
-            0); //mv_q4 has 1 extra bit for fractionnal to accomodate chroma when accessing filter coeffs.
+            0); /*!< mv_q4 has 1 extra bit for fractionnal to accomodate chroma when accessing filter coeffs. */
         subpel_x = mv_q4.col & SUBPEL_MASK;
         subpel_y = mv_q4.row & SUBPEL_MASK;
 
@@ -4889,7 +4880,7 @@ EbErrorType av1_inter_prediction(
         av1_get_convolve_filter_params(
             interp_filters, &filter_params_x, &filter_params_y, bwidth, bheight);
 
-        //the luma data is applied to chroma below
+        /*!< the luma data is applied to chroma below */
         av1_dist_wtd_comp_weight_assign(
             &picture_control_set_ptr->parent_pcs_ptr->scs_ptr->seq_header,
             picture_control_set_ptr->parent_pcs_ptr->cur_order_hint, // cur_frame_index,
@@ -4921,7 +4912,7 @@ EbErrorType av1_inter_prediction(
                 &conv_params,
                 interinter_comp,
                 bit_depth,
-                0 //plane=Luma  seg_mask is computed based on luma and used for chroma
+                0 //plane=Luma  /*!< seg_mask is computed based on luma and used for chroma */
             );
         } else
             convolve[subpel_x != 0][subpel_y != 0][is_compound](src_ptr,
@@ -4936,7 +4927,7 @@ EbErrorType av1_inter_prediction(
                                                                 subpel_y,
                                                                 &conv_params);
         if (perform_chroma && blk_geom->has_uv && sub8x8_inter == 0) {
-            //List0-Cb
+            /*!< List0-Cb */
             src_ptr = ref_pic_list1->buffer_cb +
                       (ref_pic_list1->origin_x + ((pu_origin_x >> 3) << 3)) / 2 +
                       (ref_pic_list1->origin_y + ((pu_origin_y >> 3) << 3)) / 2 *
@@ -5001,7 +4992,7 @@ EbErrorType av1_inter_prediction(
                     &conv_params,
                     interinter_comp,
                     bit_depth,
-                    1 //plane=cb  seg_mask is computed based on luma and used for chroma
+                    1 //plane=cb  /*!< seg_mask is computed based on luma and used for chroma */
                 );
             } else
                 convolve[subpel_x != 0][subpel_y != 0][is_compound](src_ptr,
@@ -5016,7 +5007,7 @@ EbErrorType av1_inter_prediction(
                                                                     subpel_y,
                                                                     &conv_params);
 
-            //List0-Cr
+            /*!< List0-Cr */
             src_ptr = ref_pic_list1->buffer_cr +
                       (ref_pic_list1->origin_x + ((pu_origin_x >> 3) << 3)) / 2 +
                       (ref_pic_list1->origin_y + ((pu_origin_y >> 3) << 3)) / 2 *
@@ -5074,7 +5065,7 @@ EbErrorType av1_inter_prediction(
                     &conv_params,
                     interinter_comp,
                     bit_depth,
-                    1 //plane=Cr  seg_mask is computed based on luma and used for chroma
+                    1 //plane=Cr  /*!< seg_mask is computed based on luma and used for chroma */
                 );
             } else
                 convolve[subpel_x != 0][subpel_y != 0][is_compound](src_ptr,
@@ -5093,7 +5084,7 @@ EbErrorType av1_inter_prediction(
     if (is_interintra_used) {
         int32_t start_plane = 0;
         int32_t end_plane   = perform_chroma && blk_geom->has_uv ? MAX_MB_PLANE : 1;
-        // temp buffer for intra pred
+        /*!< temp buffer for intra pred */
         DECLARE_ALIGNED(16, uint8_t, intra_pred[MAX_SB_SQUARE]);
         DECLARE_ALIGNED(16, uint8_t, intra_pred_cb[MAX_SB_SQUARE]);
         DECLARE_ALIGNED(16, uint8_t, intra_pred_cr[MAX_SB_SQUARE]);
@@ -5190,8 +5181,8 @@ EbErrorType av1_inter_prediction(
                             ->top_left_array[MAX_PICTURE_HEIGHT_SIZE / 2 + blk_originx_uv -
                                              blk_originy_uv / 2];
             }
-            TxSize tx_size        = blk_geom->txsize[0][0]; // Nader - Intra 128x128 not supported
-            TxSize tx_size_Chroma = blk_geom->txsize_uv[0][0]; //Nader - Intra 128x128 not supported
+            TxSize tx_size        = blk_geom->txsize[0][0]; /*!< Nader - Intra 128x128 not supported */
+            TxSize tx_size_Chroma = blk_geom->txsize_uv[0][0]; /*!<Nader - Intra 128x128 not supported */
 
             eb_av1_predict_intra_block(
                 tile,
@@ -5204,7 +5195,7 @@ EbErrorType av1_inter_prediction(
                 interintra_to_intra_mode[interintra_mode], //PredictionMode mode,
                 0,
                 0, //int32_t use_palette,
-                NULL, //inter-intra
+                NULL, /*!< inter-intra */
                 FILTER_INTRA_MODES, // FilterIntraMode filter_intra_mode,
                 topNeighArray + 1,
                 leftNeighArray + 1,
@@ -5221,7 +5212,7 @@ EbErrorType av1_inter_prediction(
                 0, //uint32_t cuOrgX used only for prediction Ptr
                 0 //uint32_t cuOrgY used only for prediction Ptr
             );
-            //combine_interintra
+            /*!< combine_interintra */
             combine_interintra(
                 interintra_mode,
                 use_wedge_interintra,
@@ -5231,11 +5222,11 @@ EbErrorType av1_inter_prediction(
                 plane_bsize,
                 dst_ptr,
                 dst_stride,
-                dst_ptr, // Inter pred buff
-                dst_stride, // Inter pred stride
+                dst_ptr, /*!< Inter pred buff */
+                dst_stride, /*!< Inter pred stride */
                 (plane == 0) ? intra_pred
-                             : (plane == 1) ? intra_pred_cb : intra_pred_cr, // Intra pred buff
-                intra_stride); // Intra pred stride
+                             : (plane == 1) ? intra_pred_cb : intra_pred_cr, /*!< Intra pred buff */
+                intra_stride); /*!< Intra pred stride */
         }
     }
 
@@ -5323,7 +5314,7 @@ EbErrorType av1_inter_prediction(
                                         dst_stride1,
                                         dst_buf2,
                                         dst_stride2,
-                                        0); // is16bit
+                                        0); /*!< is16bit */
     }
 
     return return_error;
@@ -5346,7 +5337,7 @@ EbErrorType av1_inter_prediction_hbd(
     EbErrorType return_error = EB_ErrorNone;
     uint8_t     is_compound  = (mv_unit->pred_direction == BI_PRED) ? 1 : 0;
     DECLARE_ALIGNED(
-        32, uint16_t, tmp_dstY[128 * 128]); //move this to context if stack does not hold.
+        32, uint16_t, tmp_dstY[128 * 128]); /*!< move this to context if stack does not hold. */
     DECLARE_ALIGNED(32, uint16_t, tmp_dstCb[64 * 64]);
     DECLARE_ALIGNED(32, uint16_t, tmp_dstCr[64 * 64]);
     MV mv, mv_q4;
@@ -5364,22 +5355,22 @@ EbErrorType av1_inter_prediction_hbd(
         assert(is_compound == 0);
         assert(blk_geom->bwidth > 4 && blk_geom->bheight > 4);
     }
-    //special treatment for chroma in 4XN/NX4 blocks
-    //if one of the neighbour blocks of the parent square is intra the chroma prediction will follow the normal path using the luma MV of the current nsq block which is the latest sub8x8.
-    //for this case: only uniPred is allowed.
+    /*!< special treatment for chroma in 4XN/NX4 blocks
+     *   if one of the neighbour blocks of the parent square is intra the chroma prediction will follow the normal path using the luma MV of the current nsq block which is the latest sub8x8.
+     *   for this case: only uniPred is allowed. */
 
     int32_t sub8x8_inter = 0;
 
     if (perform_chroma && (blk_geom->has_uv && (blk_geom->bwidth == 4 || blk_geom->bheight == 4)))
 
     {
-        //CHKN setup input param
+        /*!< CHKN setup input param */
         int32_t bw = blk_geom->bwidth_uv;
         int32_t bh = blk_geom->bheight_uv;
         UNUSED(bw);
         UNUSED(bh);
 
-        uint32_t mi_x = pu_origin_x; //these are luma picture wise
+        uint32_t mi_x = pu_origin_x; /*!< these are luma picture wise */
         uint32_t mi_y = pu_origin_y;
 
         MacroBlockD *xd      = blk_ptr->av1xd;
@@ -5387,7 +5378,7 @@ EbErrorType av1_inter_prediction_hbd(
         const int32_t offset = (mi_y >> MI_SIZE_LOG2) * xd->mi_stride + (mi_x >> MI_SIZE_LOG2);
         xd->mi               = picture_control_set_ptr->mi_grid_base + offset;
 
-        //CHKN fill current mi from current block
+        /*!< CHKN fill current mi from current block */
         {
             ModeInfo *       miPtr = *xd->mi;
             uint8_t          miX, miY;
@@ -5430,10 +5421,10 @@ EbErrorType av1_inter_prediction_hbd(
         sub8x8_inter = (block_size_wide[bsize] < 8 && ss_x) || (block_size_high[bsize] < 8 && ss_y);
 
         if (use_intrabc) sub8x8_inter = 0;
-        // For sub8x8 chroma blocks, we may be covering more than one luma block's
-        // worth of pixels. Thus (mi_x, mi_y) may not be the correct coordinates for
-        // the top-left corner of the prediction source - the correct top-left corner
-        // is at (pre_x, pre_y).
+        /*!< For sub8x8 chroma blocks, we may be covering more than one luma block's
+         *   worth of pixels. Thus (mi_x, mi_y) may not be the correct coordinates for
+         *   the top-left corner of the prediction source - the correct top-left corner
+         *   is at (pre_x, pre_y). */
         const int32_t row_start = (block_size_high[bsize] == 4) && ss_y && !build_for_obmc ? -1 : 0;
         const int32_t col_start = (block_size_wide[bsize] == 4) && ss_x && !build_for_obmc ? -1 : 0;
 
@@ -5455,7 +5446,7 @@ EbErrorType av1_inter_prediction_hbd(
         }
 
         if (sub8x8_inter) {
-            // block size
+            /*!< block size */
             const int32_t   b4_w        = block_size_wide[bsize] >> ss_x;
             const int32_t   b4_h        = block_size_high[bsize] >> ss_y;
             const BlockSize plane_bsize = scale_chroma_bsize(bsize, ss_x, ss_y);
@@ -5535,7 +5526,7 @@ EbErrorType av1_inter_prediction_hbd(
                                                                            &conv_params,
                                                                            bit_depth);
 
-                    //Cr
+                    /*!< Cr */
                     conv_params = get_conv_params_no_round(
                         0, 0, 0, tmp_dstCr, BLOCK_SIZE_64, is_compound, bit_depth);
                     conv_params.use_jnt_comp_avg = 0;
@@ -5588,7 +5579,7 @@ EbErrorType av1_inter_prediction_hbd(
     MvReferenceFrame rf[2];
     av1_set_ref_frame(rf, ref_frame_type);
     if (mv_unit->pred_direction == UNI_PRED_LIST_0 || mv_unit->pred_direction == BI_PRED) {
-        //List0-Y
+        /*!< List0-Y */
         mv.col = mv_unit->mv[REF_LIST_0].x;
         mv.row = mv_unit->mv[REF_LIST_0].y;
 
@@ -5605,7 +5596,7 @@ EbErrorType av1_inter_prediction_hbd(
             bwidth,
             bheight,
             0,
-            0); //mv_q4 has 1 extra bit for fractionnal to accomodate chroma when accessing filter coeffs.
+            0); /*!< mv_q4 has 1 extra bit for fractionnal to accomodate chroma when accessing filter coeffs. */
         subpel_x = mv_q4.col & SUBPEL_MASK;
         subpel_y = mv_q4.row & SUBPEL_MASK;
         src_ptr  = src_ptr + (mv_q4.row >> SUBPEL_BITS) * src_stride + (mv_q4.col >> SUBPEL_BITS);
@@ -5628,7 +5619,7 @@ EbErrorType av1_inter_prediction_hbd(
                                                                bit_depth);
 
         if (perform_chroma && blk_geom->has_uv && sub8x8_inter == 0) {
-            //List0-Cb
+            /*!< List0-Cb */
             src_ptr = (uint16_t *)ref_pic_list0->buffer_cb +
                       (ref_pic_list0->origin_x + ((pu_origin_x >> 3) << 3)) / 2 +
                       (ref_pic_list0->origin_y + ((pu_origin_y >> 3) << 3)) / 2 *
@@ -5679,7 +5670,7 @@ EbErrorType av1_inter_prediction_hbd(
                                                                        &conv_params,
                                                                        bit_depth);
 
-            //List0-Cr
+            /*!< List0-Cr */
             src_ptr = (uint16_t *)ref_pic_list0->buffer_cr +
                       (ref_pic_list0->origin_x + ((pu_origin_x >> 3) << 3)) / 2 +
                       (ref_pic_list0->origin_y + ((pu_origin_y >> 3) << 3)) / 2 *
@@ -5726,7 +5717,7 @@ EbErrorType av1_inter_prediction_hbd(
     }
 
     if (mv_unit->pred_direction == UNI_PRED_LIST_1 || mv_unit->pred_direction == BI_PRED) {
-        //List1-Y
+        /*!< List1-Y */
         mv.col = mv_unit->mv[REF_LIST_1].x;
         mv.row = mv_unit->mv[REF_LIST_1].y;
 
@@ -5743,7 +5734,7 @@ EbErrorType av1_inter_prediction_hbd(
             bwidth,
             bheight,
             0,
-            0); //mv_q4 has 1 extra bit for fractionnal to accomodate chroma when accessing filter coeffs.
+            0); /*!< mv_q4 has 1 extra bit for fractionnal to accomodate chroma when accessing filter coeffs. */
         subpel_x = mv_q4.col & SUBPEL_MASK;
         subpel_y = mv_q4.row & SUBPEL_MASK;
 
@@ -5758,7 +5749,7 @@ EbErrorType av1_inter_prediction_hbd(
         av1_get_convolve_filter_params(
             interp_filters, &filter_params_x, &filter_params_y, bwidth, bheight);
 
-        //the luma data is applied to chroma below
+        /*!< the luma data is applied to chroma below */
         av1_dist_wtd_comp_weight_assign(
             &picture_control_set_ptr->parent_pcs_ptr->scs_ptr->seq_header,
             picture_control_set_ptr->parent_pcs_ptr->cur_order_hint, // cur_frame_index,
@@ -5789,7 +5780,7 @@ EbErrorType av1_inter_prediction_hbd(
                 &conv_params,
                 interinter_comp,
                 bit_depth,
-                0 //plane=Luma  seg_mask is computed based on luma and used for chroma
+                0 //plane=Luma /*!< seg_mask is computed based on luma and used for chroma */
             );
         } else
 
@@ -5807,7 +5798,7 @@ EbErrorType av1_inter_prediction_hbd(
                                                                    bit_depth);
 
         if (perform_chroma && blk_geom->has_uv && sub8x8_inter == 0) {
-            //List1-Cb
+            /*!< List1-Cb */
             src_ptr = (uint16_t *)ref_pic_list1->buffer_cb +
                       (ref_pic_list1->origin_x + ((pu_origin_x >> 3) << 3)) / 2 +
                       (ref_pic_list1->origin_y + ((pu_origin_y >> 3) << 3)) / 2 *
@@ -5869,7 +5860,7 @@ EbErrorType av1_inter_prediction_hbd(
                     &conv_params,
                     interinter_comp,
                     bit_depth,
-                    1 //plane=cb  seg_mask is computed based on luma and used for chroma
+                    1 //plane=cb /*!< seg_mask is computed based on luma and used for chroma */
                 );
             } else
                 convolveHbd[subpel_x != 0][subpel_y != 0][is_compound](src_ptr,
@@ -5885,7 +5876,7 @@ EbErrorType av1_inter_prediction_hbd(
                                                                        &conv_params,
                                                                        bit_depth);
 
-            //List1-Cr
+            /*!< List1-Cr */
             src_ptr = (uint16_t *)ref_pic_list1->buffer_cr +
                       (ref_pic_list1->origin_x + ((pu_origin_x >> 3) << 3)) / 2 +
                       (ref_pic_list1->origin_y + ((pu_origin_y >> 3) << 3)) / 2 *
@@ -5943,7 +5934,7 @@ EbErrorType av1_inter_prediction_hbd(
                     &conv_params,
                     interinter_comp,
                     bit_depth,
-                    1 //plane=Cr  seg_mask is computed based on luma and used for chroma
+                    1 //plane=Cr /*!< seg_mask is computed based on luma and used for chroma */
                 );
             } else
                 convolveHbd[subpel_x != 0][subpel_y != 0][is_compound](src_ptr,
@@ -5963,7 +5954,7 @@ EbErrorType av1_inter_prediction_hbd(
     if (is_interintra_used) {
         int32_t start_plane = 0;
         int32_t end_plane   = perform_chroma && blk_geom->has_uv ? MAX_MB_PLANE : 1;
-        // temp buffer for intra pred
+        /*!< temp buffer for intra pred */
         DECLARE_ALIGNED(16, uint8_t, intra_pred[MAX_SB_SQUARE]);
         DECLARE_ALIGNED(16, uint8_t, intra_pred_cb[MAX_SB_SQUARE]);
         DECLARE_ALIGNED(16, uint8_t, intra_pred_cr[MAX_SB_SQUARE]);
@@ -6060,8 +6051,8 @@ EbErrorType av1_inter_prediction_hbd(
                              ->top_left_array)[MAX_PICTURE_HEIGHT_SIZE / 2 + blk_originx_uv -
                                                blk_originy_uv / 2];
             }
-            TxSize tx_size        = blk_geom->txsize[0][0]; // Nader - Intra 128x128 not supported
-            TxSize tx_size_Chroma = blk_geom->txsize_uv[0][0]; //Nader - Intra 128x128 not supported
+            TxSize tx_size        = blk_geom->txsize[0][0]; /*!< Nader - Intra 128x128 not supported */
+            TxSize tx_size_Chroma = blk_geom->txsize_uv[0][0]; /*!<Nader - Intra 128x128 not supported */
 
             eb_av1_predict_intra_block_16bit(
                 tile,
@@ -6088,11 +6079,11 @@ EbErrorType av1_inter_prediction_hbd(
                 dst_origin_y,
                 pu_origin_x,
                 pu_origin_y,
-                0, //uint32_t cuOrgX used only for prediction Ptr
-                0 //uint32_t cuOrgY used only for prediction Ptr
+                0, /*!< uint32_t cuOrgX used only for prediction Ptr */
+                0 /*!< uint32_t cuOrgY used only for prediction Ptr */
             );
 
-            //combine_interintra_highbd
+            /*!< combine_interintra_highbd */
             combine_interintra_highbd(
                 interintra_mode,
                 use_wedge_interintra,
@@ -6102,11 +6093,11 @@ EbErrorType av1_inter_prediction_hbd(
                 plane_bsize,
                 (uint8_t *)dst_ptr,
                 dst_stride,
-                (uint8_t *)dst_ptr, // Inter pred buff
-                dst_stride, // Inter pred stride
+                (uint8_t *)dst_ptr, /*!< Inter pred buff */
+                dst_stride, /*!< Inter pred stride */
                 (plane == 0) ? intra_pred
-                             : (plane == 1) ? intra_pred_cb : intra_pred_cr, // Intra pred buff
-                intra_stride, // Intra pred stride
+                             : (plane == 1) ? intra_pred_cb : intra_pred_cr, /*!< Intra pred buff */
+                intra_stride, /*!< Intra pred stride */
                 bit_depth);
         }
     }
@@ -6193,7 +6184,7 @@ EbErrorType av1_inter_prediction_hbd(
                                         dst_stride1,
                                         (uint8_t **)dst_buf2,
                                         dst_stride2,
-                                        1); // is16bit
+                                        1); /*!< is16bit */
     }
 
     return return_error;
@@ -6254,7 +6245,7 @@ static void chroma_plane_warped_motion_prediction_sub8x8(
                                                                &conv_params,
                                                                bit_depth);
 
-    //List1-Cb
+    /*!< List1-Cb */
     if (is_compound) {
         MV mv_l1;
         mv_l1.col = mv_unit->mv[REF_LIST_1].x;
@@ -6348,7 +6339,7 @@ static void plane_warped_motion_prediction(
                           &conv_params);
     } else {
         DECLARE_ALIGNED(
-            32, uint16_t, tmp_dstY[128 * 128]); //move this to context if stack does not hold.
+            32, uint16_t, tmp_dstY[128 * 128]); /*!<move this to context if stack does not hold. */
 
         ConvolveParams conv_params =
             get_conv_params_no_round(0, 0, 0, tmp_dstY, 128, is_compound, bit_depth);
@@ -6440,7 +6431,7 @@ EbErrorType warped_motion_prediction(PictureControlSet *picture_control_set_ptr,
     int32_t  dst_stride;
     uint16_t buf_width;
     uint16_t buf_height;
-    uint8_t  ss_x = 1; // subsamplings
+    uint8_t  ss_x = 1; /*!< subsamplings */
     uint8_t  ss_y = 1;
 
     MvReferenceFrame rf[2];
@@ -6450,7 +6441,7 @@ EbErrorType warped_motion_prediction(PictureControlSet *picture_control_set_ptr,
     uint8_t *dst_ptr;
     assert(ref_pic_list0 != NULL);
 
-    // Y
+    /*!< Y */
     src_ptr_l0 = ref_pic_list0->buffer_y +
                  (is16bit ? 2 : 1) *
                      (ref_pic_list0->origin_x + ref_pic_list0->origin_y * ref_pic_list0->stride_y);
@@ -6469,7 +6460,7 @@ EbErrorType warped_motion_prediction(PictureControlSet *picture_control_set_ptr,
                              (prediction_ptr->origin_y + dst_origin_y) * prediction_ptr->stride_y);
     dst_stride = prediction_ptr->stride_y;
 
-    // Warp plane
+    /*!< Warp plane */
     plane_warped_motion_prediction(picture_control_set_ptr,
                                    compound_idx,
                                    interinter_comp,
@@ -6491,14 +6482,14 @@ EbErrorType warped_motion_prediction(PictureControlSet *picture_control_set_ptr,
                                    src_ptr_l0,
                                    src_ptr_l1,
                                    dst_ptr,
-                                   0, // plane
+                                   0, /*!< plane */
                                    rf);
 
     if (!blk_geom->has_uv) return return_error;
 
     if (perform_chroma) {
         if (blk_geom->bwidth >= 16 && blk_geom->bheight >= 16) {
-            // Cb
+            /*!< Cb */
             src_ptr_l0 =
                 ref_pic_list0->buffer_cb +
                 (is16bit ? 2 : 1) * (ref_pic_list0->origin_x / 2 +
@@ -6538,10 +6529,10 @@ EbErrorType warped_motion_prediction(PictureControlSet *picture_control_set_ptr,
                                            src_ptr_l0,
                                            src_ptr_l1,
                                            dst_ptr,
-                                           1, // plane
+                                           1, /*!< plane */
                                            rf);
 
-            // Cr
+            /*!< Cr */
             src_ptr_l0 =
                 ref_pic_list0->buffer_cr +
                 (is16bit ? 2 : 1) * (ref_pic_list0->origin_x / 2 +
@@ -6581,12 +6572,12 @@ EbErrorType warped_motion_prediction(PictureControlSet *picture_control_set_ptr,
                                            src_ptr_l0,
                                            src_ptr_l1,
                                            dst_ptr,
-                                           2, // plane
+                                           2, /*!< plane */
                                            rf);
 
-        } else { // Translation prediction when chroma block is smaller than 8x8
+        } else { /*!< Translation prediction when chroma block is smaller than 8x8 */
 
-            // Cb
+            /*!< Cb */
             src_ptr_l0 =
                 ref_pic_list0->buffer_cb +
                 (is16bit ? 2 : 1) * ((ref_pic_list0->origin_x + ((pu_origin_x >> 3) << 3)) / 2 +
@@ -6623,7 +6614,7 @@ EbErrorType warped_motion_prediction(PictureControlSet *picture_control_set_ptr,
                                                          rf,
                                                          mv_unit);
 
-            // Cr
+            /*!< Cr */
             src_ptr_l0 =
                 ref_pic_list0->buffer_cr +
                 (is16bit ? 2 : 1) * ((ref_pic_list0->origin_x + ((pu_origin_x >> 3) << 3)) / 2 +
@@ -6690,7 +6681,7 @@ int32_t eb_av1_get_switchable_rate(ModeDecisionCandidateBuffer *candidate_buffer
                 dir);
 
             const InterpFilter filter = av1_extract_interp_filter(
-                /*mbmi*/ candidate_buffer_ptr->candidate_ptr->interp_filters, dir);
+                /*!< mbmi */ candidate_buffer_ptr->candidate_ptr->interp_filters, dir);
             assert(ctx < SWITCHABLE_FILTER_CONTEXTS);
             assert(filter < SWITCHABLE_FILTERS);
             inter_filter_cost +=
@@ -6707,18 +6698,18 @@ int32_t eb_av1_get_switchable_rate(ModeDecisionCandidateBuffer *candidate_buffer
     (ROUND_POWER_OF_TWO(((uint64_t)(R)) * (RM), AV1_PROB_COST_SHIFT) + ((D) * (1 << RDDIV_BITS)))
 
 static void model_rd_norm(int32_t xsq_q10, int32_t *r_q10, int32_t *d_q10) {
-    // NOTE: The tables below must be of the same size.
-
-    // The functions described below are sampled at the four most significant
-    // bits of x^2 + 8 / 256.
-
-    // Normalized rate:
-    // This table models the rate for a Laplacian source with given variance
-    // when quantized with a uniform quantizer with given stepsize. The
-    // closed form expression is:
-    // Rn(x) = H(sqrt(r)) + sqrt(r)*[1 + H(r)/(1 - r)],
-    // where r = exp(-sqrt(2) * x) and x = qpstep / sqrt(variance),
-    // and H(x) is the binary entropy function.
+    /*!< NOTE: The tables below must be of the same size.
+     *
+     *   The functions described below are sampled at the four most significant
+     *   bits of x^2 + 8 / 256.
+     *
+     *   Normalized rate:
+     *   This table models the rate for a Laplacian source with given variance
+     *   when quantized with a uniform quantizer with given stepsize. The
+     *   closed form expression is:
+     *   Rn(x) = H(sqrt(r)) + sqrt(r)*[1 + H(r)/(1 - r)],
+     *   where r = exp(-sqrt(2) * x) and x = qpstep / sqrt(variance),
+     *   and H(x) is the binary entropy function. */
     static const int32_t rate_tab_q10[] = {
         65536, 6086, 5574, 5275, 5063, 4899, 4764, 4651, 4553, 4389, 4255, 4142, 4044, 3958, 3881,
         3811,  3748, 3635, 3538, 3453, 3376, 3307, 3244, 3186, 3133, 3037, 2952, 2877, 2809, 2747,
@@ -6728,13 +6719,13 @@ static void model_rd_norm(int32_t xsq_q10, int32_t *r_q10, int32_t *d_q10) {
         269,   239,  213,  190,  171,  154,  126,  104,  87,   73,   61,   52,   44,   38,   28,
         21,    16,   12,   10,   8,    6,    5,    3,    2,    1,    1,    1,    0,    0,
     };
-    // Normalized distortion:
-    // This table models the normalized distortion for a Laplacian source
-    // with given variance when quantized with a uniform quantizer
-    // with given stepsize. The closed form expression is:
-    // Dn(x) = 1 - 1/sqrt(2) * x / sinh(x/sqrt(2))
-    // where x = qpstep / sqrt(variance).
-    // Note the actual distortion is Dn * variance.
+    /*!< Normalized distortion:
+     *   This table models the normalized distortion for a Laplacian source
+     *   with given variance when quantized with a uniform quantizer
+     *   with given stepsize. The closed form expression is:
+     *   Dn(x) = 1 - 1/sqrt(2) * x / sinh(x/sqrt(2))
+     *   where x = qpstep / sqrt(variance).
+     *   Note the actual distortion is Dn * variance. */
     static const int32_t dist_tab_q10[] = {
         0,    0,    1,    1,    1,    2,    2,    2,    3,    3,    4,    5,    5,    6,    7,
         7,    8,    9,    11,   12,   13,   15,   16,   17,   18,   21,   24,   26,   29,   31,
@@ -6768,12 +6759,12 @@ static void model_rd_norm(int32_t xsq_q10, int32_t *r_q10, int32_t *d_q10) {
 
 void eb_av1_model_rd_from_var_lapndz(int64_t var, uint32_t n_log2, uint32_t qstep, int32_t *rate,
                                      int64_t *dist) {
-    // This function models the rate and distortion for a Laplacian
-    // source with given variance when quantized with a uniform quantizer
-    // with given stepsize. The closed form expressions are in:
-    // Hang and Chen, "Source Model for transform video coder and its
-    // application - Part I: Fundamental Theory", IEEE Trans. Circ.
-    // Sys. for Video Tech., April 1997.
+    /*!< This function models the rate and distortion for a Laplacian
+     *   source with given variance when quantized with a uniform quantizer
+     *   with given stepsize. The closed form expressions are in:
+     *   Hang and Chen, "Source Model for transform video coder and its
+     *   application - Part I: Fundamental Theory", IEEE Trans. Circ.
+     *   Sys. for Video Tech., April 1997. */
     if (var == 0) {
         *rate = 0;
         *dist = 0;
@@ -6790,10 +6781,10 @@ void eb_av1_model_rd_from_var_lapndz(int64_t var, uint32_t n_log2, uint32_t qste
 
 void model_rd_from_sse(BlockSize bsize, int16_t quantizer, uint8_t bit_depth, uint64_t sse,
                        uint32_t *rate, uint64_t *dist) {
-    /* OMK (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) ? xd->bd - 5 :3;*/
+    /* OMK (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) ? xd->bd - 5 :3; */
     int32_t dequant_shift = bit_depth - 5;
 
-    // Fast approximate the modelling function.
+    /*!< Fast approximate the modelling function. */
     if (0 /*cpi->sf.simple_model_rd_from_var*/) {
         int64_t square_error = (uint64_t)sse;
         quantizer            = quantizer >> dequant_shift;
@@ -6819,9 +6810,9 @@ extern void model_rd_for_sb(PictureControlSet *  picture_control_set_ptr,
                             ModeDecisionContext *md_context_ptr, int32_t plane_from,
                             int32_t plane_to, int32_t *out_rate_sum, int64_t *out_dist_sum,
                             uint8_t bit_depth) {
-    // Note our transform coeffs are 8 times an orthogonal transform.
-    // Hence quantizer step is also 8 times. To get effective quantizer
-    // we need to divide by 8 before sending to modeling function.
+    /*!< Note our transform coeffs are 8 times an orthogonal transform.
+     *   Hence quantizer step is also 8 times. To get effective quantizer
+     *   we need to divide by 8 before sending to modeling function. */
     int32_t plane;
 
     uint64_t rate_sum  = 0;
@@ -6916,7 +6907,7 @@ int32_t is_nontrans_global_motion(BlockSize                    sb_type,
                                   PictureControlSet *          picture_control_set_ptr) {
     int32_t ref;
 
-    // First check if all modes are GLOBALMV
+    /*!< First check if all modes are GLOBALMV */
     if (candidate_buffer_ptr->candidate_ptr->pred_mode != GLOBALMV &&
         candidate_buffer_ptr->candidate_ptr->pred_mode != GLOBAL_GLOBALMV)
         return 0;
@@ -6924,7 +6915,7 @@ int32_t is_nontrans_global_motion(BlockSize                    sb_type,
     if (MIN(mi_size_wide[sb_type], mi_size_high[sb_type]) < 2) return 0;
     MvReferenceFrame rf[2];
     av1_set_ref_frame(rf, candidate_buffer_ptr->candidate_ptr->ref_frame_type);
-    // Now check if all global motion is non translational
+    /*!< Now check if all global motion is non translational */
     for (ref = 0;
          ref < 1 + candidate_buffer_ptr->candidate_ptr->is_compound /*has_second_ref(mbmi)*/;
          ++ref) {
@@ -6987,7 +6978,7 @@ void interpolation_filter_search(PictureControlSet *          picture_control_se
     if (cm->interp_filter != SWITCHABLE) assign_filter = cm->interp_filter;
 
     //set_default_interp_filters(mbmi, assign_filter);
-    /*mbmi*/ candidate_buffer_ptr->candidate_ptr->interp_filters = //EIGHTTAP_REGULAR ;
+    /*!< mbmi */ candidate_buffer_ptr->candidate_ptr->interp_filters = //EIGHTTAP_REGULAR ;
         av1_broadcast_interp_filter(av1_unswitchable_filter(assign_filter));
 
     switchable_rate = eb_av1_get_switchable_rate(candidate_buffer_ptr, cm, md_context_ptr);
@@ -7009,7 +7000,7 @@ void interpolation_filter_search(PictureControlSet *          picture_control_se
         md_context_ptr->luma_recon_neighbor_array,
         md_context_ptr->cb_recon_neighbor_array,
         md_context_ptr->cr_recon_neighbor_array,
-        0, //No inter-intra for IFSearch
+        0, /*!<No inter-intra for IFSearch */
         candidate_buffer_ptr->candidate_ptr->interintra_mode,
         candidate_buffer_ptr->candidate_ptr->use_wedge_interintra,
         candidate_buffer_ptr->candidate_ptr->interintra_wedge_index,
@@ -7036,7 +7027,7 @@ void interpolation_filter_search(PictureControlSet *          picture_control_se
     rd = RDCOST(full_lambda_8b, switchable_rate + tmp_rate, tmp_dist);
 
     if (assign_filter == SWITCHABLE) {
-        // do interp_filter search
+        /*!< do interp_filter search */
         if (av1_is_interp_needed(
                 candidate_buffer_ptr,
                 picture_control_set_ptr,
@@ -7049,10 +7040,10 @@ void interpolation_filter_search(PictureControlSet *          picture_control_se
                 int32_t tmp_rs;
                 int64_t tmp_rd;
 
-                // default to (R,R): EIGHTTAP_REGULARxEIGHTTAP_REGULAR
+                /*!< default to (R,R): EIGHTTAP_REGULARxEIGHTTAP_REGULAR */
                 int32_t best_dual_mode = 0;
-                // Find best of {R}x{R,Sm,Sh}
-                // EIGHTTAP_REGULAR mode is calculated beforehand
+                /*!< Find best of {R}x{R,Sm,Sh} */
+                /*!< EIGHTTAP_REGULAR mode is calculated beforehand */
                 for (i = 1; i < SWITCHABLE_FILTERS; ++i) {
                     /*mbmi*/ candidate_buffer_ptr->candidate_ptr->interp_filters =
                         (InterpFilter)av1_make_interp_filters((InterpFilter)filter_sets[i][0],
@@ -7076,7 +7067,7 @@ void interpolation_filter_search(PictureControlSet *          picture_control_se
                         md_context_ptr->luma_recon_neighbor_array,
                         md_context_ptr->cb_recon_neighbor_array,
                         md_context_ptr->cr_recon_neighbor_array,
-                        0, //No inter-intra for IFSearch
+                        0, /*!<No inter-intra for IFSearch */
                         candidate_buffer_ptr->candidate_ptr->interintra_mode,
                         candidate_buffer_ptr->candidate_ptr->use_wedge_interintra,
                         candidate_buffer_ptr->candidate_ptr->interintra_wedge_index,
@@ -7110,10 +7101,10 @@ void interpolation_filter_search(PictureControlSet *          picture_control_se
                     }
                 }
 
-                // From best of horizontal EIGHTTAP_REGULAR modes, check vertical modes
+                /*!< From best of horizontal EIGHTTAP_REGULAR modes, check vertical modes */
                 for (i = best_dual_mode + SWITCHABLE_FILTERS; i < filter_set_size;
                      i += SWITCHABLE_FILTERS) {
-                    /*mbmi*/ candidate_buffer_ptr->candidate_ptr->interp_filters =
+                    /*!< mbmi */ candidate_buffer_ptr->candidate_ptr->interp_filters =
                         av1_make_interp_filters((InterpFilter)filter_sets[i][0],
                                                 (InterpFilter)filter_sets[i][1]);
 
@@ -7135,7 +7126,7 @@ void interpolation_filter_search(PictureControlSet *          picture_control_se
                         md_context_ptr->luma_recon_neighbor_array,
                         md_context_ptr->cb_recon_neighbor_array,
                         md_context_ptr->cr_recon_neighbor_array,
-                        0, //No inter-intra for IFSearch
+                        0, /*!<No inter-intra for IFSearch */
                         candidate_buffer_ptr->candidate_ptr->interintra_mode,
                         candidate_buffer_ptr->candidate_ptr->use_wedge_interintra,
                         candidate_buffer_ptr->candidate_ptr->interintra_wedge_index,
@@ -7163,12 +7154,12 @@ void interpolation_filter_search(PictureControlSet *          picture_control_se
                     if (tmp_rd < rd) {
                         rd              = tmp_rd;
                         switchable_rate = tmp_rs;
-                        best_filters = /*mbmi*/ candidate_buffer_ptr->candidate_ptr->interp_filters;
+                        best_filters = /*!< mbmi */ candidate_buffer_ptr->candidate_ptr->interp_filters;
                         best_in_temp = !best_in_temp;
                     }
                 }
             } else {
-                // EIGHTTAP_REGULAR mode is calculated beforehand
+                /*!< EIGHTTAP_REGULAR mode is calculated beforehand */
                 for (i = 1; i < filter_set_size; ++i) {
                     int32_t tmp_rs;
                     int64_t tmp_rd;
@@ -7177,7 +7168,7 @@ void interpolation_filter_search(PictureControlSet *          picture_control_se
                             ->parent_pcs_ptr->scs_ptr->seq_header.enable_dual_filter == 0)
                         if (filter_sets[i][0] != filter_sets[i][1]) continue;
 
-                    /*mbmi*/ candidate_buffer_ptr->candidate_ptr->interp_filters =
+                    /*!< mbmi */ candidate_buffer_ptr->candidate_ptr->interp_filters =
                         av1_make_interp_filters((InterpFilter)filter_sets[i][0],
                                                 (InterpFilter)filter_sets[i][1]);
 
@@ -7199,7 +7190,7 @@ void interpolation_filter_search(PictureControlSet *          picture_control_se
                         md_context_ptr->luma_recon_neighbor_array,
                         md_context_ptr->cb_recon_neighbor_array,
                         md_context_ptr->cr_recon_neighbor_array,
-                        0, //No inter-intra for IFSearch
+                        0, /*!< No inter-intra for IFSearch */
                         candidate_buffer_ptr->candidate_ptr->interintra_mode,
                         candidate_buffer_ptr->candidate_ptr->use_wedge_interintra,
                         candidate_buffer_ptr->candidate_ptr->interintra_wedge_index,
@@ -7228,13 +7219,13 @@ void interpolation_filter_search(PictureControlSet *          picture_control_se
                     if (tmp_rd < rd) {
                         rd              = tmp_rd;
                         switchable_rate = tmp_rs;
-                        best_filters = /*mbmi*/ candidate_buffer_ptr->candidate_ptr->interp_filters;
+                        best_filters = /*!< mbmi */ candidate_buffer_ptr->candidate_ptr->interp_filters;
                         best_in_temp = !best_in_temp;
                     }
                 }
             }
 
-            /*mbmi*/ candidate_buffer_ptr->candidate_ptr->interp_filters = best_filters;
+            /*!< mbmi */ candidate_buffer_ptr->candidate_ptr->interp_filters = best_filters;
         } else {
             candidate_buffer_ptr->candidate_ptr->interp_filters = 0;
         }
@@ -7279,11 +7270,11 @@ EbErrorType inter_pu_prediction_av1(uint8_t hbd_mode_decision, ModeDecisionConte
             md_context_ptr->blk_ptr,
             candidate_buffer_ptr->candidate_ptr->ref_frame_type,
             &mv_unit,
-            1, //use_intrabc
+            1, /*!< use_intrabc */
             SIMPLE_TRANSLATION,
             0,
             0,
-            1, //1 for avg
+            1, /*!< 1 for avg */
             &candidate_buffer_ptr->candidate_ptr->interinter_comp,
             NULL,
             NULL,
@@ -7460,7 +7451,7 @@ EbErrorType inter_pu_prediction_av1(uint8_t hbd_mode_decision, ModeDecisionConte
         candidate_buffer_ptr->candidate_ptr->ref_frame_type,
         &mv_unit,
         candidate_buffer_ptr->candidate_ptr->use_intrabc,
-        candidate_buffer_ptr->candidate_ptr->motion_mode, //MD
+        candidate_buffer_ptr->candidate_ptr->motion_mode, /*!< MD */
         1,
         md_context_ptr,
         candidate_buffer_ptr->candidate_ptr->compound_idx,

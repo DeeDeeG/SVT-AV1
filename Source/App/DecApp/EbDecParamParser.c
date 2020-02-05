@@ -1,13 +1,11 @@
-/*
-* Copyright(c) 2019 Netflix, Inc.
-* SPDX - License - Identifier: BSD - 2 - Clause - Patent
-*/
+/*!< Copyright(c) 2019 Netflix, Inc.
+* SPDX - License - Identifier: BSD - 2 - Clause - Patent */
 
-// Command line argument parsing
+/*!< Command line argument parsing */
 
-/***************************************
- * Includes
- ***************************************/
+/**************/
+/*!< Includes */
+/**************/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -52,21 +50,21 @@ static void set_num_pframes(const char *value, EbSvtAv1DecConfiguration *cfg) {
     }
 };
 
-/**********************************
-  * Config Entry Array
-  **********************************/
+/************************/
+/*!< Config Entry Array */
+/************************/
 ConfigEntry config_entry[] = {
-    // Decoder settings
+    /*!< Decoder settings */
     {SKIP_FRAME_TOKEN, "SkipFrame", 1, set_skip_frame},
     {LIMIT_FRAME_TOKEN, "LimitFrame", 1, set_limit_frame},
-    // Picture properties
+    /*!< Picture properties */
     {BIT_DEPTH_TOKEN, "InputBitDepth", 1, set_bit_depth},
     {PIC_WIDTH_TOKEN, "PictureWidth", 1, set_pic_width},
     {PIC_HEIGHT_TOKEN, "PictureHeight", 1, set_pic_height},
     {COLOUR_SPACE_TOKEN, "InputColourSpace", 1, set_colour_space},
     {THREADS_TOKEN, "ThreadCount", 1, set_num_thread},
     {FRAME_PLL_TOKEN, "PllFrameCount", 1, set_num_pframes},
-    // Termination
+    /*!< Termination */
     {NULL, NULL, 0, NULL}};
 
 static void show_help() {
@@ -113,7 +111,7 @@ EbErrorType read_command_line(int32_t argc, char *const argv[], EbSvtAv1DecConfi
     }
 
     token_index = 0;
-    // Parse command line for tokens
+    /*!< Parse command line for tokens */
     while (token_index < cmd_token_cnt) {
         if (cmd_copy[token_index] != NULL) {
             if (EB_STRCMP(cmd_copy[token_index], INPUT_FILE_TOKEN) == 0) {

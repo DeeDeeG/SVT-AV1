@@ -1,7 +1,5 @@
-/*
-* Copyright(c) 2019 Intel Corporation
-* SPDX - License - Identifier: BSD - 2 - Clause - Patent
-*/
+/*!< Copyright(c) 2019 Intel Corporation
+ * SPDX - License - Identifier: BSD - 2 - Clause - Patent */
 
 #ifndef EbIntraPrediction_h
 #define EbIntraPrediction_h
@@ -38,7 +36,7 @@ typedef struct IntraReferenceSamples {
     uint8_t *cb_intra_reference_array_reverse;
     uint8_t *cr_intra_reference_array_reverse;
 
-    // Scratch buffers used in the interpolaiton process
+    /*!< Scratch buffers used in the interpolaiton process */
     uint8_t reference_above_line_y[(MAX_PU_SIZE << 2) + 1];
     uint8_t reference_left_line_y[(MAX_PU_SIZE << 2) + 1];
     EbBool  above_ready_flag_y;
@@ -66,7 +64,7 @@ typedef struct IntraReference16bitSamples {
     uint16_t *cb_intra_reference_array_reverse;
     uint16_t *cr_intra_reference_array_reverse;
 
-    // Scratch buffers used in the interpolaiton process
+    /*!< Scratch buffers used in the interpolaiton process */
     uint16_t reference_above_line_y[(MAX_PU_SIZE << 2) + 1];
     uint16_t reference_left_line_y[(MAX_PU_SIZE << 2) + 1];
     EbBool   above_ready_flag_y;
@@ -94,12 +92,12 @@ typedef struct IntraReference16bitSamples {
 #define SMOOTHING_THRESHOLD 8
 #define SMOOTHING_THRESHOLD_10BIT 32
 
-/////####.... For recursive intra prediction.....#####///
+/*!< ####.... For recursive intra prediction.....##### */
 
 #define FILTER_INTRA_SCALE_BITS 4
 extern const int8_t eb_av1_filter_intra_taps[FILTER_INTRA_MODES][8][8];
 
-/////####.... To make functions common between EbIntraPrediction.c &
+/*!< ####.... To make functions common between EbIntraPrediction.c & */
 void *eb_aom_memset16(void *dest, int32_t val, size_t length);
 
 int32_t use_intra_edge_upsample(int32_t bs0, int32_t bs1, int32_t delta, int32_t type);
@@ -120,7 +118,7 @@ int is_smooth(const BlockModeInfo *mbmi, int plane);
 
 extern const uint8_t extend_modes[INTRA_MODES];
 
-/* TODO: Need to harmonize with fun from EbAdaptiveMotionVectorPrediction.c */
+/*!< TODO: Need to harmonize with fun from EbAdaptiveMotionVectorPrediction.c */
 int32_t intra_has_top_right(BlockSize sb_size, BlockSize bsize, int32_t mi_row, int32_t mi_col,
                             int32_t top_available, int32_t right_available, PartitionType partition,
                             TxSize txsz, int32_t row_off, int32_t col_off, int32_t ss_x,
@@ -152,7 +150,7 @@ void filter_intra_edge_corner_high(uint16_t *p_above, uint16_t *p_left);
 void highbd_filter_intra_predictor(uint16_t *dst, ptrdiff_t stride, TxSize tx_size,
                                    const uint16_t *above, const uint16_t *left, int mode, int bd);
 
-/////////..............................................//////////////////////////
+/****************************************************************************/
 
 extern EbErrorType eb_av1_intra_prediction_cl(uint8_t                      hbd_mode_decision,
                                               struct ModeDecisionContext * context_ptr,
@@ -167,18 +165,18 @@ extern EbErrorType update_neighbor_samples_array_open_loop(uint8_t *above_ref, u
 extern EbErrorType intra_prediction_open_loop(
     int32_t p_angle, uint8_t ois_intra_mode, uint32_t srcOriginX, uint32_t srcOriginY,
     TxSize tx_size, uint8_t *above_row, uint8_t *left_col,
-    MotionEstimationContext_t *context_ptr); // input parameter, ME context
+    MotionEstimationContext_t *context_ptr); /*!< input parameter, ME context */
 
 typedef void (*EB_INTRA_NOANG_TYPE)(const uint32_t size, uint8_t *ref_samples,
                                     uint8_t *      prediction_ptr,
                                     const uint32_t prediction_buffer_stride, const EbBool skip);
 typedef void (*EB_INTRA_DC_AV1_TYPE)(
-    const uint32_t size, //input parameter, denotes the size of the current PU
-    uint8_t *      ref_samples, //input parameter, pointer to the reference samples
-    uint8_t *      dst, //output parameter, pointer to the prediction
+    const uint32_t size, /*!< input parameter, denotes the size of the current PU */
+    uint8_t *      ref_samples, /*!< input parameter, pointer to the reference samples */
+    uint8_t *      dst, /*!< output parameter, pointer to the prediction */
     const uint32_t
-                 prediction_buffer_stride, //input parameter, denotes the stride for the prediction ptr
-    const EbBool skip); //skip half rows
+                 prediction_buffer_stride, /*!< input parameter, denotes the stride for the prediction ptr */
+    const EbBool skip); /*!< skip half rows */
 typedef void (*EB_INTRA_NOANG_16bit_TYPE)(const uint32_t size, uint16_t *ref_samples,
                                           uint16_t *     prediction_ptr,
                                           const uint32_t prediction_buffer_stride,
@@ -192,28 +190,27 @@ typedef void (*EB_INTRA_ANG_TYPE)(uint32_t size, uint8_t *ref_samp_main, uint8_t
                                   uint32_t prediction_buffer_stride, const EbBool skip,
                                   int32_t intra_pred_angle);
 typedef void (*EB_INTRA_ANG_16BIT_TYPE)(
-    uint32_t  size, //input parameter, denotes the size of the current PU
-    uint16_t *ref_samp_main, //input parameter, pointer to the reference samples
-    uint16_t *prediction_ptr, //output parameter, pointer to the prediction
-    uint32_t  prediction_buffer_stride, //input parameter, denotes the stride for the prediction ptr
+    uint32_t  size, /*!< input parameter, denotes the size of the current PU */
+    uint16_t *ref_samp_main, /*!< input parameter, pointer to the reference samples */
+    uint16_t *prediction_ptr, /*!< output parameter, pointer to the prediction */
+    uint32_t  prediction_buffer_stride, /*!< input parameter, denotes the stride for the prediction ptr */
     const EbBool skip, int32_t intra_pred_angle);
 
 
 typedef struct CflCtx {
-    // Q3 reconstructed luma pixels (only Q2 is required, but Q3 is used to avoid
-    // shifts)
+    /*!< Q3 reconstructed luma pixels (only Q2 is required, but Q3 is used to avoid shifts) */
     EB_ALIGN(64) int16_t recon_buf_q3[CFL_BUF_SQUARE];
 
-    // Height and width currently used in the CfL prediction buffer.
+    /*!< Height and width currently used in the CfL prediction buffer. */
     int32_t buf_height, buf_width;
 
     int32_t are_parameters_computed;
 
-    // Chroma subsampling
+    /*!< Chroma subsampling */
     int32_t subsampling_x, subsampling_y;
 } CflCtx;
 
-extern void cfl_luma_subsampling_420_lbd_c(const uint8_t *input, // AMIR-> Changed to 8 bit
+extern void cfl_luma_subsampling_420_lbd_c(const uint8_t *input, /*!< AMIR-> Changed to 8 bit */
                                            int32_t input_stride, int16_t *output_q3, int32_t width,
                                            int32_t height);
 extern void cfl_luma_subsampling_420_hbd_c(const uint16_t *input, int32_t input_stride,
@@ -229,19 +226,19 @@ static INLINE int32_t get_scaled_luma_q0(int32_t alpha_q3, int16_t pred_buf_q3) 
     return ROUND_POWER_OF_TWO_SIGNED(scaled_luma_q6, 6);
 }
 
-//CFL_PREDICT_FN(c, lbd)
+// CFL_PREDICT_FN(c, lbd)
 
 void eb_cfl_predict_lbd_c(const int16_t *pred_buf_q3,
-                          uint8_t *      pred, // AMIR ADDED
+                          uint8_t *      pred, /*!< AMIR ADDED */
                           int32_t        pred_stride,
-                          uint8_t *      dst, // AMIR changed to 8 bit
+                          uint8_t *      dst, /*!< AMIR changed to 8 bit */
                           int32_t dst_stride, int32_t alpha_q3, int32_t bit_depth, int32_t width,
                           int32_t height);
 
 void eb_cfl_predict_hbd_c(const int16_t *pred_buf_q3,
-                          uint16_t *     pred, // AMIR ADDED
+                          uint16_t *     pred, /*!< AMIR ADDED */
                           int32_t        pred_stride,
-                          uint16_t *     dst, // AMIR changed to 8 bit
+                          uint16_t *     dst, /*!< AMIR changed to 8 bit */
                           int32_t dst_stride, int32_t alpha_q3, int32_t bit_depth, int32_t width,
                           int32_t height);
 
@@ -255,7 +252,7 @@ static INLINE int32_t cfl_idx_to_alpha(int32_t alpha_idx, int32_t joint_sign,
     return (alpha_sign == CFL_SIGN_POS) ? abs_alpha_q3 + 1 : -abs_alpha_q3 - 1;
 }
 
-/* Function pointers return by CfL functions */
+/*!< Function pointers return by CfL functions */
 
 typedef void (*cfl_subsample_lbd_fn)(const uint8_t *input, int input_stride, int16_t *output_q3);
 
@@ -284,14 +281,13 @@ cfl_subsample_lbd_fn cfl_get_luma_subsampling_444_lbd_c(TxSize tx_size);
 CflSubtractAverageFn eb_get_subtract_average_fn_c(TxSize tx_size);
 #define get_subtract_average_fn eb_get_subtract_average_fn_c
 
-// Allows the CFL_SUBSAMPLE function to switch types depending on the bitdepth.
+/*!< Allows the CFL_SUBSAMPLE function to switch types depending on the bitdepth. */
 #define CFL_lbd_TYPE uint8_t *cfl_type
 #define CFL_hbd_TYPE uint16_t *cfl_type
 
-// Declare a size-specific wrapper for the size-generic function. The compiler
-// will inline the size generic function in here, the advantage is that the size
-// will be constant allowing for loop unrolling and other constant propagated
-// goodness.
+/*!< Declare a size-specific wrapper for the size-generic function. The compiler
+ *   will inline the size generic function in here, the advantage is that the size
+ *   will be constant allowing for loop unrolling and other constant propagated goodness. */
 #define CFL_SUBSAMPLE(arch, sub, bd, width, height)                    \
     void subsample_##bd##_##sub##_##width##x##height##_##arch(         \
         const CFL_##bd##_TYPE, int input_stride, int16_t *output_q3) { \
@@ -299,7 +295,7 @@ CflSubtractAverageFn eb_get_subtract_average_fn_c(TxSize tx_size);
             cfl_type, input_stride, output_q3, width, height);         \
     }
 
-// Declare size-specific wrappers for all valid CfL sizes.
+/*!< Declare size-specific wrappers for all valid CfL sizes. */
 #define CFL_SUBSAMPLE_FUNCTIONS(arch, sub, bd)                                               \
     CFL_SUBSAMPLE(arch, sub, bd, 4, 4)                                                       \
     CFL_SUBSAMPLE(arch, sub, bd, 8, 8)                                                       \
@@ -320,33 +316,31 @@ CflSubtractAverageFn eb_get_subtract_average_fn_c(TxSize tx_size);
         return subfn_##sub[tx_size];                                                         \
     }
 
-// Declare an architecture-specific array of function pointers for size-specific
-// wrappers.
+/*!< Declare an architecture-specific array of function pointers for size-specific wrappers. */
 #define CFL_SUBSAMPLE_FUNCTION_ARRAY(arch, sub, bd)             \
     const cfl_subsample_##bd##_fn subfn_##sub[TX_SIZES_ALL] = { \
-        subsample_##bd##_##sub##_4x4_##arch, /* 4x4 */          \
-        subsample_##bd##_##sub##_8x8_##arch, /* 8x8 */          \
-        subsample_##bd##_##sub##_16x16_##arch, /* 16x16 */      \
-        subsample_##bd##_##sub##_32x32_##arch, /* 32x32 */      \
-        NULL, /* 64x64 (invalid CFL size) */                    \
-        subsample_##bd##_##sub##_4x8_##arch, /* 4x8 */          \
-        subsample_##bd##_##sub##_8x4_##arch, /* 8x4 */          \
-        subsample_##bd##_##sub##_8x16_##arch, /* 8x16 */        \
-        subsample_##bd##_##sub##_16x8_##arch, /* 16x8 */        \
-        subsample_##bd##_##sub##_16x32_##arch, /* 16x32 */      \
-        subsample_##bd##_##sub##_32x16_##arch, /* 32x16 */      \
-        NULL, /* 32x64 (invalid CFL size) */                    \
-        NULL, /* 64x32 (invalid CFL size) */                    \
-        subsample_##bd##_##sub##_4x16_##arch, /* 4x16  */       \
-        subsample_##bd##_##sub##_16x4_##arch, /* 16x4  */       \
-        subsample_##bd##_##sub##_8x32_##arch, /* 8x32  */       \
-        subsample_##bd##_##sub##_32x8_##arch, /* 32x8  */       \
-        NULL, /* 16x64 (invalid CFL size) */                    \
-        NULL, /* 64x16 (invalid CFL size) */                    \
+        subsample_##bd##_##sub##_4x4_##arch, /*!< 4x4 */          \
+        subsample_##bd##_##sub##_8x8_##arch, /*!< 8x8 */          \
+        subsample_##bd##_##sub##_16x16_##arch, /*!< 16x16 */      \
+        subsample_##bd##_##sub##_32x32_##arch, /*!< 32x32 */      \
+        NULL, /*!< 64x64 (invalid CFL size) */                    \
+        subsample_##bd##_##sub##_4x8_##arch, /*!< 4x8 */          \
+        subsample_##bd##_##sub##_8x4_##arch, /*!< 8x4 */          \
+        subsample_##bd##_##sub##_8x16_##arch, /*!< 8x16 */        \
+        subsample_##bd##_##sub##_16x8_##arch, /*!< 16x8 */        \
+        subsample_##bd##_##sub##_16x32_##arch, /*!< 16x32 */      \
+        subsample_##bd##_##sub##_32x16_##arch, /*!< 32x16 */      \
+        NULL, /*!< 32x64 (invalid CFL size) */                    \
+        NULL, /*!< 64x32 (invalid CFL size) */                    \
+        subsample_##bd##_##sub##_4x16_##arch, /*!< 4x16  */       \
+        subsample_##bd##_##sub##_16x4_##arch, /*!< 16x4  */       \
+        subsample_##bd##_##sub##_8x32_##arch, /*!< 8x32  */       \
+        subsample_##bd##_##sub##_32x8_##arch, /*!< 32x8  */       \
+        NULL, /*!< 16x64 (invalid CFL size) */                    \
+        NULL, /*!< 64x16 (invalid CFL size) */                    \
     };
 
-// The RTCD script does not support passing in an array, so we wrap it in this
-// function.
+/*!< The RTCD script does not support passing in an array, so we wrap it in this function. */
 #define CFL_GET_SUBSAMPLE_FUNCTION(arch)    \
     CFL_SUBSAMPLE_FUNCTIONS(arch, 420, lbd) \
     CFL_SUBSAMPLE_FUNCTIONS(arch, 422, lbd) \
@@ -355,56 +349,55 @@ CflSubtractAverageFn eb_get_subtract_average_fn_c(TxSize tx_size);
     CFL_SUBSAMPLE_FUNCTIONS(arch, 422, hbd) \
     CFL_SUBSAMPLE_FUNCTIONS(arch, 444, hbd)
 
-// Declare a size-specific wrapper for the size-generic function. The compiler
-// will inline the size generic function in here, the advantage is that the size
-// will be constant allowing for loop unrolling and other constant propagated
-// goodness.
+/*!< Declare a size-specific wrapper for the size-generic function. The compiler
+ *   will inline the size generic function in here, the advantage is that the size
+ *   will be constant allowing for loop unrolling and other constant propagated goodness. */
 #define CFL_SUB_AVG_X(arch, width, height, round_offset, num_pel_log2)              \
     void eb_subtract_average_##width##x##height##_##arch(int16_t *buf) {            \
         eb_subtract_average_##arch(buf, width, height, round_offset, num_pel_log2); \
     }
 
-// Declare size-specific wrappers for all valid CfL sizes.
-#define CFL_SUB_AVG_FN(arch)                                                  \
-    CFL_SUB_AVG_X(arch, 4, 4, 8, 4)                                           \
-    CFL_SUB_AVG_X(arch, 4, 8, 16, 5)                                          \
-    CFL_SUB_AVG_X(arch, 4, 16, 32, 6)                                         \
-    CFL_SUB_AVG_X(arch, 8, 4, 16, 5)                                          \
-    CFL_SUB_AVG_X(arch, 8, 8, 32, 6)                                          \
-    CFL_SUB_AVG_X(arch, 8, 16, 64, 7)                                         \
-    CFL_SUB_AVG_X(arch, 8, 32, 128, 8)                                        \
-    CFL_SUB_AVG_X(arch, 16, 4, 32, 6)                                         \
-    CFL_SUB_AVG_X(arch, 16, 8, 64, 7)                                         \
-    CFL_SUB_AVG_X(arch, 16, 16, 128, 8)                                       \
-    CFL_SUB_AVG_X(arch, 16, 32, 256, 9)                                       \
-    CFL_SUB_AVG_X(arch, 32, 8, 128, 8)                                        \
-    CFL_SUB_AVG_X(arch, 32, 16, 256, 9)                                       \
-    CFL_SUB_AVG_X(arch, 32, 32, 512, 10)                                      \
-    CflSubtractAverageFn eb_get_subtract_average_fn_##arch(TxSize tx_size) {  \
-        const CflSubtractAverageFn sub_avg[TX_SIZES_ALL] = {                  \
-            eb_subtract_average_4x4_##arch, /* 4x4 */                         \
-            eb_subtract_average_8x8_##arch, /* 8x8 */                         \
-            eb_subtract_average_16x16_##arch, /* 16x16 */                     \
-            eb_subtract_average_32x32_##arch, /* 32x32 */                     \
-            NULL, /* 64x64 (invalid CFL size) */                              \
-            eb_subtract_average_4x8_##arch, /* 4x8 */                         \
-            eb_subtract_average_8x4_##arch, /* 8x4 */                         \
-            eb_subtract_average_8x16_##arch, /* 8x16 */                       \
-            eb_subtract_average_16x8_##arch, /* 16x8 */                       \
-            eb_subtract_average_16x32_##arch, /* 16x32 */                     \
-            eb_subtract_average_32x16_##arch, /* 32x16 */                     \
-            NULL, /* 32x64 (invalid CFL size) */                              \
-            NULL, /* 64x32 (invalid CFL size) */                              \
-            eb_subtract_average_4x16_##arch, /* 4x16 (invalid CFL size) */    \
-            eb_subtract_average_16x4_##arch, /* 16x4 (invalid CFL size) */    \
-            eb_subtract_average_8x32_##arch, /* 8x32 (invalid CFL size) */    \
-            eb_subtract_average_32x8_##arch, /* 32x8 (invalid CFL size) */    \
-            NULL, /* 16x64 (invalid CFL size) */                              \
-            NULL, /* 64x16 (invalid CFL size) */                              \
-        };                                                                    \
-        /* Modulo TX_SIZES_ALL to ensure that an attacker won't be able to */ \
-        /* index the function pointer array out of bounds. */                 \
-        return sub_avg[tx_size % TX_SIZES_ALL];                               \
+/*!< Declare size-specific wrappers for all valid CfL sizes. */
+#define CFL_SUB_AVG_FN(arch)                                                    \
+    CFL_SUB_AVG_X(arch, 4, 4, 8, 4)                                             \
+    CFL_SUB_AVG_X(arch, 4, 8, 16, 5)                                            \
+    CFL_SUB_AVG_X(arch, 4, 16, 32, 6)                                           \
+    CFL_SUB_AVG_X(arch, 8, 4, 16, 5)                                            \
+    CFL_SUB_AVG_X(arch, 8, 8, 32, 6)                                            \
+    CFL_SUB_AVG_X(arch, 8, 16, 64, 7)                                           \
+    CFL_SUB_AVG_X(arch, 8, 32, 128, 8)                                          \
+    CFL_SUB_AVG_X(arch, 16, 4, 32, 6)                                           \
+    CFL_SUB_AVG_X(arch, 16, 8, 64, 7)                                           \
+    CFL_SUB_AVG_X(arch, 16, 16, 128, 8)                                         \
+    CFL_SUB_AVG_X(arch, 16, 32, 256, 9)                                         \
+    CFL_SUB_AVG_X(arch, 32, 8, 128, 8)                                          \
+    CFL_SUB_AVG_X(arch, 32, 16, 256, 9)                                         \
+    CFL_SUB_AVG_X(arch, 32, 32, 512, 10)                                        \
+    CflSubtractAverageFn eb_get_subtract_average_fn_##arch(TxSize tx_size) {    \
+        const CflSubtractAverageFn sub_avg[TX_SIZES_ALL] = {                    \
+            eb_subtract_average_4x4_##arch, /*!< 4x4 */                         \
+            eb_subtract_average_8x8_##arch, /*!< 8x8 */                         \
+            eb_subtract_average_16x16_##arch, /*!< 16x16 */                     \
+            eb_subtract_average_32x32_##arch, /*!< 32x32 */                     \
+            NULL, /*!< 64x64 (invalid CFL size) */                              \
+            eb_subtract_average_4x8_##arch, /*!< 4x8 */                         \
+            eb_subtract_average_8x4_##arch, /*!< 8x4 */                         \
+            eb_subtract_average_8x16_##arch, /*!< 8x16 */                       \
+            eb_subtract_average_16x8_##arch, /*!< 16x8 */                       \
+            eb_subtract_average_16x32_##arch, /*!< 16x32 */                     \
+            eb_subtract_average_32x16_##arch, /*!< 32x16 */                     \
+            NULL, /*!< 32x64 (invalid CFL size) */                              \
+            NULL, /*!< 64x32 (invalid CFL size) */                              \
+            eb_subtract_average_4x16_##arch, /*!< 4x16 (invalid CFL size) */    \
+            eb_subtract_average_16x4_##arch, /*!< 16x4 (invalid CFL size) */    \
+            eb_subtract_average_8x32_##arch, /*!< 8x32 (invalid CFL size) */    \
+            eb_subtract_average_32x8_##arch, /*!< 32x8 (invalid CFL size) */    \
+            NULL, /*!< 16x64 (invalid CFL size) */                              \
+            NULL, /*!< 64x16 (invalid CFL size) */                              \
+        };                                                                      \
+        /*!< Modulo TX_SIZES_ALL to ensure that an attacker won't be able to */ \
+        /*!< index the function pointer array out of bounds. */                 \
+        return sub_avg[tx_size % TX_SIZES_ALL];                                 \
     }
 
 void eb_av1_predict_intra_block(TileInfo *tile, STAGE stage, const BlockGeom *blk_geom,

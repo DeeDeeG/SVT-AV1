@@ -1,21 +1,17 @@
-// clang-format off
-/*
-* Copyright(c) 2019 Intel Corporation
-* SPDX - License - Identifier: BSD - 2 - Clause - Patent
-*/
+/* clang-format off */
+/*!< Copyright(c) 2019 Intel Corporation
+ * SPDX - License - Identifier: BSD - 2 - Clause - Patent */
 
-/*
-* Copyright (c) 2016, Alliance for Open Media. All rights reserved
-*
-* This source code is subject to the terms of the BSD 2 Clause License and
-* the Alliance for Open Media Patent License 1.0. If the BSD 2 Clause License
-* was not distributed with this source code in the LICENSE file, you can
-* obtain it at www.aomedia.org/license/software. If the Alliance for Open
-* Media Patent License 1.0 was not distributed with this source code in the
-* PATENTS file, you can obtain it at www.aomedia.org/license/patent.
-*/
+/*!< Copyright (c) 2016, Alliance for Open Media. All rights reserved
+ *
+ * This source code is subject to the terms of the BSD 2 Clause License and
+ * the Alliance for Open Media Patent License 1.0. If the BSD 2 Clause License
+ * was not distributed with this source code in the LICENSE file, you can
+ * obtain it at www.aomedia.org/license/software. If the Alliance for Open
+ * Media Patent License 1.0 was not distributed with this source code in the
+ * PATENTS file, you can obtain it at www.aomedia.org/license/patent. */
 
-// This file is generated. Do not edit.
+/*!< This file is generated. Do not edit. */
 #ifndef AOM_DSP_RTCD_H_
 #define AOM_DSP_RTCD_H_
 
@@ -23,9 +19,9 @@
 #include "EbCodingUnit.h"
 # include "ml.h"
 #ifdef RTCD_C
-#define RTCD_EXTERN                //CHKN RTCD call in effect. declare the function pointers in  encHandle.
+#define RTCD_EXTERN                /*!< CHKN RTCD call in effect. declare the function pointers in  encHandle. */
 #else
-#define RTCD_EXTERN extern         //CHKN run time externing the fucntion pointers.
+#define RTCD_EXTERN extern         /*!< CHKN run time externing the fucntion pointers. */
 #endif
 
 #ifdef __GNUC__
@@ -36,9 +32,9 @@
 #define UNLIKELY(v) (v)
 #endif
 
- /**************************************
- * Instruction Set Support
- **************************************/
+ /**************************************/
+ /*!< Instruction Set Support */
+ /**************************************/
 
 #ifdef _WIN32
 # include <intrin.h>
@@ -49,12 +45,12 @@
 extern "C" {
 #endif
 
-    // Helper Functions
+    /*!< Helper Functions */
     CPU_FLAGS get_cpu_flags();
     CPU_FLAGS get_cpu_flags_to_use();
     void setup_rtcd_internal(CPU_FLAGS flags);
 
-    //to not include convolve.h, just forward declare what's needed.
+    /*!< to not include convolve.h, just forward declare what's needed. */
     struct ConvolveParams;
     struct InterpFilterParams;
 
@@ -563,7 +559,7 @@ extern "C" {
     void eb_av1_upsample_intra_edge_sse4_1(uint8_t *p, int32_t sz);
     RTCD_EXTERN void(*eb_av1_upsample_intra_edge)(uint8_t *p, int32_t sz);
 
-    // AMIR
+    /*!< AMIR */
     void eb_av1_upsample_intra_edge_high_c(uint16_t *p, int32_t sz, int32_t bd);
     //void eb_av1_upsample_intra_edge_high_sse4_1(uint16_t *p, int32_t sz, int32_t bd);
     //RTCD_EXTERN void(*eb_av1_upsample_intra_edge_high)(uint16_t *p, int32_t sz, int32_t bd);
@@ -649,7 +645,7 @@ extern "C" {
     void eb_aom_dc_predictor_8x4_sse2(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
     RTCD_EXTERN void(*eb_aom_dc_predictor_8x4)(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
 
-    /* DC_PRED top */
+    /*!< DC_PRED top */
 
     void eb_aom_dc_left_predictor_4x4_c(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
     void eb_aom_dc_left_predictor_4x4_sse2(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
@@ -727,7 +723,7 @@ extern "C" {
     void eb_aom_dc_left_predictor_8x4_sse2(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
     RTCD_EXTERN void(*eb_aom_dc_left_predictor_8x4)(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
 
-    /* DC_PRED top */
+    /*!< DC_PRED top */
 
     void eb_aom_dc_top_predictor_4x4_c(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
     void eb_aom_dc_top_predictor_4x4_sse2(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
@@ -805,7 +801,7 @@ extern "C" {
     void eb_aom_dc_top_predictor_8x4_sse2(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
     RTCD_EXTERN void(*eb_aom_dc_top_predictor_8x4)(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
 
-    /* DC_PRED 128 */
+    /*!< DC_PRED 128 */
     void eb_aom_dc_128_predictor_4x4_c(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
     void eb_aom_dc_128_predictor_4x4_sse2(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
     RTCD_EXTERN void(*eb_aom_dc_128_predictor_4x4)(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
@@ -882,7 +878,7 @@ extern "C" {
     void eb_aom_dc_128_predictor_8x4_sse2(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
     RTCD_EXTERN void(*eb_aom_dc_128_predictor_8x4)(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
 
-    /* SMOOTH_H_PRED */
+    /*!< SMOOTH_H_PRED */
     void eb_aom_smooth_h_predictor_64x64_c(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
     void eb_aom_smooth_h_predictor_64x64_ssse3(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
     RTCD_EXTERN void(*eb_aom_smooth_h_predictor_64x64)(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
@@ -959,7 +955,7 @@ extern "C" {
     void eb_aom_smooth_h_predictor_8x4_ssse3(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
     RTCD_EXTERN void(*eb_aom_smooth_h_predictor_8x4)(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
 
-    /* SMOOTH_V_PRED */
+    /*!< SMOOTH_V_PRED */
 
     void eb_aom_smooth_v_predictor_64x64_c(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
     void eb_aom_smooth_v_predictor_64x64_ssse3(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
@@ -1037,7 +1033,7 @@ extern "C" {
     void eb_aom_smooth_v_predictor_8x4_ssse3(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
     RTCD_EXTERN void(*eb_aom_smooth_v_predictor_8x4)(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
 
-    /* SMOOTH_PRED */
+    /*!< SMOOTH_PRED */
 
     void eb_aom_smooth_predictor_64x64_c(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
     void eb_aom_smooth_predictor_64x64_ssse3(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
@@ -1115,7 +1111,7 @@ extern "C" {
     void eb_aom_smooth_predictor_8x4_ssse3(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
     RTCD_EXTERN void(*eb_aom_smooth_predictor_8x4)(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
 
-    /* V_PRED */
+    /*!< V_PRED */
     void eb_aom_v_predictor_4x4_c(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
     void eb_aom_v_predictor_4x4_sse2(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
     RTCD_EXTERN void(*eb_aom_v_predictor_4x4)(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
@@ -1192,7 +1188,7 @@ extern "C" {
     void eb_aom_v_predictor_8x4_sse2(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
     RTCD_EXTERN void(*eb_aom_v_predictor_8x4)(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
 
-    /* H_PRED */
+    /*!< H_PRED */
 
     void eb_aom_h_predictor_4x4_c(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
     void eb_aom_h_predictor_4x4_sse2(uint8_t *dst, ptrdiff_t y_stride, const uint8_t *above, const uint8_t *left);
@@ -2935,9 +2931,8 @@ extern "C" {
     void av1_nn_predict_sse3(const float *input_nodes, const NnConfig *const nn_config, int reduce_prec, float *const output);
     RTCD_EXTERN void(*av1_nn_predict)(const float *input_nodes, const NnConfig *const nn_config, int reduce_prec, float *const output);
 
-    /* Moved to aom_dsp_rtcd.c file:
-    static void setup_rtcd_internal(EbAsm asm_type)
-    */
+    /*!< Moved to aom_dsp_rtcd.c file:
+     *   static void setup_rtcd_internal(EbAsm asm_type) */
 
 
 #ifdef __cplusplus
@@ -2945,4 +2940,4 @@ extern "C" {
 #endif
 
 #endif
-// clang-format on
+/* clang-format on */

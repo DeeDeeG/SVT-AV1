@@ -1,21 +1,16 @@
-/*
-* Copyright(c) 2019 Netflix, Inc.
-* SPDX - License - Identifier: BSD - 2 - Clause - Patent
-*/
+/* Copyright(c) 2019 Netflix, Inc.
+ * SPDX - License - Identifier: BSD - 2 - Clause - Patent */
 
-/*
-* Copyright (c) 2016, Alliance for Open Media. All rights reserved
-*
-* This source code is subject to the terms of the BSD 2 Clause License and
-* the Alliance for Open Media Patent License 1.0. If the BSD 2 Clause License
-* was not distributed with this source code in the LICENSE file, you can
-* obtain it at www.aomedia.org/license/software. If the Alliance for Open
-* Media Patent License 1.0 was not distributed with this source code in the
-* PATENTS file, you can obtain it at www.aomedia.org/license/patent.
-*/
+/*!< Copyright (c) 2016, Alliance for Open Media. All rights reserved
+ *
+ * This source code is subject to the terms of the BSD 2 Clause License and
+ * the Alliance for Open Media Patent License 1.0. If the BSD 2 Clause License
+ *  was not distributed with this source code in the LICENSE file, you can
+ * obtain it at www.aomedia.org/license/software. If the Alliance for Open
+ * Media Patent License 1.0 was not distributed with this source code in the
+ * PATENTS file, you can obtain it at www.aomedia.org/license/patent. */
 
-/*SUMMARY
-Contains the Decoder Loop Filtering related functions*/
+/*!< SUMMARY: Contains the Decoder Loop Filtering related functions */
 
 #include "EbDefinitions.h"
 #include "EbUtility.h"
@@ -29,8 +24,8 @@ Contains the Decoder Loop Filtering related functions*/
 
 #define FILTER_LEN 4
 
-/*Filter_length is mapped to int indx for the filter tap arrays*/
-/*4-> 0   6-> 1   8-> 2   14->3 */
+/*!< Filter_length is mapped to int indx for the filter tap arrays */
+/*!< 4-> 0   6-> 1   8-> 2   14->3 */
 static int8_t filter_map[15] = {-1, -1, -1, -1, 0, -1, 1, -1, 2, -1, -1, -1, -1, -1, 3};
 
 SvtLbdFilterTapFn lbd_vert_filter_tap[FILTER_LEN];
@@ -62,7 +57,7 @@ void set_hbd_lf_filter_tap_functions(void) {
     hbd_vert_filter_tap[3] = aom_highbd_lpf_vertical_14;
 }
 
-/*Population of neighbour block LUMA params for each 4x4 block*/
+/*!< Population of neighbour block LUMA params for each 4x4 block */
 void fill_4x4_param_luma(LfBlockParamL *lf_block_l, int32_t txb_x, int32_t txb_y, int32_t stride,
                          TxSize tx_size, BlockModeInfo *mode_info) {
     const int txw = tx_size_wide_unit[tx_size];
@@ -86,11 +81,11 @@ void fill_4x4_param_luma(LfBlockParamL *lf_block_l, int32_t txb_x, int32_t txb_y
     }
 }
 
-/*Population of neighbour block UV params for each 4x4 block*/
+/*!< Population of neighbour block UV params for each 4x4 block */
 void fill_4x4_param_uv(LfBlockParamUv *lf_block_uv, int32_t txb_x, int32_t txb_y, int32_t stride,
                        TxSize tx_size, int32_t sub_x, int32_t sub_y) {
-    /*Population of chroma info is done at 4x4
-    to be sync with all other luma population*/
+    /*!< Population of chroma info is done at 4x4
+     *   to be sync with all other luma population*/
     const int txw = tx_size_wide_unit[tx_size] << sub_x;
     const int txh = tx_size_high_unit[tx_size] << sub_y;
 
@@ -107,18 +102,17 @@ void fill_4x4_param_uv(LfBlockParamUv *lf_block_uv, int32_t txb_x, int32_t txb_y
     }
 }
 
-/*Function to get transform size*/
+/*!< Function to get transform size */
 static INLINE TxSize dec_get_transform_size(const EdgeDir edge_dir, TxSize tx_size) {
-    /*since in case of chrominance or non-square transorm need to convert
-    transform size into transform size in particular direction.
-    for vertical edge, filter direction is horizontal, for horizontal
-    edge, filter direction is vertical.*/
+    /*!< since in case of chrominance or non-square transorm need to convert
+     *   transform size into transform size in particular direction.
+     *   for vertical edge, filter direction is horizontal, for horizontal
+     *   edge, filter direction is vertical. */
     tx_size = (VERT_EDGE == edge_dir) ? txsize_horz_map[tx_size] : txsize_vert_map[tx_size];
     return tx_size;
 }
 
-/*Return TxSize from get_transform_size(), so it is plane and direction
- awared*/
+/*!< Return TxSize from get_transform_size(), so it is plane and direction awared */
 static INLINE TxSize dec_set_lpf_parameters(Av1DeblockingParameters *const params,
                                             EbPictureBufferDesc *          recon_picture_buf,
                                             FrameHeader *frm_hdr, EbColorConfig *color_config,
@@ -127,14 +121,14 @@ static INLINE TxSize dec_set_lpf_parameters(Av1DeblockingParameters *const param
                                             const uint32_t y, const int32_t plane,
                                             int32_t *sb_delta_lf, int32_t *sb_delta_lf_prev) {
     UNUSED(recon_picture_buf);
-    /*reset to initial values*/
+    /*!< reset to initial values */
     params->filter_length = 0;
 
-    /*no deblocking is required*/
+    /*!< no deblocking is required */
     const uint32_t width  = frm_hdr->frame_size.frame_width;
     const uint32_t height = frm_hdr->frame_size.frame_height;
     if ((width <= x) || (height <= y)) {
-        /*just return the smallest transform unit size*/
+        /*!< just return the smallest transform unit size */
         return TX_4X4;
     }
     const uint32_t sub_x     = (plane > 0) ? color_config->subsampling_x : 0;
@@ -143,11 +137,11 @@ static INLINE TxSize dec_set_lpf_parameters(Av1DeblockingParameters *const param
     const int32_t  mi_col    = x >> MI_SIZE_LOG2;
     const int32_t  lf_stride = frm_hdr->mi_stride;
 
-    /*Alligned at 8x8 boundary :
-    case 1 : if 8x8 block, last 4x4 block property is populated for all
-            the TL, Left and Top 4x4 block
-    case 2 : if 8xH & Wx8 block , then 2nd 4xH or Wx4 block property is
-            populated for the left or rigth block */
+    /*!< Alligned at 8x8 boundary :
+     *   case 1 : if 8x8 block, last 4x4 block property is populated for all
+     *      the TL, Left and Top 4x4 block
+     *   case 2 : if 8xH & Wx8 block , then 2nd 4xH or Wx4 block property is
+     *      populated for the left or rigth block */
     int32_t lf_offset = (mi_row | sub_y) * lf_stride + (mi_col | sub_x);
 
     LfBlockParamL * lf_block_l_cur  = lf_ctxt->lf_block_luma + lf_offset;
@@ -156,7 +150,7 @@ static INLINE TxSize dec_set_lpf_parameters(Av1DeblockingParameters *const param
     if (lf_block_l_cur == NULL) return TX_INVALID;
     if (lf_block_uv_cur == NULL) return TX_INVALID;
 
-    /*TODO : to be written get_trnasfrom_size function*/
+    /*!< TODO : to be written get_trnasfrom_size function */
     const TxSize ts = plane == 0 ? dec_get_transform_size(edge_dir, lf_block_l_cur->tx_size_l)
                                  : dec_get_transform_size(edge_dir, lf_block_uv_cur->tx_size_uv);
     {
@@ -166,7 +160,7 @@ static INLINE TxSize dec_set_lpf_parameters(Av1DeblockingParameters *const param
         const int32_t txb_edge = (coord & transform_masks) ? (0) : (1);
 
         if (!txb_edge) return ts;
-        /*prepare outer edge parameters. deblock the edge if it's an edge of a TU*/
+        /*!< prepare outer edge parameters. deblock the edge if it's an edge of a TU */
         {
             const uint32_t curr_level = get_filter_level(frm_hdr,
                                                          lf_info,
@@ -182,7 +176,7 @@ static INLINE TxSize dec_set_lpf_parameters(Av1DeblockingParameters *const param
 
             uint32_t level = curr_level;
             if (coord) {
-                /* Since block are alligned at 8x8 boundary , so prev block
+                /*!< Since block are alligned at 8x8 boundary , so prev block
                     will be cur - 1<<sub_x */
                 LfBlockParamL *lf_block_l_prev = (VERT_EDGE == edge_dir)
                                                      ? lf_block_l_cur - (uint64_t)(1 << sub_x)
@@ -214,8 +208,8 @@ static INLINE TxSize dec_set_lpf_parameters(Av1DeblockingParameters *const param
                 const int32_t prediction_masks =
                     edge_dir == VERT_EDGE ? block_size_wide[bsize] - 1 : block_size_high[bsize] - 1;
                 const int32_t pu_edge = !(coord & prediction_masks);
-                /*if the current and the previous blocks are skipped,
-                deblock the edge if the edge belongs to a PU's edge only.*/
+                /*!< if the current and the previous blocks are skipped,
+                 *   deblock the edge if the edge belongs to a PU's edge only. */
                 if ((curr_level || pv_lvl) && (!pv_skip || !curr_skipped || pu_edge)) {
                     const TxSize min_ts = AOMMIN(ts, pv_ts);
                     if (TX_4X4 >= min_ts)
@@ -227,16 +221,16 @@ static INLINE TxSize dec_set_lpf_parameters(Av1DeblockingParameters *const param
                             params->filter_length = 8;
                     } else {
                         params->filter_length = 14;
-                        /* No wide filtering for chroma plane*/
+                        /*!< No wide filtering for chroma plane */
                         if (plane != 0) params->filter_length = 6;
                     }
 
-                    /* update the level if the current block is skipped,
-                    but the previous one is not*/
+                    /*!< update the level if the current block is skipped,
+                     *   but the previous one is not */
                     level = (curr_level) ? (curr_level) : (pv_lvl);
                 }
             }
-            /* prepare common parameters*/
+            /*!< prepare common parameters */
             if (params->filter_length) {
                 const LoopFilterThresh *const limits = lf_info->lfthr + level;
                 params->lim                          = limits->lim;
@@ -248,7 +242,7 @@ static INLINE TxSize dec_set_lpf_parameters(Av1DeblockingParameters *const param
     return ts;
 }
 
-/*It applies Vertical Loop Filtering in a superblock*/
+/*!< It applies Vertical Loop Filtering in a superblock */
 void dec_av1_filter_block_plane_vert(FrameHeader *frm_hdr, EbColorConfig *color_config,
                                      EbPictureBufferDesc *recon_picture_buf, LfCtxt *lf_ctxt,
                                      LoopFilterInfoN *lf_info, const int32_t plane,
@@ -279,10 +273,10 @@ void dec_av1_filter_block_plane_vert(FrameHeader *frm_hdr, EbColorConfig *color_
         uint8_t *p = (uint8_t *)blk_recon_buf + ((y * MI_SIZE * recon_stride) << is_16bit);
 
         for (int32_t x = 0; x < x_range;) {
-            /*inner loop always filter vertical edges in a MI block. If MI size
-            is 8x8, it will filter the vertical edge aligned with a 8x8 block.
-            If 4x4 trasnform is used, it will then filter the internal edge
-             aligned with a 4x4 block*/
+            /*!< inner loop always filter vertical edges in a MI block. If MI size
+             *   is 8x8, it will filter the vertical edge aligned with a 8x8 block.
+             *   If 4x4 trasnform is used, it will then filter the internal edge
+             *   aligned with a 4x4 block */
             const uint32_t          curr_luma_x = mi_col * MI_SIZE + ((x << sub_x) * MI_SIZE);
             const uint32_t          curr_luma_y = mi_row * MI_SIZE + ((y << sub_y) * MI_SIZE);
             uint32_t                advance_units;
@@ -290,7 +284,7 @@ void dec_av1_filter_block_plane_vert(FrameHeader *frm_hdr, EbColorConfig *color_
             Av1DeblockingParameters params;
             memset(&params, 0, sizeof(params));
 
-            /* For VERT_EDGE edge and x_range is for SB scan */
+            /*!, For VERT_EDGE edge and x_range is for SB scan */
             sb_delta_lf_left = x == 0 ? sb_delta_lf - FRAME_LF_COUNT : sb_delta_lf;
 
             tx_size = dec_set_lpf_parameters(&params,
@@ -326,7 +320,7 @@ void dec_av1_filter_block_plane_vert(FrameHeader *frm_hdr, EbColorConfig *color_
                         p, recon_stride, params.mblim, params.lim, params.hev_thr);
             }
 
-            /*advance the destination pointer*/
+            /*!< advance the destination pointer */
             assert(tx_size < TX_SIZES_ALL);
             advance_units = tx_size_wide_unit[tx_size];
             x += advance_units;
@@ -335,7 +329,7 @@ void dec_av1_filter_block_plane_vert(FrameHeader *frm_hdr, EbColorConfig *color_
     }
 }
 
-/*It applies Horizonatal Loop Filtering in a superblock*/
+/*!< It applies Horizonatal Loop Filtering in a superblock */
 void dec_av1_filter_block_plane_horz(FrameHeader *frm_hdr, EbColorConfig *color_config,
                                      EbPictureBufferDesc *recon_picture_buf, LfCtxt *lf_ctxt,
                                      LoopFilterInfoN *lf_info, const int32_t plane,
@@ -365,10 +359,10 @@ void dec_av1_filter_block_plane_horz(FrameHeader *frm_hdr, EbColorConfig *color_
     for (int32_t x = 0; x < x_range; x += col_step) {
         uint8_t *p = (uint8_t *)blk_recon_buf + ((x * MI_SIZE) << is_16bit);
         for (int32_t y = 0; y < y_range;) {
-            /*inner loop always filter vertical edges in a MI block.If MI size
-            is 8x8, it will first filter the vertical edge aligned with a 8x8
-            block. If 4x4 trasnform is used, it will then filter the internal
-            edge aligned with a 4x4 block*/
+            /*!< inner loop always filter vertical edges in a MI block.If MI size
+             *   is 8x8, it will first filter the vertical edge aligned with a 8x8
+             *   block. If 4x4 trasnform is used, it will then filter the internal
+             *   edge aligned with a 4x4 block */
             const uint32_t          curr_luma_x = mi_col * MI_SIZE + ((x << sub_x) * MI_SIZE);
             const uint32_t          curr_luma_y = mi_row * MI_SIZE + ((y << sub_y) * MI_SIZE);
             uint32_t                advance_units;
@@ -376,7 +370,7 @@ void dec_av1_filter_block_plane_horz(FrameHeader *frm_hdr, EbColorConfig *color_
             Av1DeblockingParameters params;
             memset(&params, 0, sizeof(params));
 
-            /* For HORZ_EDGE edge and y_range is for SB scan */
+            /*!< For HORZ_EDGE edge and y_range is for SB scan */
             sb_delta_lf_above = y == 0 ? sb_delta_lf - lf_ctxt->delta_lf_stride : sb_delta_lf;
 
             tx_size = dec_set_lpf_parameters(&params,
@@ -412,7 +406,7 @@ void dec_av1_filter_block_plane_horz(FrameHeader *frm_hdr, EbColorConfig *color_
                         p, recon_stride, params.mblim, params.lim, params.hev_thr);
             }
 
-            /*advance the destination pointer*/
+            /*!< advance the destination pointer */
             assert(tx_size < TX_SIZES_ALL);
             advance_units = tx_size_high_unit[tx_size];
             y += advance_units;
@@ -421,7 +415,7 @@ void dec_av1_filter_block_plane_horz(FrameHeader *frm_hdr, EbColorConfig *color_
     }
 }
 
-/*LF function to filter each SB*/
+/*!< LF function to filter each SB */
 void dec_loop_filter_sb(FrameHeader *frm_hdr, SeqHeader *seq_header,
                         EbPictureBufferDesc *recon_picture_buf, LfCtxt *lf_ctxt,
                         LoopFilterInfoN *lf_info, const uint32_t mi_row, const uint32_t mi_col,
@@ -438,8 +432,8 @@ void dec_loop_filter_sb(FrameHeader *frm_hdr, SeqHeader *seq_header,
             continue;
 
         if (frm_hdr->loop_filter_params.combine_vert_horz_lf) {
-            /*filter all vertical and horizontal edges in every 64x64 super block
-             filter vertical edges*/
+            /*!< filter all vertical and horizontal edges in every 64x64 super block
+             *   filter vertical edges */
             dec_av1_filter_block_plane_vert(frm_hdr,
                                             &seq_header->color_config,
                                             recon_picture_buf,
@@ -451,7 +445,7 @@ void dec_loop_filter_sb(FrameHeader *frm_hdr, SeqHeader *seq_header,
                                             mi_col,
                                             sb_delta_lf);
 
-            /*filter horizontal edges*/
+            /*!< filter horizontal edges */
             int32_t max_mib_size =
                 seq_header->sb_size == BLOCK_128X128 ? MAX_MIB_SIZE : SB64_MIB_SIZE;
 
@@ -468,7 +462,7 @@ void dec_loop_filter_sb(FrameHeader *frm_hdr, SeqHeader *seq_header,
                                                 (sb_delta_lf - FRAME_LF_COUNT));
             }
 
-            /*Filter the horizontal edges of the last sb in each row*/
+            /*!< Filter the horizontal edges of the last sb in each row */
             if (last_col) {
                 dec_av1_filter_block_plane_horz(frm_hdr,
                                                 &seq_header->color_config,
@@ -482,7 +476,7 @@ void dec_loop_filter_sb(FrameHeader *frm_hdr, SeqHeader *seq_header,
                                                 sb_delta_lf);
             }
         } else {
-            /*filter all vertical edges in every 64x64 super block*/
+            /*!< filter all vertical edges in every 64x64 super block */
             dec_av1_filter_block_plane_vert(frm_hdr,
                                             &seq_header->color_config,
                                             recon_picture_buf,
@@ -494,7 +488,7 @@ void dec_loop_filter_sb(FrameHeader *frm_hdr, SeqHeader *seq_header,
                                             mi_col,
                                             sb_delta_lf);
 
-            /*filter all horizontal edges in every 64x64 super block*/
+            /*!< filter all horizontal edges in every 64x64 super block */
             dec_av1_filter_block_plane_horz(frm_hdr,
                                             &seq_header->color_config,
                                             recon_picture_buf,
@@ -509,7 +503,7 @@ void dec_loop_filter_sb(FrameHeader *frm_hdr, SeqHeader *seq_header,
     }
 }
 
-/* Row level function to trigger loop filter for each superblock*/
+/*!< Row level function to trigger loop filter for each superblock */
 void dec_loop_filter_row(EbDecHandle *dec_handle_ptr, EbPictureBufferDesc *recon_picture_buf,
                          LfCtxt *lf_ctxt, LoopFilterInfoN *lf_info, uint32_t y_sb_index,
                          int32_t plane_start, int32_t plane_end) {
@@ -538,12 +532,12 @@ void dec_loop_filter_row(EbDecHandle *dec_handle_ptr, EbPictureBufferDesc *recon
         SBInfo *sb_info =
             frame_buf->sb_info + (((y_sb_index * master_frame_buf->sb_cols) + x_sb_index));
 
-        /* Top-Right Sync*/
+        /*!< Top-Right Sync */
         if (y_sb_index) {
             while (*sb_lf_completed_in_prev_row < MIN((x_sb_index + 2), pic_width_in_sb - 1))
                 ;
         }
-        /*LF function for a SB*/
+        /*!< LF function for a SB */
         dec_loop_filter_sb(frm_hdr,
                            seq_header,
                            recon_picture_buf,
@@ -555,12 +549,12 @@ void dec_loop_filter_row(EbDecHandle *dec_handle_ptr, EbPictureBufferDesc *recon
                            plane_end,
                            end_of_row_flag,
                            sb_info->sb_delta_lf);
-        /* Update Top-Right Sync*/
+        /*!< Update Top-Right Sync */
         *sb_lf_completed_in_row = x_sb_index;
     }
 }
 
-/*Frame level function to trigger loop filter for each superblock*/
+/*!< Frame level function to trigger loop filter for each superblock */
 void dec_av1_loop_filter_frame(EbDecHandle *dec_handle_ptr, EbPictureBufferDesc *recon_picture_buf,
                                LfCtxt *lf_ctxt, int32_t plane_start, int32_t plane_end,
                                int32_t is_mt, int enable_flag) {
@@ -584,7 +578,7 @@ void dec_av1_loop_filter_frame(EbDecHandle *dec_handle_ptr, EbPictureBufferDesc 
     uint32_t picture_height_in_sb = (seq_header->max_frame_height + sb_size_h - 1) / sb_size_h;
 
     frm_hdr->loop_filter_params.combine_vert_horz_lf = 1;
-    /*init hev threshold const vectors*/
+    /*!< init hev threshold const vectors */
     for (int lvl = 0; lvl <= MAX_LOOP_FILTER; lvl++)
         memset(lf_info->lfthr[lvl].hev_thr, (lvl >> 4), SIMD_WIDTH);
 
@@ -604,7 +598,7 @@ void dec_av1_loop_filter_frame(EbDecHandle *dec_handle_ptr, EbPictureBufferDesc 
                                 plane_end);
         }
     } else {
-        /*Loop over a frame : tregger dec_loop_filter_sb for each SB*/
+        /*!< Loop over a frame : tregger dec_loop_filter_sb for each SB */
         for (y_sb_index = 0; y_sb_index < picture_height_in_sb; ++y_sb_index) {
             for (x_sb_index = 0; x_sb_index < pic_width_in_sb; ++x_sb_index) {
                 sb_origin_x     = x_sb_index << sb_size_log2;
@@ -620,7 +614,7 @@ void dec_av1_loop_filter_frame(EbDecHandle *dec_handle_ptr, EbPictureBufferDesc 
                 /*sb_info->sb_delta_lf = frame_buf->delta_lf + (FRAME_LF_COUNT *
                     ((y_sb_index * master_frame_buf->sb_cols) + x_sb_index));*/
 
-                /*LF function for a SB*/
+                /*!< LF function for a SB */
                 dec_loop_filter_sb(frm_hdr,
                                    seq_header,
                                    recon_picture_buf,

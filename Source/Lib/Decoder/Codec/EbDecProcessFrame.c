@@ -1,14 +1,12 @@
-/*
-* Copyright(c) 2019 Netflix, Inc.
-* SPDX - License - Identifier: BSD - 2 - Clause - Patent
-*/
+/*!<
+ * Copyright(c) 2019 Netflix, Inc.
+ * SPDX - License - Identifier: BSD - 2 - Clause - Patent */
 
-// SUMMARY
-//   Contains the Decode related functions
+/*!< SUMMARY: Contains the Decode related functions */
 
-/**************************************
- * Includes
- **************************************/
+/**************************************/
+/*!< Includes */
+/**************************************/
 
 #include "EbDefinitions.h"
 
@@ -20,7 +18,7 @@
 #include "EbDecProcessBlock.h"
 #include "EbDecNbr.h"
 
-/* decode partition */
+/*!< decode partition */
 static void decode_partition(DecModCtxt *dec_mod_ctxt, uint32_t mi_row, uint32_t mi_col,
                              BlockSize bsize, SBInfo *sb_info) {
     BlockSize     subsize;
@@ -103,15 +101,15 @@ static void decode_partition(DecModCtxt *dec_mod_ctxt, uint32_t mi_row, uint32_t
     }
 }
 
-// decoding of the superblock
+/*!< decoding of the superblock */
 void decode_super_block(DecModCtxt *dec_mod_ctxt, uint32_t mi_row, uint32_t mi_col,
                         SBInfo *sb_info) {
     dec_mod_ctxt->iquant_cur_ptr = dec_mod_ctxt->sb_iquant_ptr;
 
-    /* SB level dequant update */
+    /*!< SB level dequant update */
     update_dequant(dec_mod_ctxt, sb_info);
 
-    /* Decode partition */
+    /*!< Decode partition */
     decode_partition(dec_mod_ctxt, mi_row, mi_col, dec_mod_ctxt->seq_header->sb_size, sb_info);
 }
 
@@ -160,11 +158,11 @@ EbErrorType decode_tile_row(DecModCtxt *dec_mod_ctxt, TilesInfo *tile_info,
         dec_mod_ctxt->cur_coeff[AOM_PLANE_Y] = sb_info->sb_coeff[AOM_PLANE_Y];
         dec_mod_ctxt->cur_coeff[AOM_PLANE_U] = sb_info->sb_coeff[AOM_PLANE_U];
         dec_mod_ctxt->cur_coeff[AOM_PLANE_V] = sb_info->sb_coeff[AOM_PLANE_V];
-        /* Top-Right Sync*/
+        /*!< Top-Right Sync */
         if (sb_row_in_tile) {
             while (*sb_completed_in_prev_row < MIN((sb_col + 2), tile_wd_in_sb))
                 ;
-            //Sleep(5); /* ToDo : Change */
+            //Sleep(5); /*!< ToDo : Change */
         }
 
         decode_super_block(dec_mod_ctxt, mi_row, mi_col, sb_info);
@@ -189,20 +187,20 @@ EbErrorType decode_tile(DecModCtxt *dec_mod_ctxt, TilesInfo *tile_info,
             (parse_recon_tile_info_array->tile_info.mi_row_start << MI_SIZE_LOG2) >>
             dec_mod_ctxt->seq_header->sb_size_log2;
 
-        //lock mutex
+        /*!< lock mutex */
         eb_block_on_mutex(parse_recon_tile_info_array->tile_sbrow_mutex);
 
-        //pick up a row and increment the sb row counter
+        /*!< pick up a row and increment the sb row counter */
         if (parse_recon_tile_info_array->sb_row_to_process !=
             parse_recon_tile_info_array->tile_num_sb_rows) {
             sb_row_in_tile = parse_recon_tile_info_array->sb_row_to_process;
             parse_recon_tile_info_array->sb_row_to_process++;
         }
 
-        //unlock mutex
+        /*!< unlock mutex */
         eb_release_mutex(parse_recon_tile_info_array->tile_sbrow_mutex);
 
-        //wait for parse
+        /*!< wait for parse */
         if (-1 != sb_row_in_tile) {
             volatile int32_t *sb_row_parsed = (volatile int32_t *)&parse_recon_tile_info_array
                                                   ->sb_recon_row_parsed[sb_row_in_tile];
@@ -216,14 +214,14 @@ EbErrorType decode_tile(DecModCtxt *dec_mod_ctxt, TilesInfo *tile_info,
             color_config = &dec_mod_ctxt->seq_header->color_config;
             cfl_init(&dec_mod_ctxt->cfl_ctx, color_config);
 
-            //update the row started status
+            /*!< update the row started status */
             parse_recon_tile_info_array->sb_recon_row_started[sb_row_in_tile] = 1;
 
             status = decode_tile_row(
                 dec_mod_ctxt, tile_info, parse_recon_tile_info_array, tile_col, mi_row, sb_row);
         }
 
-        /*if all sb rows have been picked up for processing then break the while loop */
+        /*!< if all sb rows have been picked up for processing then break the while loop */
         if (parse_recon_tile_info_array->sb_row_to_process ==
             parse_recon_tile_info_array->tile_num_sb_rows) {
             break;

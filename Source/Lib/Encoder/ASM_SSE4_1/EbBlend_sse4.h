@@ -1,18 +1,14 @@
-/*
-* Copyright(c) 2019 Intel Corporation
-* SPDX - License - Identifier: BSD - 2 - Clause - Patent
-*/
+/*!< Copyright(c) 2019 Intel Corporation
+ * SPDX - License - Identifier: BSD - 2 - Clause - Patent */
 
-/*
- * Copyright (c) 2016, Alliance for Open Media. All rights reserved
+/*!< Copyright (c) 2016, Alliance for Open Media. All rights reserved
  *
  * This source code is subject to the terms of the BSD 2 Clause License and
  * the Alliance for Open Media Patent License 1.0. If the BSD 2 Clause License
  * was not distributed with this source code in the LICENSE file, you can
  * obtain it at www.aomedia.org/license/software. If the Alliance for Open
  * Media Patent License 1.0 was not distributed with this source code in the
- * PATENTS file, you can obtain it at www.aomedia.org/license/patent.
- */
+ * PATENTS file, you can obtain it at www.aomedia.org/license/patent. */
 
 #ifndef AOM_AOM_DSP_X86_BLEND_SSE4_H_
 #define AOM_AOM_DSP_X86_BLEND_SSE4_H_
@@ -28,9 +24,9 @@ static const uint8_t g_blend_a64_mask_shuffle[32] = {
     0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15,
 };
 
-//////////////////////////////////////////////////////////////////////////////
-// Common kernels
-//////////////////////////////////////////////////////////////////////////////
+/****************************************************************************/
+/*!< Common kernels */
+/****************************************************************************/
 
 static INLINE __m128i blend_4(const uint8_t *src0, const uint8_t *src1, const __m128i *v_m0_w,
                               const __m128i *v_m1_w) {
@@ -144,20 +140,20 @@ static INLINE __m128i blend_4_b12(const uint16_t *src0, const uint16_t *src1, co
     const __m128i v_s0_w = xx_loadl_64(src0);
     const __m128i v_s1_w = xx_loadl_64(src1);
 
-    // Interleave
+    /*!< Interleave */
     const __m128i v_m01_w = _mm_unpacklo_epi16(v_m0_w, v_m1_w);
     const __m128i v_s01_w = _mm_unpacklo_epi16(v_s0_w, v_s1_w);
 
-    // Multiply-Add
+    /*!< Multiply-Add */
     const __m128i v_sum_d = _mm_madd_epi16(v_s01_w, v_m01_w);
 
-    // Scale
+    /*!< Scale */
     const __m128i v_ssum_d = _mm_srli_epi32(v_sum_d, AOM_BLEND_A64_ROUND_BITS - 1);
 
-    // Pack
+    /*!< Pack */
     const __m128i v_pssum_d = _mm_packs_epi32(v_ssum_d, v_ssum_d);
 
-    // Round
+    /*!< Round */
     const __m128i v_res_w = xx_round_epu16(v_pssum_d);
 
     return v_res_w;
@@ -168,30 +164,30 @@ static INLINE __m128i blend_8_b12(const uint16_t *src0, const uint16_t *src1, co
     const __m128i v_s0_w = xx_loadu_128(src0);
     const __m128i v_s1_w = xx_loadu_128(src1);
 
-    // Interleave
+    /*!< Interleave */
     const __m128i v_m01l_w = _mm_unpacklo_epi16(v_m0_w, v_m1_w);
     const __m128i v_m01h_w = _mm_unpackhi_epi16(v_m0_w, v_m1_w);
     const __m128i v_s01l_w = _mm_unpacklo_epi16(v_s0_w, v_s1_w);
     const __m128i v_s01h_w = _mm_unpackhi_epi16(v_s0_w, v_s1_w);
 
-    // Multiply-Add
+    /*!< Multiply-Add */
     const __m128i v_suml_d = _mm_madd_epi16(v_s01l_w, v_m01l_w);
     const __m128i v_sumh_d = _mm_madd_epi16(v_s01h_w, v_m01h_w);
 
-    // Scale
+    /*!< Scale */
     const __m128i v_ssuml_d = _mm_srli_epi32(v_suml_d, AOM_BLEND_A64_ROUND_BITS - 1);
     const __m128i v_ssumh_d = _mm_srli_epi32(v_sumh_d, AOM_BLEND_A64_ROUND_BITS - 1);
 
-    // Pack
+    /*!< Pack */
     const __m128i v_pssum_d = _mm_packs_epi32(v_ssuml_d, v_ssumh_d);
 
-    // Round
+    /*!< Round */
     const __m128i v_res_w = xx_round_epu16(v_pssum_d);
 
     return v_res_w;
 }
 
-/*Functions from convolve_avx2.c*/
+/*!< Functions from convolve_avx2.c */
 static INLINE void blend_a64_d16_mask_w4_sse41(uint8_t *dst, const CONV_BUF_TYPE *src0,
                                                const CONV_BUF_TYPE *src1, const __m128i *m,
                                                const __m128i *v_round_offset,

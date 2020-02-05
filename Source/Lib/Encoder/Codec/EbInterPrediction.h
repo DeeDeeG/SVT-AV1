@@ -1,7 +1,5 @@
-/*
-* Copyright(c) 2019 Intel Corporation
-* SPDX - License - Identifier: BSD - 2 - Clause - Patent
-*/
+/*!< Copyright(c) 2019 Intel Corporation
+ * SPDX - License - Identifier: BSD - 2 - Clause - Patent */
 
 #ifndef EbInterPrediction_h
 #define EbInterPrediction_h
@@ -183,7 +181,7 @@ EbErrorType av1_inter_prediction_hbd(
         InterpFilterParams *params_x, InterpFilterParams *params_y,
         int32_t w, int32_t h);
 
-    /* Mapping of interintra to intra mode for use in the intra component */
+    /*!< Mapping of interintra to intra mode for use in the intra component */
     static const PredictionMode interintra_to_intra_mode[INTERINTRA_MODES] = {
       DC_PRED, V_PRED, H_PRED, SMOOTH_PRED
     };
@@ -252,10 +250,10 @@ EbErrorType av1_inter_prediction_hbd(
         uint8_t                               bit_depth,
         EbBool                                perform_chroma);
 
-    extern aom_highbd_convolve_fn_t convolve_hbd[/*sub_x*/2][/*sub_y*/2][/*bi*/2];
-    extern AomConvolveFn convolve[/*sub_x*/2][/*sub_y*/2][/*bi*/2];
+    extern aom_highbd_convolve_fn_t convolve_hbd[/*!< sub_x */2][/*!< sub_y */2][/*!< bi */2];
+    extern AomConvolveFn convolve[/*!< sub_x */2][/*!< sub_y */2][/*!< bi */2];
 
 #ifdef __cplusplus
 }
 #endif
-#endif //EbInterPrediction_h
+#endif // EbInterPrediction_h

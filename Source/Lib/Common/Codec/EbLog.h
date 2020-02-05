@@ -1,7 +1,5 @@
-/*
-* Copyright(c) 2019 Intel Corporation
-* SPDX - License - Identifier: BSD - 2 - Clause - Patent
-*/
+/*!< Copyright(c) 2019 Intel Corporation
+ * SPDX - License - Identifier: BSD - 2 - Clause - Patent */
 #ifndef EbLog_h
 #define EbLog_h
 
@@ -18,11 +16,11 @@ typedef enum {
     SVT_LOG_DEBUG = 4,
 } SvtLogLevel;
 
-//define this to turn off all library log
-//#define SVT_LOG_QUIET
+/*!< define this to turn off all library log
+ *   #define SVT_LOG_QUIET */
 #ifndef SVT_LOG_QUIET
 
-//SVT_LOG will not output the prefix. you can contorl the output style.
+/*!< SVT_LOG will not output the prefix. you can contorl the output style. */
 #define SVT_LOG(format, ...) svt_log(SVT_LOG_ALL, NULL, format, ##__VA_ARGS__)
 
 #define SVT_DEBUG(format, ...) svt_log(SVT_LOG_DEBUG, LOG_TAG, format, ##__VA_ARGS__)
@@ -52,9 +50,9 @@ typedef enum {
     do {                       \
     } while (0)
 
-#endif //SVT_LOG_QUIET
+#endif // SVT_LOG_QUIET
 
 void svt_log_init();
 void svt_log(SvtLogLevel level, const char* tag, const char* format, ...);
 
-#endif //EbLog_h
+#endif // EbLog_h

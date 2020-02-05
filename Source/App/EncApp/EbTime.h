@@ -1,7 +1,5 @@
-/*
-* Copyright(c) 2019 Intel Corporation
-* SPDX - License - Identifier: BSD - 2 - Clause - Patent
-*/
+/*!< Copyright(c) 2019 Intel Corporation
+* SPDX - License - Identifier: BSD - 2 - Clause - Patent */
 
 #ifndef EbTime_h
 #define EbTime_h
@@ -26,4 +24,4 @@ void injector(uint64_t processed_frame_count, uint32_t injector_frame_rate);
 #endif // __cplusplus
 
 #endif // EbTime_h
-/* File EOF */
+// File EOF

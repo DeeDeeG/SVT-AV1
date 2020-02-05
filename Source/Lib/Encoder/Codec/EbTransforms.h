@@ -1,18 +1,14 @@
-/*
-* Copyright(c) 2019 Intel Corporation
-* SPDX - License - Identifier: BSD - 2 - Clause - Patent
-*/
+/*!< Copyright(c) 2019 Intel Corporation
+ * SPDX - License - Identifier: BSD - 2 - Clause - Patent */
 
-/*
-* Copyright (c) 2016, Alliance for Open Media. All rights reserved
-*
-* This source code is subject to the terms of the BSD 2 Clause License and
-* the Alliance for Open Media Patent License 1.0. If the BSD 2 Clause License
-* was not distributed with this source code in the LICENSE file, you can
-* obtain it at www.aomedia.org/license/software. If the Alliance for Open
-* Media Patent License 1.0 was not distributed with this source code in the
-* PATENTS file, you can obtain it at www.aomedia.org/license/patent.
-*/
+/*!< Copyright (c) 2016, Alliance for Open Media. All rights reserved
+ *
+ * This source code is subject to the terms of the BSD 2 Clause License and
+ * the Alliance for Open Media Patent License 1.0. If the BSD 2 Clause License
+ * was not distributed with this source code in the LICENSE file, you can
+ * obtain it at www.aomedia.org/license/software. If the Alliance for Open
+ * Media Patent License 1.0 was not distributed with this source code in the
+ * PATENTS file, you can obtain it at www.aomedia.org/license/patent. */
 
 #ifndef EbTransforms_h
 #define EbTransforms_h
@@ -31,9 +27,9 @@ extern "C" {
 #define MAX_NEIGHBORS 2
 #define AOM_QM_BITS 5
 #define MAX_TX_SCALE 1
-/*****************************
-    * DEBUG MACROS
-    *****************************/
+/*****************************/
+/*!< DEBUG MACROS */
+/*****************************/
 #define ZERO_COEFF 0
 #define ZERO_COEFF_CHROMA 0
 
@@ -52,28 +48,27 @@ extern "C" {
 #define default_scan_64x16_neighbors default_scan_32x16_neighbors
 
 static const int8_t txsize_log2_minus4[TX_SIZES_ALL] = {
-    0, // TX_4X4
-    2, // TX_8X8
-    4, // TX_16X16
-    6, // TX_32X32
-    6, // TX_64X64
-    1, // TX_4X8
-    1, // TX_8X4
-    3, // TX_8X16
-    3, // TX_16X8
-    5, // TX_16X32
-    5, // TX_32X16
-    6, // TX_32X64
-    6, // TX_64X32
-    2, // TX_4X16
-    2, // TX_16X4
-    4, // TX_8X32
-    4, // TX_32X8
-    5, // TX_16X64
-    5, // TX_64X16
+    0, /*!< TX_4X4 */
+    2, /*!< TX_8X8 */
+    4, /*!< TX_16X16 */
+    6, /*!< TX_32X32 */
+    6, /*!< TX_64X64 */
+    1, /*!< TX_4X8 */
+    1, /*!< TX_8X4 */
+    3, /*!< TX_8X16 */
+    3, /*!< TX_16X8 */
+    5, /*!< TX_16X32 */
+    5, /*!< TX_32X16 */
+    6, /*!< TX_32X64 */
+    6, /*!< TX_64X32 */
+    2, /*!< TX_4X16 */
+    2, /*!< TX_16X4 */
+    4, /*!< TX_8X32 */
+    4, /*!< TX_32X8 */
+    5, /*!< TX_16X64 */
+    5, /*!< TX_64X16 */
 };
-// Note:
-// TranHigh is the datatype used for intermediate transform stages.
+/*!< Note: TranHigh is the datatype used for intermediate transform stages. */
 typedef int64_t TranHigh;
 
 static const TxType1D vtx_tab[TX_TYPES] = {
@@ -113,25 +108,25 @@ static const TxType1D htx_tab[TX_TYPES] = {
     FLIPADST_1D,
 };
 static const BlockSize txsize_to_bsize[TX_SIZES_ALL] = {
-    BLOCK_4X4, // TX_4X4
-    BLOCK_8X8, // TX_8X8
-    BLOCK_16X16, // TX_16X16
-    BLOCK_32X32, // TX_32X32
-    BLOCK_64X64, // TX_64X64
-    BLOCK_4X8, // TX_4X8
-    BLOCK_8X4, // TX_8X4
-    BLOCK_8X16, // TX_8X16
-    BLOCK_16X8, // TX_16X8
-    BLOCK_16X32, // TX_16X32
-    BLOCK_32X16, // TX_32X16
-    BLOCK_32X64, // TX_32X64
-    BLOCK_64X32, // TX_64X32
-    BLOCK_4X16, // TX_4X16
-    BLOCK_16X4, // TX_16X4
-    BLOCK_8X32, // TX_8X32
-    BLOCK_32X8, // TX_32X8
-    BLOCK_16X64, // TX_16X64
-    BLOCK_64X16, // TX_64X16
+    BLOCK_4X4, /*!< TX_4X4 */
+    BLOCK_8X8, /*!< TX_8X8 */
+    BLOCK_16X16, /*!< TX_16X16 */
+    BLOCK_32X32, /*!< TX_32X32 */
+    BLOCK_64X64, /*!< TX_64X64 */
+    BLOCK_4X8, /*!< TX_4X8 */
+    BLOCK_8X4, /*!< TX_8X4 */
+    BLOCK_8X16, /*!< TX_8X16 */
+    BLOCK_16X8, /*!< TX_16X8 */
+    BLOCK_16X32, /*!< TX_16X32 */
+    BLOCK_32X16, /*!< TX_32X16 */
+    BLOCK_32X64, /*!< TX_32X64 */
+    BLOCK_64X32, /*!< TX_64X32 */
+    BLOCK_4X16, /*!< TX_4X16 */
+    BLOCK_16X4, /*!< TX_16X4 */
+    BLOCK_8X32, /*!< TX_8X32 */
+    BLOCK_32X8, /*!< TX_32X8 */
+    BLOCK_16X64, /*!< TX_16X64 */
+    BLOCK_64X16, /*!< TX_64X16 */
 };
 static const int8_t fwd_shift_4x4[3]   = {2, 0, 0};
 static const int8_t fwd_shift_8x8[3]   = {2, -1, 0};
@@ -166,8 +161,7 @@ static const int8_t fwd_cos_bit_row[MAX_TXWH_IDX /*txw_idx*/][MAX_TXWH_IDX /*txh
     {0, 12, 13, 12, 11},
     {0, 0, 12, 11, 10}};
 
-// Utility function that returns the log of the ratio of the col and row
-// sizes.
+/*!< Utility function that returns the log of the ratio of the col and row sizes. */
 typedef enum TxfmType {
     TXFM_TYPE_DCT4,
     TXFM_TYPE_DCT8,
@@ -188,8 +182,8 @@ typedef enum TxfmType {
 } TxfmType;
 typedef struct Txfm2dFlipCfg {
     TxSize        tx_size;
-    int32_t       ud_flip; // flip upside down
-    int32_t       lr_flip; // flip left to right
+    int32_t       ud_flip; /*!< flip upside down */
+    int32_t       lr_flip; /*!< flip left to right */
     const int8_t *shift;
     int8_t        cos_bit_col;
     int8_t        cos_bit_row;
@@ -208,20 +202,20 @@ static const TxfmType av1_txfm_type_ls[5][TX_TYPES_1D] = {
     {TXFM_TYPE_DCT32, TXFM_TYPE_ADST32, TXFM_TYPE_ADST32, TXFM_TYPE_IDENTITY32},
     {TXFM_TYPE_DCT64, TXFM_TYPE_INVALID, TXFM_TYPE_INVALID, TXFM_TYPE_IDENTITY64}};
 static const int8_t av1_txfm_stage_num_list[TXFM_TYPES] = {
-    4, // TXFM_TYPE_DCT4
-    6, // TXFM_TYPE_DCT8
-    8, // TXFM_TYPE_DCT16
-    10, // TXFM_TYPE_DCT32
-    12, // TXFM_TYPE_DCT64
-    7, // TXFM_TYPE_ADST4
-    8, // TXFM_TYPE_ADST8
-    10, // TXFM_TYPE_ADST16
-    12, // TXFM_TYPE_ADST32
-    1, // TXFM_TYPE_IDENTITY4
-    1, // TXFM_TYPE_IDENTITY8
-    1, // TXFM_TYPE_IDENTITY16
-    1, // TXFM_TYPE_IDENTITY32
-    1, // TXFM_TYPE_IDENTITY64
+    4, /*!< TXFM_TYPE_DCT4 */
+    6, /*!< TXFM_TYPE_DCT8 */
+    8, /*!< TXFM_TYPE_DCT16 */
+    10, /*!< TXFM_TYPE_DCT32 */
+    12, /*!< TXFM_TYPE_DCT64 */
+    7, /*!< TXFM_TYPE_ADST4 */
+    8, /*!< TXFM_TYPE_ADST8 */
+    10, /*!< TXFM_TYPE_ADST16 */
+    12, /*!< TXFM_TYPE_ADST32 */
+    1, /*!< TXFM_TYPE_IDENTITY4 */
+    1, /*!< TXFM_TYPE_IDENTITY8 */
+    1, /*!< TXFM_TYPE_IDENTITY16 */
+    1, /*!< TXFM_TYPE_IDENTITY32 */
+    1, /*!< TXFM_TYPE_IDENTITY64 */
 };
 
 static INLINE int32_t get_txh_idx(TxSize tx_size) {
@@ -282,28 +276,28 @@ static INLINE int32_t get_txw_idx(TxSize tx_size) {
 static INLINE int is_rect_tx(TxSize tx_size) { return tx_size >= TX_SIZES; }
 static INLINE int is_rect_tx_allowed_bsize(BlockSize bsize) {
     static const char lut[BLOCK_SIZES_ALL] = {
-        0, // BLOCK_4X4
-        1, // BLOCK_4X8
-        1, // BLOCK_8X4
-        0, // BLOCK_8X8
-        1, // BLOCK_8X16
-        1, // BLOCK_16X8
-        0, // BLOCK_16X16
-        1, // BLOCK_16X32
-        1, // BLOCK_32X16
-        0, // BLOCK_32X32
-        1, // BLOCK_32X64
-        1, // BLOCK_64X32
-        0, // BLOCK_64X64
-        0, // BLOCK_64X128
-        0, // BLOCK_128X64
-        0, // BLOCK_128X128
-        1, // BLOCK_4X16
-        1, // BLOCK_16X4
-        1, // BLOCK_8X32
-        1, // BLOCK_32X8
-        1, // BLOCK_16X64
-        1, // BLOCK_64X16
+        0, /*!< BLOCK_4X4 */
+        1, /*!< BLOCK_4X8 */
+        1, /*!< BLOCK_8X4 */
+        0, /*!< BLOCK_8X8 */
+        1, /*!< BLOCK_8X16 */
+        1, /*!< BLOCK_16X8 */
+        0, /*!< BLOCK_16X16 */
+        1, /*!< BLOCK_16X32 */
+        1, /*!< BLOCK_32X16 */
+        0, /*!< BLOCK_32X32 */
+        1, /*!< BLOCK_32X64 */
+        1, /*!< BLOCK_64X32 */
+        0, /*!< BLOCK_64X64 */
+        0, /*!< BLOCK_64X128 */
+        0, /*!< BLOCK_128X64 */
+        0, /*!< BLOCK_128X128 */
+        1, /*!< BLOCK_4X16 */
+        1, /*!< BLOCK_16X4 */
+        1, /*!< BLOCK_8X32 */
+        1, /*!< BLOCK_32X8 */
+        1, /*!< BLOCK_16X64 */
+        1, /*!< BLOCK_64X16 */
     };
 
     return lut[bsize];
@@ -317,29 +311,29 @@ static INLINE int is_rect_tx_allowed(/*const MacroBlockD *xd,*/
 
 static const int8_t iadst4_range[7] = {0, 1, 0, 0, 0, 0, 0};
 
-// sum of fwd_shift_##
+/*!< sum of fwd_shift_## */
 static const int8_t inv_start_range[TX_SIZES_ALL] = {
-    5, // 4x4 transform
-    6, // 8x8 transform
-    7, // 16x16 transform
-    7, // 32x32 transform
-    7, // 64x64 transform
-    5, // 4x8 transform
-    5, // 8x4 transform
-    6, // 8x16 transform
-    6, // 16x8 transform
-    6, // 16x32 transform
-    6, // 32x16 transform
-    6, // 32x64 transform
-    6, // 64x32 transform
-    6, // 4x16 transform
-    6, // 16x4 transform
-    7, // 8x32 transform
-    7, // 32x8 transform
-    7, // 16x64 transform
-    7, // 64x16 transform
+    5, /*!< 4x4 transform */
+    6, /*!< 8x8 transform */
+    7, /*!< 16x16 transform */
+    7, /*!< 32x32 transform */
+    7, /*!< 64x64 transform */
+    5, /*!< 4x8 transform */
+    5, /*!< 8x4 transform */
+    6, /*!< 8x16 transform */
+    6, /*!< 16x8 transform */
+    6, /*!< 16x32 transform */
+    6, /*!< 32x16 transform */
+    6, /*!< 32x64 transform */
+    6, /*!< 64x32 transform */
+    6, /*!< 4x16 transform */
+    6, /*!< 16x4 transform */
+    7, /*!< 8x32 transform */
+    7, /*!< 32x8 transform */
+    7, /*!< 16x64 transform */
+    7, /*!< 64x16 transform */
 };
-////////////////////// QUANTIZATION//////////////
+/*!< ******** QUANTIZATION ******** */
 typedef struct QuantParam {
     int32_t      log_scale;
     TxSize       tx_size;
@@ -349,7 +343,7 @@ typedef struct QuantParam {
 
 static inline int32_t av1_get_tx_scale(const TxSize tx_size) {
     const int32_t pels = tx_size_2d[tx_size];
-    // Largest possible pels is 4096 (64x64).
+    /*!< Largest possible pels is 4096 (64x64). */
     return (pels > 256) + (pels > 1024);
 }
 
@@ -1027,8 +1021,8 @@ DECLARE_ALIGNED(16, static const int16_t, default_scan_32x32[1024]) = {
     952,  983,  1014, 1015, 984,  953,  922,  891,  860,  829,  798,  767,  799,  830,  861,  892,
     923,  954,  985,  1016, 1017, 986,  955,  924,  893,  862,  831,  863,  894,  925,  956,  987,
     1018, 1019, 988,  957,  926,  895,  927,  958,  989,  1020, 1021, 990,  959,  991,  1022, 1023};
-// Neighborhood 2-tuples for various scans and blocksizes,
-// in {top, left} order for each position in corresponding scan order.
+/*!< Neighborhood 2-tuples for various scans and blocksizes,
+ *   in {top, left} order for each position in corresponding scan order. */
 DECLARE_ALIGNED(16, static const int16_t, default_scan_4x4_neighbors[17 * MAX_NEIGHBORS]) = {
     0, 0, 0, 0, 0,  0, 4, 4, 1, 4, 1,  1,  2,  2,  2,  5, 5,
     8, 8, 8, 9, 12, 6, 9, 3, 6, 7, 10, 10, 13, 11, 14, 0, 0};
@@ -2864,7 +2858,7 @@ DECLARE_ALIGNED(16, static const int16_t, av1_default_iscan_32x32[1024]) = {
     903, 904, 932, 933, 957, 958, 978, 979, 995, 996, 1008, 1009, 1017, 1018, 1022, 1023};
 static const ScanOrder av1_scan_orders[TX_SIZES_ALL][TX_TYPES] = {
     {
-        // TX_4X4
+        /*!< TX_4X4 */
         {default_scan_4x4, av1_default_iscan_4x4, default_scan_4x4_neighbors},
         {default_scan_4x4, av1_default_iscan_4x4, default_scan_4x4_neighbors},
         {default_scan_4x4, av1_default_iscan_4x4, default_scan_4x4_neighbors},
@@ -2883,7 +2877,7 @@ static const ScanOrder av1_scan_orders[TX_SIZES_ALL][TX_TYPES] = {
         {mcol_scan_4x4, av1_mcol_iscan_4x4, mcol_scan_4x4_neighbors},
     },
     {
-        // TX_8X8
+        /*!< TX_8X8 */
         {default_scan_8x8, av1_default_iscan_8x8, default_scan_8x8_neighbors},
         {default_scan_8x8, av1_default_iscan_8x8, default_scan_8x8_neighbors},
         {default_scan_8x8, av1_default_iscan_8x8, default_scan_8x8_neighbors},
@@ -2902,7 +2896,7 @@ static const ScanOrder av1_scan_orders[TX_SIZES_ALL][TX_TYPES] = {
         {mcol_scan_8x8, av1_mcol_iscan_8x8, mcol_scan_8x8_neighbors},
     },
     {
-        // TX_16X16
+        /*!< TX_16X16 */
         {default_scan_16x16, av1_default_iscan_16x16, default_scan_16x16_neighbors},
         {default_scan_16x16, av1_default_iscan_16x16, default_scan_16x16_neighbors},
         {default_scan_16x16, av1_default_iscan_16x16, default_scan_16x16_neighbors},
@@ -2921,7 +2915,7 @@ static const ScanOrder av1_scan_orders[TX_SIZES_ALL][TX_TYPES] = {
         {mcol_scan_16x16, av1_mcol_iscan_16x16, mcol_scan_16x16_neighbors},
     },
     {
-        // TX_32X32
+        /*!< TX_32X32 */
         {default_scan_32x32, av1_default_iscan_32x32, default_scan_32x32_neighbors},
         {default_scan_32x32, av1_default_iscan_32x32, default_scan_32x32_neighbors},
         {default_scan_32x32, av1_default_iscan_32x32, default_scan_32x32_neighbors},
@@ -2940,9 +2934,9 @@ static const ScanOrder av1_scan_orders[TX_SIZES_ALL][TX_TYPES] = {
         {mcol_scan_32x32, av1_mcol_iscan_32x32, mcol_scan_32x32_neighbors},
     },
     {
-        // TX_64X64
-        // Half of the coefficients of tx64 at higher frequencies are set to
-        // zeros. So tx32's scan order is used.
+        /*!< TX_64X64 */
+        /*!< Half of the coefficients of tx64 at higher frequencies are set to
+         *   zeros. So tx32's scan order is used. */
         {default_scan_32x32, av1_default_iscan_32x32, default_scan_32x32_neighbors},
         {default_scan_32x32, av1_default_iscan_32x32, default_scan_32x32_neighbors},
         {default_scan_32x32, av1_default_iscan_32x32, default_scan_32x32_neighbors},
@@ -2961,7 +2955,7 @@ static const ScanOrder av1_scan_orders[TX_SIZES_ALL][TX_TYPES] = {
         {mcol_scan_32x32, av1_mcol_iscan_32x32, mcol_scan_32x32_neighbors},
     },
     {
-        // TX_4X8
+        /*!< TX_4X8 */
         {default_scan_4x8, av1_default_iscan_4x8, default_scan_4x8_neighbors},
         {default_scan_4x8, av1_default_iscan_4x8, default_scan_4x8_neighbors},
         {default_scan_4x8, av1_default_iscan_4x8, default_scan_4x8_neighbors},
@@ -2980,7 +2974,7 @@ static const ScanOrder av1_scan_orders[TX_SIZES_ALL][TX_TYPES] = {
         {mcol_scan_4x8, av1_mcol_iscan_4x8, mcol_scan_4x8_neighbors},
     },
     {
-        // TX_8X4
+        /*!< TX_8X4 */
         {default_scan_8x4, av1_default_iscan_8x4, default_scan_8x4_neighbors},
         {default_scan_8x4, av1_default_iscan_8x4, default_scan_8x4_neighbors},
         {default_scan_8x4, av1_default_iscan_8x4, default_scan_8x4_neighbors},
@@ -2999,7 +2993,7 @@ static const ScanOrder av1_scan_orders[TX_SIZES_ALL][TX_TYPES] = {
         {mcol_scan_8x4, av1_mcol_iscan_8x4, mcol_scan_8x4_neighbors},
     },
     {
-        // TX_8X16
+        /*!< TX_8X16 */
         {default_scan_8x16, av1_default_iscan_8x16, default_scan_8x16_neighbors},
         {default_scan_8x16, av1_default_iscan_8x16, default_scan_8x16_neighbors},
         {default_scan_8x16, av1_default_iscan_8x16, default_scan_8x16_neighbors},
@@ -3018,7 +3012,7 @@ static const ScanOrder av1_scan_orders[TX_SIZES_ALL][TX_TYPES] = {
         {mcol_scan_8x16, av1_mcol_iscan_8x16, mcol_scan_8x16_neighbors},
     },
     {
-        // TX_16X8
+        /*!< TX_16X8 */
         {default_scan_16x8, av1_default_iscan_16x8, default_scan_16x8_neighbors},
         {default_scan_16x8, av1_default_iscan_16x8, default_scan_16x8_neighbors},
         {default_scan_16x8, av1_default_iscan_16x8, default_scan_16x8_neighbors},
@@ -3037,7 +3031,7 @@ static const ScanOrder av1_scan_orders[TX_SIZES_ALL][TX_TYPES] = {
         {mcol_scan_16x8, av1_mcol_iscan_16x8, mcol_scan_16x8_neighbors},
     },
     {
-        // TX_16X32
+        /*!< TX_16X32 */
         {default_scan_16x32, av1_default_iscan_16x32, default_scan_16x32_neighbors},
         {default_scan_16x32, av1_default_iscan_16x32, default_scan_16x32_neighbors},
         {default_scan_16x32, av1_default_iscan_16x32, default_scan_16x32_neighbors},
@@ -3056,7 +3050,7 @@ static const ScanOrder av1_scan_orders[TX_SIZES_ALL][TX_TYPES] = {
         {mcol_scan_16x32, av1_mcol_iscan_16x32, mcol_scan_16x32_neighbors},
     },
     {
-        // TX_32X16
+        /*!< TX_32X16 */
         {default_scan_32x16, av1_default_iscan_32x16, default_scan_32x16_neighbors},
         {default_scan_32x16, av1_default_iscan_32x16, default_scan_32x16_neighbors},
         {default_scan_32x16, av1_default_iscan_32x16, default_scan_32x16_neighbors},
@@ -3075,9 +3069,9 @@ static const ScanOrder av1_scan_orders[TX_SIZES_ALL][TX_TYPES] = {
         {mcol_scan_32x16, av1_mcol_iscan_32x16, mcol_scan_32x16_neighbors},
     },
     {
-        // TX_32X64
-        // Half of the coefficients of tx64 at higher frequencies are set to
-        // zeros. So tx32's scan order is used.
+        /*!< TX_32X64 */
+        /*!< Half of the coefficients of tx64 at higher frequencies are set to
+         *   zeros. So tx32's scan order is used. */
         {default_scan_32x32, av1_default_iscan_32x32, default_scan_32x32_neighbors},
         {default_scan_32x32, av1_default_iscan_32x32, default_scan_32x32_neighbors},
         {default_scan_32x32, av1_default_iscan_32x32, default_scan_32x32_neighbors},
@@ -3096,9 +3090,9 @@ static const ScanOrder av1_scan_orders[TX_SIZES_ALL][TX_TYPES] = {
         {mcol_scan_32x32, av1_mcol_iscan_32x32, mcol_scan_32x32_neighbors},
     },
     {
-        // TX_64X32
-        // Half of the coefficients of tx64 at higher frequencies are set to
-        // zeros. So tx32's scan order is used.
+        /*!< TX_64X32 */
+        /*!< Half of the coefficients of tx64 at higher frequencies are set to
+         *   zeros. So tx32's scan order is used. */
         {default_scan_32x32, av1_default_iscan_32x32, default_scan_32x32_neighbors},
         {default_scan_32x32, av1_default_iscan_32x32, default_scan_32x32_neighbors},
         {default_scan_32x32, av1_default_iscan_32x32, default_scan_32x32_neighbors},
@@ -3117,7 +3111,7 @@ static const ScanOrder av1_scan_orders[TX_SIZES_ALL][TX_TYPES] = {
         {mcol_scan_32x32, av1_mcol_iscan_32x32, mcol_scan_32x32_neighbors},
     },
     {
-        // TX_4X16
+        /*!< TX_4X16 */
         {default_scan_4x16, av1_default_iscan_4x16, default_scan_4x16_neighbors},
         {default_scan_4x16, av1_default_iscan_4x16, default_scan_4x16_neighbors},
         {default_scan_4x16, av1_default_iscan_4x16, default_scan_4x16_neighbors},
@@ -3136,7 +3130,7 @@ static const ScanOrder av1_scan_orders[TX_SIZES_ALL][TX_TYPES] = {
         {mcol_scan_4x16, av1_mcol_iscan_4x16, mcol_scan_4x16_neighbors},
     },
     {
-        // TX_16X4
+        /*!< TX_16X4 */
         {default_scan_16x4, av1_default_iscan_16x4, default_scan_16x4_neighbors},
         {default_scan_16x4, av1_default_iscan_16x4, default_scan_16x4_neighbors},
         {default_scan_16x4, av1_default_iscan_16x4, default_scan_16x4_neighbors},
@@ -3155,7 +3149,7 @@ static const ScanOrder av1_scan_orders[TX_SIZES_ALL][TX_TYPES] = {
         {mcol_scan_16x4, av1_mcol_iscan_16x4, mcol_scan_16x4_neighbors},
     },
     {
-        // TX_8X32
+        /*!< TX_8X32 */
         {default_scan_8x32, av1_default_iscan_8x32, default_scan_8x32_neighbors},
         {default_scan_8x32, av1_default_iscan_8x32, default_scan_8x32_neighbors},
         {default_scan_8x32, av1_default_iscan_8x32, default_scan_8x32_neighbors},
@@ -3174,7 +3168,7 @@ static const ScanOrder av1_scan_orders[TX_SIZES_ALL][TX_TYPES] = {
         {mcol_scan_8x32, av1_mcol_iscan_8x32, mcol_scan_8x32_neighbors},
     },
     {
-        // TX_32X8
+        /*!< TX_32X8 */
         {default_scan_32x8, av1_default_iscan_32x8, default_scan_32x8_neighbors},
         {default_scan_32x8, av1_default_iscan_32x8, default_scan_32x8_neighbors},
         {default_scan_32x8, av1_default_iscan_32x8, default_scan_32x8_neighbors},
@@ -3193,9 +3187,9 @@ static const ScanOrder av1_scan_orders[TX_SIZES_ALL][TX_TYPES] = {
         {mcol_scan_32x8, av1_mcol_iscan_32x8, mcol_scan_32x8_neighbors},
     },
     {
-        // TX_16X64
-        // Half of the coefficients of tx64 at higher frequencies are set to
-        // zeros. So tx32's scan order is used.
+        /*!< TX_16X64 */
+        /*!< Half of the coefficients of tx64 at higher frequencies are set to
+         *   zeros. So tx32's scan order is used. */
         {default_scan_16x32, av1_default_iscan_16x32, default_scan_16x32_neighbors},
         {default_scan_16x32, av1_default_iscan_16x32, default_scan_16x32_neighbors},
         {default_scan_16x32, av1_default_iscan_16x32, default_scan_16x32_neighbors},
@@ -3214,9 +3208,9 @@ static const ScanOrder av1_scan_orders[TX_SIZES_ALL][TX_TYPES] = {
         {mcol_scan_16x32, av1_mcol_iscan_16x32, mcol_scan_16x32_neighbors},
     },
     {
-        // TX_64X16
-        // Half of the coefficients of tx64 at higher frequencies are set to
-        // zeros. So tx32's scan order is used.
+        /*!< TX_64X16 */
+        /*!< Half of the coefficients of tx64 at higher frequencies are set to
+         *   zeros. So tx32's scan order is used. */
         {default_scan_32x16, av1_default_iscan_32x16, default_scan_32x16_neighbors},
         {default_scan_32x16, av1_default_iscan_32x16, default_scan_32x16_neighbors},
         {default_scan_32x16, av1_default_iscan_32x16, default_scan_32x16_neighbors},
@@ -3249,9 +3243,9 @@ extern const int8_t *eb_inv_txfm_shift_ls[TX_SIZES_ALL];
 static const int32_t cos_bit_min = 10;
 
 static const int32_t new_sqrt2_bits = 12;
-// 2^12 * sqrt(2)
+/*!< 2^12 * sqrt(2) */
 static const int32_t new_sqrt2 = 5793;
-// 2^12 / sqrt(2)
+/*!< 2^12 / sqrt(2) */
 static const int32_t new_inv_sqrt2 = 2896;
 
 static INLINE const int32_t *cospi_arr(int32_t n) { return eb_av1_cospi_arr_data[n - cos_bit_min]; }
@@ -3309,7 +3303,7 @@ static INLINE int32_t get_rect_tx_log_ratio(int32_t col, int32_t row) {
         if (row == col * 4) return -2;
         assert(0 && "Unsupported transform size");
     }
-    return 0; // Invalid
+    return 0; /*!< Invalid */
 }
 
 extern EbErrorType av1_estimate_transform(int16_t *residual_buffer, uint32_t residual_stride,
@@ -3328,13 +3322,13 @@ extern int32_t av1_quantize_inv_quantize(
     TxType tx_type, ModeDecisionCandidateBuffer *candidate_buffer, int16_t txb_skip_context,
     int16_t dc_sign_context, PredictionMode pred_mode, EbBool is_intra_bc, EbBool is_encode_pass);
 
-EbErrorType av1_inv_transform_recon(int32_t *coeff_buffer, //1D buffer
+EbErrorType av1_inv_transform_recon(int32_t *coeff_buffer, /*!< 1D buffer */
                                     uint8_t *recon_buffer_r, uint32_t recon_stride_r,
                                     uint8_t *recon_buffer_w, uint32_t recon_stride_w, TxSize txsize,
                                     uint32_t bit_increment, TxType transform_type,
                                     PlaneType component_type, uint32_t eob, uint8_t lossless);
 
-EbErrorType av1_inv_transform_recon8bit(int32_t *coeff_buffer, //1D buffer
+EbErrorType av1_inv_transform_recon8bit(int32_t *coeff_buffer, /*!< 1D buffer */
                                         uint8_t *recon_buffer_r, uint32_t recon_stride_r,
                                         uint8_t *recon_buffer_w, uint32_t recon_stride_w,
                                         TxSize txsize, TxType transform_type,

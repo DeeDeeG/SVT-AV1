@@ -1,7 +1,5 @@
-/*
-* Copyright(c) 2019 Intel Corporation
-* SPDX - License - Identifier: BSD - 2 - Clause - Patent
-*/
+/*!< Copyright(c) 2019 Intel Corporation
+ * SPDX - License - Identifier: BSD - 2 - Clause - Patent */
 
 #ifndef EbPacketizationReorderQueue_h
 #define EbPacketizationReorderQueue_h
@@ -13,9 +11,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-/************************************************
-     * Packetization Reorder Queue Entry
-     ************************************************/
+/************************************************/
+/*!< Packetization Reorder Queue Entry */
+/************************************************/
 typedef struct PacketizationReorderEntry {
     EbDctor          dctor;
     uint64_t         picture_number;
@@ -46,4 +44,4 @@ extern EbErrorType packetization_reorder_entry_ctor(PacketizationReorderEntry *e
 #ifdef __cplusplus
 }
 #endif
-#endif //EbPacketizationReorderQueue_h
+#endif // EbPacketizationReorderQueue_h

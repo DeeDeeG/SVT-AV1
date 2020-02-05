@@ -1,26 +1,21 @@
-/*
-* Copyright(c) 2019 Intel Corporation
-* SPDX - License - Identifier: BSD - 2 - Clause - Patent
-*/
+/*!< Copyright(c) 2019 Intel Corporation
+ * SPDX - License - Identifier: BSD - 2 - Clause - Patent */
 
-/*
-* Copyright (c) 2016, Alliance for Open Media. All rights reserved
-*
-* This source code is subject to the terms of the BSD 2 Clause License and
-* the Alliance for Open Media Patent License 1.0. If the BSD 2 Clause License
-* was not distributed with this source code in the LICENSE file, you can
-* obtain it at www.aomedia.org/license/software. If the Alliance for Open
-* Media Patent License 1.0 was not distributed with this source code in the
-* PATENTS file, you can obtain it at www.aomedia.org/license/patent.
-*/
+/*!< Copyright (c) 2016, Alliance for Open Media. All rights reserved
+ *
+ * This source code is subject to the terms of the BSD 2 Clause License and
+ * the Alliance for Open Media Patent License 1.0. If the BSD 2 Clause License
+ * was not distributed with this source code in the LICENSE file, you can
+ * obtain it at www.aomedia.org/license/software. If the Alliance for Open
+ * Media Patent License 1.0 was not distributed with this source code in the
+ * PATENTS file, you can obtain it at www.aomedia.org/license/patent. */
 
 #include "EbCabacContextModel.h"
 
 /**********************************************************************************************************************/
 /**********************************************************************************************************************/
 /**********************************************************************************************************************/
-/********************************************************************************************************************************/
-// entropymode.c
+/*!< entropymode.c */
 
 const AomCdfProb default_kf_y_mode_cdf[KF_MODE_CONTEXTS][KF_MODE_CONTEXTS][CDF_SIZE(
     INTRA_MODES)] = {
@@ -393,18 +388,18 @@ static const AomCdfProb default_cfl_alpha_cdf[CFL_ALPHA_CONTEXTS][CDF_SIZE(CFL_A
     {AOM_CDF16(14738, 21678, 25779, 27901, 29024, 30302, 30980, 31843, 32144, 32413, 32520, 32594,
                32622, 32656, 32660)}};
 
-//static const AomCdfProb
-//default_switchable_interp_cdf[SWITCHABLE_FILTER_CONTEXTS][CDF_SIZE(
-//SWITCHABLE_FILTERS)] = {
-//    { AOM_CDF3(31935, 32720) }, { AOM_CDF3(5568, 32719) },
-//    { AOM_CDF3(422, 2938) }, { AOM_CDF3(28244, 32608) },
-//    { AOM_CDF3(31206, 31953) }, { AOM_CDF3(4862, 32121) },
-//    { AOM_CDF3(770, 1152) }, { AOM_CDF3(20889, 25637) },
-//    { AOM_CDF3(31910, 32724) }, { AOM_CDF3(4120, 32712) },
-//    { AOM_CDF3(305, 2247) }, { AOM_CDF3(27403, 32636) },
-//    { AOM_CDF3(31022, 32009) }, { AOM_CDF3(2963, 32093) },
-//    { AOM_CDF3(601, 943) }, { AOM_CDF3(14969, 21398) }
-//};
+// static const AomCdfProb
+// default_switchable_interp_cdf[SWITCHABLE_FILTER_CONTEXTS][CDF_SIZE(
+// SWITCHABLE_FILTERS)] = {
+//     { AOM_CDF3(31935, 32720) }, { AOM_CDF3(5568, 32719) },
+//     { AOM_CDF3(422, 2938) }, { AOM_CDF3(28244, 32608) },
+//     { AOM_CDF3(31206, 31953) }, { AOM_CDF3(4862, 32121) },
+//     { AOM_CDF3(770, 1152) }, { AOM_CDF3(20889, 25637) },
+//     { AOM_CDF3(31910, 32724) }, { AOM_CDF3(4120, 32712) },
+//     { AOM_CDF3(305, 2247) }, { AOM_CDF3(27403, 32636) },
+//     { AOM_CDF3(31022, 32009) }, { AOM_CDF3(2963, 32093) },
+//     { AOM_CDF3(601, 943) }, { AOM_CDF3(14969, 21398) }
+// };
 
 static const AomCdfProb default_newmv_cdf[NEWMV_MODE_CONTEXTS][CDF_SIZE(2)] = {{AOM_CDF2(24035)},
                                                                                {AOM_CDF2(16630)},
@@ -793,17 +788,17 @@ static const AomCdfProb
 };
 
 static const NmvContext default_nmv_context = {
-    {AOM_CDF4(4096, 11264, 19328)}, // joints_cdf
+    {AOM_CDF4(4096, 11264, 19328)}, /*!< joints_cdf */
     {{
-         // Vertical component
+         /*!< Vertical component */
          {AOM_CDF11(28672, 30976, 31858, 32320, 32551, 32656, 32740, 32757, 32762,
-                    32767)}, // class_cdf // fp
+                    32767)}, /*!< class_cdf // fp */
          {{AOM_CDF4(16384, 24576, 26624)}, {AOM_CDF4(12288, 21248, 24128)}}, // class0_fp_cdf
-         {AOM_CDF4(8192, 17408, 21248)}, // fp_cdf
-         {AOM_CDF2(128 * 128)}, // sign_cdf
-         {AOM_CDF2(160 * 128)}, // class0_hp_cdf
-         {AOM_CDF2(128 * 128)}, // hp_cdf
-         {AOM_CDF2(216 * 128)}, // class0_cdf
+         {AOM_CDF4(8192, 17408, 21248)}, /*!< fp_cdf */
+         {AOM_CDF2(128 * 128)}, /*!< sign_cdf */
+         {AOM_CDF2(160 * 128)}, /*!< class0_hp_cdf */
+         {AOM_CDF2(128 * 128)}, /*!< hp_cdf */
+         {AOM_CDF2(216 * 128)}, /*!< class0_cdf */
          {{AOM_CDF2(128 * 136)},
           {AOM_CDF2(128 * 140)},
           {AOM_CDF2(128 * 148)},
@@ -813,18 +808,18 @@ static const NmvContext default_nmv_context = {
           {AOM_CDF2(128 * 224)},
           {AOM_CDF2(128 * 234)},
           {AOM_CDF2(128 * 234)},
-          {AOM_CDF2(128 * 240)}}, // bits_cdf
+          {AOM_CDF2(128 * 240)}}, /*!< bits_cdf */
      },
      {
-         // Horizontal component
+         /*!< Horizontal component */
          {AOM_CDF11(28672, 30976, 31858, 32320, 32551, 32656, 32740, 32757, 32762,
-                    32767)}, // class_cdf // fp
-         {{AOM_CDF4(16384, 24576, 26624)}, {AOM_CDF4(12288, 21248, 24128)}}, // class0_fp_cdf
-         {AOM_CDF4(8192, 17408, 21248)}, // fp_cdf
-         {AOM_CDF2(128 * 128)}, // sign_cdf
-         {AOM_CDF2(160 * 128)}, // class0_hp_cdf
-         {AOM_CDF2(128 * 128)}, // hp_cdf
-         {AOM_CDF2(216 * 128)}, // class0_cdf
+                    32767)}, /*!< class_cdf // fp */
+         {{AOM_CDF4(16384, 24576, 26624)}, {AOM_CDF4(12288, 21248, 24128)}}, /*!< class0_fp_cdf */
+         {AOM_CDF4(8192, 17408, 21248)}, /*!< fp_cdf */
+         {AOM_CDF2(128 * 128)}, /*!< sign_cdf */
+         {AOM_CDF2(160 * 128)}, /*!< class0_hp_cdf */
+         {AOM_CDF2(128 * 128)}, /*!< hp_cdf */
+         {AOM_CDF2(216 * 128)}, /*!< class0_cdf */
          {{AOM_CDF2(128 * 136)},
           {AOM_CDF2(128 * 140)},
           {AOM_CDF2(128 * 148)},
@@ -834,7 +829,7 @@ static const NmvContext default_nmv_context = {
           {AOM_CDF2(128 * 224)},
           {AOM_CDF2(128 * 234)},
           {AOM_CDF2(128 * 234)},
-          {AOM_CDF2(128 * 240)}}, // bits_cdf
+          {AOM_CDF2(128 * 240)}}, /*!< bits_cdf */
      }},
 };
 static const AomCdfProb default_switchable_interp_cdf[SWITCHABLE_FILTER_CONTEXTS][CDF_SIZE(
@@ -916,8 +911,9 @@ void init_mode_probs(FRAME_CONTEXT *fc) {
     fc->nmvc = default_nmv_context;
     fc->ndvc = default_nmv_context;
 }
-/********************************************************************************************************************************/
-// token_cdfs.h
+
+/**********************************************************************************************************************/
+/*!< token_cdfs.h */
 static const AomCdfProb av1_default_dc_sign_cdfs[TOKEN_CDF_Q_CTXS][PLANE_TYPES][DC_SIGN_CONTEXTS]
                                                 [CDF_SIZE(2)] = {
                                                     {{
@@ -3029,8 +3025,9 @@ static const AomCdfProb av1_default_coeff_base_eob_multi_cdfs[TOKEN_CDF_Q_CTXS][
                                                                     {AOM_CDF3(10923, 21845)},
                                                                     {AOM_CDF3(10923, 21845)}}}}};
 
-/********************************************************************************************************************************/
-// entropy.c
+
+/**********************************************************************************************************************/
+/*!< entropy.c */
 static int32_t get_q_ctx(int32_t q) {
     if (q <= 20) return 0;
     if (q <= 60) return 1;
@@ -3179,9 +3176,8 @@ void eb_av1_reset_cdf_symbol_counters(FRAME_CONTEXT *fc) {
     RESET_CDF_COUNTER(fc->cfl_sign_cdf, CFL_JOINT_SIGNS);
     RESET_CDF_COUNTER(fc->cfl_alpha_cdf, CFL_ALPHABET_SIZE);
 }
+/**********************************************************************************************************************/
 
-/********************************************************************************************************************************/
-
-/********************************************************************************************************************************/
-/********************************************************************************************************************************/
-/********************************************************************************************************************************/
+/**********************************************************************************************************************/
+/**********************************************************************************************************************/
+/**********************************************************************************************************************/

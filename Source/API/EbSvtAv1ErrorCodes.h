@@ -1,16 +1,14 @@
-/*
-* Copyright(c) 2019 Intel Corporation
-* SPDX - License - Identifier: BSD - 2 - Clause - Patent
-*/
+/*!< Copyright(c) 2019 Intel Corporation
+ * SPDX - License - Identifier: BSD - 2 - Clause - Patent */
 
 #ifndef EbSvtAv1ErrorCodes_h
 #define EbSvtAv1ErrorCodes_h
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif /*!< __cplusplus */
 
-#define CHECK_REPORT_ERROR(cond, app_callback_ptr, errorCode)                          \
+#define CHECK_REPORT_ERROR(cond, app_callback_ptr, errorCode)                        \
     {                                                                                \
         if (!(cond)) {                                                               \
             (app_callback_ptr)->error_handler(((app_callback_ptr)->handle), (errorCode)); \
@@ -29,7 +27,7 @@ extern "C" {
 
 typedef enum ENCODER_ERROR_CODES {
     EB_APP_ERRORS = 0x0100,
-    //EB_ENC_AMVP_ERRORS                = 0x0200,
+    /*!< EB_ENC_AMVP_ERRORS                = 0x0200,*/
     EB_ENC_AMVP_ERROR1           = 0x0200,
     EB_ENC_AMVP_ERROR2           = 0x0201,
     EB_ENC_AMVP_ERROR3           = 0x0202,
@@ -41,7 +39,7 @@ typedef enum ENCODER_ERROR_CODES {
     EB_ENC_AMVP_ERROR7           = 0x0208,
     EB_ENC_AMVP_ERROR8           = 0x0209,
     EB_ENC_MCP_ERRORS            = 0x0300,
-    //EB_ENC_BITSTREAM_ERRORS           = 0x0400,
+    /*!< EB_ENC_BITSTREAM_ERRORS           = 0x0400,*/
     EB_ENC_BITSTREAM_ERROR1 = 0x0400,
     EB_ENC_BITSTREAM_ERROR2 = 0x0401,
     EB_ENC_BITSTREAM_ERROR3 = 0x0402,
@@ -50,7 +48,7 @@ typedef enum ENCODER_ERROR_CODES {
     EB_ENC_BITSTREAM_ERROR6 = 0x0405,
     EB_ENC_BITSTREAM_ERROR7 = 0x0406,
     EB_ENC_BITSTREAM_ERROR8 = 0x0407,
-    //EB_ENC_CL_ERRORS                  = 0x0500,
+    /*!< EB_ENC_CL_ERRORS                  = 0x0500, */
     EB_ENC_CL_ERROR1 = 0x0500,
     EB_ENC_CL_ERROR2 = 0x0501,
     EB_ENC_CL_ERROR3 = 0x0502,
@@ -60,7 +58,7 @@ typedef enum ENCODER_ERROR_CODES {
     EB_ENC_CL_ERROR7 = 0x0506,
     EB_ENC_CL_ERROR8 = 0x0507,
     EB_ENC_CL_ERROR9 = 0x0508,
-    //EB_ENC_DLF_ERRORS                 = 0x0600,
+    /*!< EB_ENC_DLF_ERRORS                 = 0x0600, */
     EB_ENC_DLF_ERROR1  = 0x0600,
     EB_ENC_DLF_ERROR2  = 0x0601,
     EB_ENC_DLF_ERROR3  = 0x0602,
@@ -71,7 +69,7 @@ typedef enum ENCODER_ERROR_CODES {
     EB_ENC_DLF_ERROR8  = 0x0607,
     EB_ENC_DLF_ERROR9  = 0x0608,
     EB_ENC_DLF_ERROR10 = 0x0609,
-    //EB_ENC_EC_ERRORS                  = 0x0700,
+    /*!< EB_ENC_EC_ERRORS                  = 0x0700, */
     EB_ENC_EC_ERROR1  = 0x0700,
     EB_ENC_EC_ERROR2  = 0x0701,
     EB_ENC_EC_ERROR3  = 0x0702,
@@ -101,25 +99,25 @@ typedef enum ENCODER_ERROR_CODES {
     EB_ENC_EC_ERROR27 = 0x0720,
     EB_ENC_EC_ERROR28 = 0x0721,
     EB_ENC_EC_ERROR29 = 0x0722,
-    //EB_ENC_INTER_PRED_ERRORS          = 0x0800,
+    /*!< EB_ENC_INTER_PRED_ERRORS          = 0x0800, */
     EB_ENC_INTER_PRED_ERROR0     = 0x0800,
     EB_ENC_INTER_PRED_ERROR1     = 0x0801,
     EB_ENC_INTER_PRED_ERROR2     = 0x0802,
     EB_ENC_INTER_PRED_ERROR3     = 0x0803,
     EB_ENC_INTER_PRED_ERROR4     = 0x0804,
     EB_ENC_INTER_INVLD_MCP_ERROR = 0x0805,
-    //EB_ENC_RD_COST_ERRORS             = 0x0900,
+    /*!< EB_ENC_RD_COST_ERRORS             = 0x0900, */
     EB_ENC_RD_COST_ERROR1 = 0x0900,
     EB_ENC_RD_COST_ERROR2 = 0x0901,
     EB_ENC_RD_COST_ERROR3 = 0x0902,
-    //EB_ENC_SAO_ERRORS                 = 0x0a00,
+    /*!< EB_ENC_SAO_ERRORS                 = 0x0a00, */
     EB_ENC_SAO_ERROR1       = 0x0a00,
     EB_ENC_SAO_ERROR2       = 0x0a01,
     EB_ENC_TRANSFORM_ERRORS = 0x0b00,
     EB_ENC_TFILTER_ERRORS   = 0x0c00,
     EB_ENC_THREAD_ERRORS    = 0x0d00,
     EB_ENC_ALF_ERRORS       = 0x0e00,
-    //EB_ENC_HANDLE_ERRORS              = 0x0f00,
+    /*!< EB_ENC_HANDLE_ERRORS              = 0x0f00, */
     EB_ENC_HANDLE_ERROR1  = 0x0f00,
     EB_ENC_HANDLE_ERROR2  = 0x0f01,
     EB_ENC_HANDLE_ERROR3  = 0x0f02,
@@ -138,7 +136,7 @@ typedef enum ENCODER_ERROR_CODES {
     EB_ENC_HANDLE_ERROR16 = 0x0f0f,
     EB_ENC_HANDLE_ERROR17 = 0x0f10,
     EB_ENC_HANDLE_ERROR18 = 0x0f11,
-    //EB_ENC_MD_ERRORS                  = 0x1000,
+    /*!< EB_ENC_MD_ERRORS                  = 0x1000, */
     EB_ENC_MD_ERROR1  = 0x1000,
     EB_ENC_MD_ERROR2  = 0x1001,
     EB_ENC_MD_ERROR3  = 0x1002,
@@ -149,16 +147,16 @@ typedef enum ENCODER_ERROR_CODES {
     EB_ENC_MD_ERROR8  = 0x1007,
     EB_ENC_MD_ERROR9  = 0x1008,
     EB_ENC_MD_ERROR10 = 0x1009,
-    //EB_ENC_ME_ERRORS                  = 0x1100,
+    /*!< EB_ENC_ME_ERRORS                  = 0x1100, */
     EB_ENC_ME_ERROR1 = 0x1100,
     EB_ENC_ME_ERROR2 = 0x1101,
-    //EB_ENC_PACKETIZATION_ERRORS       = 0x1200,
+    /*!< EB_ENC_PACKETIZATION_ERRORS       = 0x1200, */
     EB_ENC_PACKETIZATION_ERROR1 = 0x1200,
     EB_ENC_PACKETIZATION_ERROR2 = 0x1201,
     EB_ENC_PACKETIZATION_ERROR3 = 0x1202,
     EB_ENC_PACKETIZATION_ERROR4 = 0x1203,
     EB_ENC_PACKETIZATION_ERROR5 = 0x1204,
-    //EB_ENC_PM_ERRORS                  = 0x1300,
+    /*!< EB_ENC_PM_ERRORS                  = 0x1300, */
     EB_ENC_PM_ERROR0  = 0x1300,
     EB_ENC_PM_ERROR1  = 0x1301,
     EB_ENC_PM_ERROR2  = 0x1302,
@@ -175,7 +173,7 @@ typedef enum ENCODER_ERROR_CODES {
     EB_ENC_PM_ERROR13 = 0x130e,
     EB_ENC_PM_ERROR14 = 0x130f,
     EB_ENC_PM_ERROR15 = 0x1310,
-    //EB_ENC_RC_ERRORS                  = 0x1400
+    /*!< EB_ENC_RC_ERRORS                  = 0x1400 */
     EB_ENC_RC_ERROR1 = 0x1400,
     EB_ENC_RC_ERROR2 = 0x1401,
     EB_ENC_RC_ERROR3 = 0x1402,
@@ -184,26 +182,26 @@ typedef enum ENCODER_ERROR_CODES {
     EB_ENC_RC_ERROR6 = 0x1405,
     EB_ENC_RC_ERROR7 = 0x1406,
     EB_ENC_RC_ERROR8 = 0x1407,
-    //EB_ENC_PU_ERRORS                  = 0x1500,
+    /*!< *!< EB_ENC_PU_ERRORS                  = 0x1500, */
     EB_ENC_PU_ERROR1             = 0x1500,
     EB_ENC_PU_ERROR2             = 0x1501,
     EB_ENC_INVLD_PART_SIZE_ERROR = 0x1502,
     EB_ENC_ROB_OF_ERROR          = 0x1601,
-    //EB_ENC_INTRA_PRED_ERRORS          = 0x1700,
+    /*!< EB_ENC_INTRA_PRED_ERRORS          = 0x1700, */
     EB_ENC_INTRA_PRED_ERROR1 = 0x1700,
     EB_ENC_INTRA_PRED_ERROR2 = 0x1701,
     EB_ENC_INTRA_PRED_ERROR3 = 0x1702,
-    //EB_ENC_FL_ERRORS                  = 0x1800,
+    /*!< EB_ENC_FL_ERRORS                  = 0x1800, */
     EB_ENC_FL_ERROR1 = 0x1800,
     EB_ENC_FL_ERROR2 = 0x1801,
     EB_ENC_FL_ERROR3 = 0x1802,
     EB_ENC_FL_ERROR4 = 0x1803,
-    //EB_ENC_PRED_STRC_ERRORS           = 0x1900,
+    /*!< EB_ENC_PRED_STRC_ERRORS           = 0x1900, */
     EB_ENC_PRED_STRC_ERROR1 = 0x1900,
     EB_ENC_PRED_STRC_ERROR2 = 0x1901,
-    //EB_ENC_SCS_ERRORS                 = 0x2000,
+    /*!< EB_ENC_SCS_ERRORS                 = 0x2000, */
     EB_ENC_SCS_ERROR1 = 0x2000,
-    //EB_ENC_RESS_COOR_ERRORS           = 0x2100,
+    /*!< EB_ENC_RESS_COOR_ERRORS           = 0x2100, */
     EB_ENC_RESS_COOR_ERRORS1                            = 0x2100,
     EB_ENC_RES_COORD_NoInputPicture                     = 0x2101,
     EB_ENC_RES_COORD_InputPictureWidthTooLarge          = 0x2102,
@@ -213,7 +211,7 @@ typedef enum ENCODER_ERROR_CODES {
     EB_ENC_RES_COORD_InputPictureNotEnoughBottomPadding = 0x2106,
     EB_ENC_RES_COORD_InvalidQP                          = 0x2108,
     EB_ENC_RES_COORD_InvalidSliceType                   = 0x2109,
-    //EB_ENC_PD_ERRORS                  = 0x2100,
+    /*!< EB_ENC_PD_ERRORS                  = 0x2100, */
     EB_ENC_PD_ERROR1 = 0x2100,
     EB_ENC_PD_ERROR2 = 0x2101,
     EB_ENC_PD_ERROR3 = 0x2102,
@@ -226,6 +224,6 @@ typedef enum ENCODER_ERROR_CODES {
 
 #ifdef __cplusplus
 }
-#endif // __cplusplus
+#endif /*!< __cplusplus */
 
-#endif // EbSvtAv1ErrorCodes_h
+#endif /*!< EbSvtAv1ErrorCodes_h */

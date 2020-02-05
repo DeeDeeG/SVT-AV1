@@ -1,14 +1,11 @@
-/*
-* Copyright(c) 2019 Netflix, Inc.
-* SPDX - License - Identifier: BSD - 2 - Clause - Patent
-*/
+/*!< Copyright(c) 2019 Netflix, Inc.
+ * SPDX - License - Identifier: BSD - 2 - Clause - Patent */
 
-// SUMMARY
-//   Contains the Decoder Utility functions
+/*!< SUMMARY: Contains the Decoder Utility functions */
 
-/**************************************
- * Includes
- **************************************/
+/**************************************/
+/*!< Includes */
+/**************************************/
 #include <stdlib.h>
 #include "EbDecUtils.h"
 #include "EbDefinitions.h"
@@ -25,7 +22,7 @@ EbErrorType check_add_tplmv_buf(EbDecHandle *dec_handle_ptr) {
                       (dec_handle_ptr->master_frame_buf.tpl_mvs_size < tpl_size);
 
     if (realloc) {
-        /*TODO: Add free now itself */
+        /*!< TODO: Add free now itself */
         EB_MALLOC_DEC(TemporalMvRef *,
                       dec_handle_ptr->master_frame_buf.tpl_mvs,
                       tpl_size * sizeof(*dec_handle_ptr->master_frame_buf.tpl_mvs),
@@ -56,7 +53,7 @@ void derive_blk_pointers(EbPictureBufferDesc *recon_picture_buf, int32_t plane, 
         *recon_stride = recon_picture_buf->stride_cr;
     }
 
-    if (recon_picture_buf->bit_depth != EB_8BIT) { //16bit
+    if (recon_picture_buf->bit_depth != EB_8BIT) { /*!< 16bit */
         if (plane == 0)
             *pp_blk_recon_buf = (void *)((uint16_t *)recon_picture_buf->buffer_y + block_offset);
         else if (plane == 1)
@@ -100,7 +97,7 @@ void pad_pic(EbPictureBufferDesc *recon_picture_buf, FrameHeader *frame_hdr, int
     }
 
     if (recon_picture_buf->bit_depth == EB_8BIT) {
-        // Y samples
+        /*!< Y samples */
         generate_padding(recon_picture_buf->buffer_y,
                          recon_picture_buf->stride_y,
                          frame_size->superres_upscaled_width,
@@ -109,7 +106,7 @@ void pad_pic(EbPictureBufferDesc *recon_picture_buf, FrameHeader *frame_hdr, int
                          recon_picture_buf->origin_y);
 
         if (recon_picture_buf->color_format != EB_YUV400) {
-            // Cb samples
+            /*!< Cb samples */
             generate_padding(recon_picture_buf->buffer_cb,
                              recon_picture_buf->stride_cb,
                              (frame_size->superres_upscaled_width + sx) >> sx,
@@ -117,7 +114,7 @@ void pad_pic(EbPictureBufferDesc *recon_picture_buf, FrameHeader *frame_hdr, int
                              recon_picture_buf->origin_x >> sx,
                              recon_picture_buf->origin_y >> sy);
 
-            // Cr samples
+            /*!< Cr samples */
             generate_padding(recon_picture_buf->buffer_cr,
                              recon_picture_buf->stride_cr,
                              (frame_size->superres_upscaled_width + sx) >> sx,
@@ -126,7 +123,7 @@ void pad_pic(EbPictureBufferDesc *recon_picture_buf, FrameHeader *frame_hdr, int
                              recon_picture_buf->origin_y >> sy);
         }
     } else {
-        // Y samples
+        /*!< Y samples */
         generate_padding16_bit(recon_picture_buf->buffer_y,
                                recon_picture_buf->stride_y << 1,
                                frame_size->superres_upscaled_width << 1,
@@ -135,7 +132,7 @@ void pad_pic(EbPictureBufferDesc *recon_picture_buf, FrameHeader *frame_hdr, int
                                recon_picture_buf->origin_y);
 
         if (recon_picture_buf->color_format != EB_YUV400) {
-            // Cb samples
+            /*!< Cb samples */
             generate_padding16_bit(recon_picture_buf->buffer_cb,
                                    recon_picture_buf->stride_cb << 1,
                                    ((frame_size->superres_upscaled_width + sx) >> sx) << 1,
@@ -143,7 +140,7 @@ void pad_pic(EbPictureBufferDesc *recon_picture_buf, FrameHeader *frame_hdr, int
                                    recon_picture_buf->origin_x >> sx << 1,
                                    recon_picture_buf->origin_y >> sy);
 
-            // Cr samples
+            /*!< Cr samples */
             generate_padding16_bit(recon_picture_buf->buffer_cr,
                                    recon_picture_buf->stride_cr << 1,
                                    ((frame_size->superres_upscaled_width + sx) >> sx) << 1,

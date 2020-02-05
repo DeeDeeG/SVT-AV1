@@ -1,7 +1,5 @@
-/*
-* Copyright(c) 2019 Intel Corporation
-* SPDX - License - Identifier: BSD - 2 - Clause - Patent
-*/
+/*!< Copyright(c) 2019 Intel Corporation
+* SPDX - License - Identifier: BSD - 2 - Clause - Patent */
 #ifndef EbMalloc_h
 #define EbMalloc_h
 #include <stdlib.h>
@@ -27,7 +25,7 @@ void eb_remove_mem_entry(void* ptr, EbPtrType type);
 #define EB_ADD_MEM_ENTRY(p, type, count)
 #define EB_REMOVE_MEM_ENTRY(p, type)
 
-#endif //DEBUG_MEMORY_USAGE
+#endif // DEBUG_MEMORY_USAGE
 
 #define EB_NO_THROW_ADD_MEM(p, size, type)                                               \
     do {                                                                                 \
@@ -176,4 +174,4 @@ void eb_print_memory_usage();
 void eb_increase_component_count();
 void eb_decrease_component_count();
 
-#endif //EbMalloc_h
+#endif // EbMalloc_h

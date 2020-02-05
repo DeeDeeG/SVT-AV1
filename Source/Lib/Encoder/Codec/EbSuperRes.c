@@ -1,18 +1,14 @@
-/*
-* Copyright(c) 2019 Netflix, Inc.
-* SPDX - License - Identifier: BSD - 2 - Clause - Patent
-*/
+/*!< Copyright(c) 2019 Netflix, Inc.
+ * SPDX - License - Identifier: BSD - 2 - Clause - Patent */
 
-/*
- * Copyright (c) 2016, Alliance for Open Media. All rights reserved
+/*!< Copyright (c) 2016, Alliance for Open Media. All rights reserved
  *
  * This source code is subject to the terms of the BSD 2 Clause License and
  * the Alliance for Open Media Patent License 1.0. If the BSD 2 Clause License
  * was not distributed with this source code in the LICENSE file, you can
  * obtain it at www.aomedia.org/license/software. If the Alliance for Open
  * Media Patent License 1.0 was not distributed with this source code in the
- * PATENTS file, you can obtain it at www.aomedia.org/license/patent.
- */
+ * PATENTS file, you can obtain it at www.aomedia.org/license/patent. */
 
 #include "EbEntropyCoding.h"
 #include "EbInterPrediction.h"
@@ -122,12 +118,12 @@ void upscale_normative_rect(const uint8_t *const input, int height, int width, i
     assert(height2 > 0);
     assert(height2 == height);
 
-    /* Extend the left/right pixels of the tile column if needed
-    (either because we can't sample from other tiles, or because we're at
-    a frame edge).
-    Save the overwritten pixels into tmp_left and tmp_right.
-    Note: Because we pass input-1 to av1_convolve_horiz_rs, we need one extra
-    column of border pixels compared to what we'd naively think.*/
+    /*!< Extend the left/right pixels of the tile column if needed
+     *   (either because we can't sample from other tiles, or because we're at
+     *   a frame edge).
+     *   Save the overwritten pixels into tmp_left and tmp_right.
+     *   Note: Because we pass input-1 to av1_convolve_horiz_rs, we need one extra
+     *   column of border pixels compared to what we'd naively think. */
     const int      border_cols = UPSCALE_NORMATIVE_TAPS / 2 + 1;
     uint8_t *      tmp_left    = NULL;
     uint8_t *      tmp_right   = NULL;
@@ -159,7 +155,7 @@ void upscale_normative_rect(const uint8_t *const input, int height, int width, i
                             x0_qn,
                             x_step_qn);
 
-    /* Restore the left/right border pixels */
+    /*!< Restore the left/right border pixels */
     if (pad_left) {
         for (int i = 0; i < height; i++) {
             memcpy(in_tl + i * in_stride, tmp_left + i * border_cols, border_cols);
@@ -183,12 +179,12 @@ void highbd_upscale_normative_rect(const uint8_t *const input, int height, int w
     assert(height2 > 0);
     assert(height2 == height);
 
-    /* Extend the left/right pixels of the tile column if needed
-    (either because we can't sample from other tiles, or because we're at
-    a frame edge).
-    Save the overwritten pixels into tmp_left and tmp_right.
-    Note: Because we pass input-1 to av1_convolve_horiz_rs, we need one extra
-    column of border pixels compared to what we'd naively think.*/
+    /*!< Extend the left/right pixels of the tile column if needed
+     *   (either because we can't sample from other tiles, or because we're at
+     *   a frame edge).
+     *   Save the overwritten pixels into tmp_left and tmp_right.
+     *   Note: Because we pass input-1 to av1_convolve_horiz_rs, we need one extra
+     *   column of border pixels compared to what we'd naively think. */
     const int       border_cols = UPSCALE_NORMATIVE_TAPS / 2 + 1;
     const int       border_size = border_cols * sizeof(uint16_t);
     uint16_t *      tmp_left    = NULL;
@@ -222,7 +218,7 @@ void highbd_upscale_normative_rect(const uint8_t *const input, int height, int w
                                    x_step_qn,
                                    bd);
 
-    /*Restore the left/right border pixels*/
+    /*!< Restore the left/right border pixels */
     if (pad_left) {
         for (int i = 0; i < height; i++) {
             memcpy(in_tl + i * in_stride, tmp_left + i * border_cols, border_size);
@@ -253,11 +249,11 @@ void av1_upscale_normative_rows(const Av1Common *cm, const uint8_t *src, int src
     for (int j = 0; j < cm->tiles_info.tile_cols; j++) {
         eb_av1_tile_set_col(&tile_col, &cm->tiles_info, cm->mi_cols, j);
 
-        /*Determine the limits of this tile column in both the source
-        and destination images.
-        Note: The actual location which we start sampling from is
-        (downscaled_x0 - 1 + (x0_qn/2^14)), and this quantity increases
-        by exactly dst_width * (x_step_qn/2^14) pixels each iteration.*/
+        /*!< Determine the limits of this tile column in both the source
+         *   and destination images.
+         *   Note: The actual location which we start sampling from is
+         *   (downscaled_x0 - 1 + (x0_qn/2^14)), and this quantity increases
+         *   by exactly dst_width * (x_step_qn/2^14) pixels each iteration. */
         const int downscaled_x0 = tile_col.mi_col_start << (MI_SIZE_LOG2 - sub_x);
         const int downscaled_x1 = tile_col.mi_col_end << (MI_SIZE_LOG2 - sub_x);
         const int src_width     = downscaled_x1 - downscaled_x0;
@@ -265,9 +261,9 @@ void av1_upscale_normative_rows(const Av1Common *cm, const uint8_t *src, int src
         const int upscaled_x0 = (downscaled_x0 * superres_denom) / SCALE_NUMERATOR;
         int       upscaled_x1;
         if (j == cm->tiles_info.tile_cols - 1) {
-            /*Note that we can't just use AOMMIN here - due to rounding,
-            (downscaled_x1 * superres_denom) / SCALE_NUMERATOR may be less than
-            upscaled_plane_width.*/
+            /*!< Note that we can't just use AOMMIN here - due to rounding,
+             *   (downscaled_x1 * superres_denom) / SCALE_NUMERATOR may be less than
+             *   upscaled_plane_width.*/
             upscaled_x1 = upscaled_plane_width;
         } else
             upscaled_x1 = (downscaled_x1 * superres_denom) / SCALE_NUMERATOR;
@@ -307,7 +303,7 @@ void av1_upscale_normative_rows(const Av1Common *cm, const uint8_t *src, int src
                                    pad_left,
                                    pad_right);
 
-        /*Update the fractional pixel offset to prepare for the next tile col*/
+        /*!< Update the fractional pixel offset to prepare for the next tile col */
         x0_qn += (dst_width * x_step_qn) - (src_width << RS_SCALE_SUBPEL_BITS);
     }
 }

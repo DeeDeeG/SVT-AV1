@@ -1,14 +1,11 @@
-/*
-* Copyright(c) 2019 Netflix, Inc.
-* SPDX - License - Identifier: BSD - 2 - Clause - Patent
-*/
+/*!< Copyright(c) 2019 Netflix, Inc.
+ * SPDX - License - Identifier: BSD - 2 - Clause - Patent */
 
-// SUMMARY
-//   Contains the Decode MT process related functions
+/*!< SUMMARY: Contains the Decode MT process related functions */
 
-/**************************************
- * Includes
- **************************************/
+/**************************************/
+/*!< Includes */
+/**************************************/
 
 #include "EbDefinitions.h"
 #include "EbPictureBufferDesc.h"
@@ -32,7 +29,7 @@
 #include <stdlib.h>
 
 void *dec_all_stage_kernel(void *input_ptr);
-/*ToDo : Remove all these replications */
+/*!< ToDo : Remove all these replications */
 void eb_av1_loop_filter_frame_init(FrameHeader *frm_hdr, LoopFilterInfoN *lfi, int32_t plane_start,
                                    int32_t plane_end);
 void dec_loop_filter_row(EbDecHandle *dec_handle_ptr, EbPictureBufferDesc *recon_picture_buf,
@@ -59,9 +56,9 @@ EbErrorType dec_dummy_creator(EbPtr *object_dbl_ptr, EbPtr object_init_data_ptr)
     return EB_ErrorNone;
 }
 
-/************************************
-* System Resource Managers & Fifos
-************************************/
+/**************************************/
+/*!< System Resource Managers & Fifos */
+/**************************************/
 EbErrorType dec_system_resource_init(EbDecHandle *dec_handle_ptr, TilesInfo *tiles_info) {
     EbErrorType     return_error = EB_ErrorNone;
     DecMtFrameData *dec_mt_frame_data =
@@ -71,38 +68,38 @@ EbErrorType dec_system_resource_init(EbDecHandle *dec_handle_ptr, TilesInfo *til
 
     assert(dec_handle_ptr->dec_config.threads > 1);
 
-    /************************************
-    * System Resource Managers & Fifos
-    ************************************/
+    /**************************************/
+    /*!< System Resource Managers & Fifos */
+    /**************************************/
     dec_handle_ptr->start_thread_process = EB_FALSE;
 
-    /* Motion Filed Projection*/
+    /*!< Motion Filed Projection */
     dec_mt_frame_data->motion_proj_info.num_motion_proj_rows = -1;
     EB_CREATE_MUTEX(dec_mt_frame_data->motion_proj_info.motion_proj_mutex);
 
-    /* Parse Q */
+    /*!< Parse Q */
     uint32_t node_idx = 0;
 
     EB_NEW(dec_mt_frame_data->parse_tile_resource_ptr,
            eb_system_resource_ctor,
-           num_tiles, /* object_total_count */
-           1, /* producer procs cnt : 1 Q per cnt is created inside, so kept 1*/
-           1, /* consumer prcos cnt : 1 Q per cnt is created inside, so kept 1*/
+           num_tiles, /*!< object_total_count */
+           1, /*!< producer procs cnt : 1 Q per cnt is created inside, so kept 1*/
+           1, /*!< consumer prcos cnt : 1 Q per cnt is created inside, so kept 1*/
            dec_dummy_creator,
            &node_idx,
            NULL);
 
     dec_mt_frame_data->parse_tile_producer_fifo_ptr = eb_system_resource_get_producer_fifo(
-        dec_mt_frame_data->parse_tile_resource_ptr, 0); /* producer_fifo */
+        dec_mt_frame_data->parse_tile_resource_ptr, 0); /*!< producer_fifo */
     dec_mt_frame_data->parse_tile_consumer_fifo_ptr = eb_system_resource_get_consumer_fifo(
-        dec_mt_frame_data->parse_tile_resource_ptr, 0); /* consumer_fifo */
+        dec_mt_frame_data->parse_tile_resource_ptr, 0); /*!< consumer_fifo */
 
-    /* Recon queue */
+    /*!< Recon queue */
     EB_NEW(dec_mt_frame_data->recon_tile_resource_ptr,
            eb_system_resource_ctor,
-           num_tiles, /* object_total_count */
-           1, /* producer procs cnt : 1 Q per cnt is created inside, so kept 1*/
-           1, /* consumer prcos cnt : 1 Q per cnt is created inside, so kept 1*/
+           num_tiles, /*!< object_total_count */
+           1, /*!< producer procs cnt : 1 Q per cnt is created inside, so kept 1*/
+           1, /*!< consumer prcos cnt : 1 Q per cnt is created inside, so kept 1*/
            dec_dummy_creator,
            &node_idx,
            NULL);
@@ -116,12 +113,12 @@ EbErrorType dec_system_resource_init(EbDecHandle *dec_handle_ptr, TilesInfo *til
     uint32_t picture_height_in_sb =
         (dec_handle_ptr->seq_header.max_frame_height + sb_size_h - 1) / sb_size_h;
 
-    /* LF queue */
+    /*!< LF queue */
     EB_NEW(dec_mt_frame_data->lf_frame_info.lf_resource_ptr,
            eb_system_resource_ctor,
-           picture_height_in_sb, /* object_total_count */
-           1, /* producer procs cnt : 1 Q per cnt is created inside, so kept 1*/
-           1, /* consumer prcos cnt : 1 Q per cnt is created inside, so kept 1*/
+           picture_height_in_sb, /*!< object_total_count */
+           1, /*!< producer procs cnt : 1 Q per cnt is created inside, so kept 1*/
+           1, /*!< consumer prcos cnt : 1 Q per cnt is created inside, so kept 1*/
            dec_dummy_creator,
            &node_idx,
            NULL);
@@ -131,12 +128,12 @@ EbErrorType dec_system_resource_init(EbDecHandle *dec_handle_ptr, TilesInfo *til
     dec_mt_frame_data->lf_frame_info.lf_row_consumer_fifo_ptr =
         eb_system_resource_get_consumer_fifo(dec_mt_frame_data->lf_frame_info.lf_resource_ptr, 0);
 
-    /* CDEF queue */
+    /*!< CDEF queue */
     EB_NEW(dec_mt_frame_data->cdef_resource_ptr,
            eb_system_resource_ctor,
-           picture_height_in_sb, /* object_total_count */
-           1, /* producer procs cnt : 1 Q per cnt is created inside, so kept 1*/
-           1, /* consumer prcos cnt : 1 Q per cnt is created inside, so kept 1*/
+           picture_height_in_sb, /*!< object_total_count */
+           1, /*!< producer procs cnt : 1 Q per cnt is created inside, so kept 1 */
+           1, /*!< consumer prcos cnt : 1 Q per cnt is created inside, so kept 1 */
            dec_dummy_creator,
            &node_idx,
            NULL);
@@ -144,16 +141,16 @@ EbErrorType dec_system_resource_init(EbDecHandle *dec_handle_ptr, TilesInfo *til
         eb_system_resource_get_producer_fifo(dec_mt_frame_data->cdef_resource_ptr, 0);
     dec_mt_frame_data->cdef_row_consumer_fifo_ptr =
         eb_system_resource_get_consumer_fifo(dec_mt_frame_data->cdef_resource_ptr, 0);
-    /************************************
-    * Contexts
-    ************************************/
+    /************************************/
+    /*!< Contexts */
+    /************************************/
 
-    /* Recon */
+    /*!< Recon */
     EB_MALLOC_DEC(uint32_t *,
                   dec_mt_frame_data->sb_recon_row_map,
                   picture_height_in_sb * tiles_info->tile_cols * sizeof(uint32_t),
                   EB_N_PTR);
-    /* recon top right sync */
+    /*!< recon top right sync */
     {
         int32_t tiles_ctr;
 
@@ -172,7 +169,7 @@ EbErrorType dec_system_resource_init(EbDecHandle *dec_handle_ptr, TilesInfo *til
 
             tile_info = &dec_mt_frame_data->parse_recon_tile_info_array[tiles_ctr].tile_info;
 
-            /* init tile info */
+            /*!< init tile info */
             svt_tile_init(tile_info, &dec_handle_ptr->frame_header, tile_row, tile_col);
 
             tile_num_sb_rows = ((((tile_info->mi_row_end - 1) << MI_SIZE_LOG2) >>
@@ -205,22 +202,22 @@ EbErrorType dec_system_resource_init(EbDecHandle *dec_handle_ptr, TilesInfo *til
             EB_CREATE_MUTEX(
                 dec_mt_frame_data->parse_recon_tile_info_array[tiles_ctr].tile_sbrow_mutex);
 
-            /* SB row queue */
+            /*!< SB row queue */
             //EB_NEW(dec_mt_frame_data->parse_recon_tile_info_array[tiles_ctr].recon_tile_sbrow_resource_ptr,
             //    eb_system_resource_ctor,
-            //    tile_num_sb_rows, /* object_total_count */
-            //    1, /* producer procs cnt : 1 Q per cnt is created inside, so kept 1*/
-            //    1, /* consumer prcos cnt : 1 Q per cnt is created inside, so kept 1*/
-            //    &dec_mt_frame_data->parse_recon_tile_info_array[tiles_ctr].recon_tile_sbrow_producer_fifo_ptr, /* producer_fifo */
-            //    &dec_mt_frame_data->parse_recon_tile_info_array[tiles_ctr].recon_tile_sbrow_consumer_fifo_ptr, /* consumer_fifo */
-            //    EB_TRUE, /* Full Queue*/
+            //    tile_num_sb_rows, /*!< object_total_count */
+            //    1, /*!< producer procs cnt : 1 Q per cnt is created inside, so kept 1*/
+            //    1, /*!< consumer prcos cnt : 1 Q per cnt is created inside, so kept 1*/
+            //    &dec_mt_frame_data->parse_recon_tile_info_array[tiles_ctr].recon_tile_sbrow_producer_fifo_ptr, /*!< producer_fifo */
+            //    &dec_mt_frame_data->parse_recon_tile_info_array[tiles_ctr].recon_tile_sbrow_consumer_fifo_ptr, /*!< consumer_fifo */
+            //    EB_TRUE, /*!< Full Queue*/
             //    dec_dummy_creator,
             //    &node_idx,
             //    NULL);
         }
     }
 
-    /* LF */
+    /*!< LF */
     EB_MALLOC_DEC(int32_t *,
                   dec_mt_frame_data->lf_frame_info.sb_lf_completed_in_row,
                   picture_height_in_sb * sizeof(int32_t),
@@ -231,7 +228,7 @@ EbErrorType dec_system_resource_init(EbDecHandle *dec_handle_ptr, TilesInfo *til
                   picture_height_in_sb * sizeof(uint32_t),
                   EB_N_PTR);
 
-    /* CDEF */
+    /*!< CDEF */
     const int32_t num_planes = av1_num_planes(&dec_handle_ptr->seq_header.color_config);
     uint32_t      mi_cols    = 2 * ((dec_handle_ptr->seq_header.max_frame_width + 7) >> 3);
 
@@ -243,8 +240,8 @@ EbErrorType dec_system_resource_init(EbDecHandle *dec_handle_ptr, TilesInfo *til
     const int32_t stride                   = (mi_cols << MI_SIZE_LOG2) + 2 * CDEF_HBORDER;
     dec_mt_frame_data->cdef_linebuf_stride = stride;
 
-    /*ToDo: Linebuff memory we can allocate min(sb_rows , threads)*/
-    /*Currently we r allocating for every (64x64 +1 )rows*/
+    /*!< ToDo: Linebuff memory we can allocate min(sb_rows , threads)*/
+    /*!< Currently we r allocating for every (64x64 +1 )rows*/
     EB_MALLOC_DEC(
         uint16_t ***, dec_mt_frame_data->cdef_linebuf, (nvfb + 1) * sizeof(uint16_t **), EB_N_PTR);
     for (int32_t sb_row = 0; sb_row < (nvfb + 1); sb_row++) {
@@ -261,8 +258,9 @@ EbErrorType dec_system_resource_init(EbDecHandle *dec_handle_ptr, TilesInfo *til
     }
 
     dec_mt_frame_data->cdef_map_stride = nhfb + 2;
-    /*For fbr=0, previous row cdef points some junk memory, if we allocate memory only for nvfb 64x64 blocks,
-    to avoid to pointing junck memory, we allocate nvfb+1 64x64 blocks*/
+    /*!< For fbr=0, previous row cdef points some junk memory,
+     *   if we allocate memory only for nvfb 64x64 blocks,
+     *   to avoid to pointing junck memory, we allocate nvfb+1 64x64 blocks */
     EB_MALLOC_DEC(uint8_t *,
                   dec_mt_frame_data->row_cdef_map,
                   (nvfb + 1) * dec_mt_frame_data->cdef_map_stride * sizeof(uint8_t),
@@ -277,7 +275,7 @@ EbErrorType dec_system_resource_init(EbDecHandle *dec_handle_ptr, TilesInfo *til
                   EB_N_PTR);
     memset(dec_mt_frame_data->cdef_completed_in_row,
            0,
-           (nvfb + 2) * //Rem here nhbf+2 u replaced with nvfb + 2
+           (nvfb + 2) * /*!< Rem here nhbf+2 u replaced with nvfb + 2 */
                sizeof(uint32_t));
     dec_mt_frame_data->temp_mutex = eb_create_mutex();
 
@@ -287,11 +285,12 @@ EbErrorType dec_system_resource_init(EbDecHandle *dec_handle_ptr, TilesInfo *til
     dec_mt_frame_data->start_lf_frame     = EB_FALSE;
     dec_mt_frame_data->start_cdef_frame   = EB_FALSE;
     dec_mt_frame_data->num_threads_cdefed = 0;
-    /************************************
-    * Thread Handles
-    ************************************/
 
-    /* Decode Library Threads */
+    /************************************/
+    /*!< Thread Handles */
+    /************************************/
+
+    /*!< Decode Library Threads */
     uint32_t num_lib_threads = (int32_t)dec_handle_ptr->dec_config.threads - 1;
 
     dec_mt_frame_data->end_flag           = EB_FALSE;
@@ -318,7 +317,7 @@ EbErrorType dec_system_resource_init(EbDecHandle *dec_handle_ptr, TilesInfo *til
     return return_error;
 }
 
-/* Scan through the Tiles to find Bitstream offsets */
+/*!< Scan through the Tiles to find Bitstream offsets */
 void svt_av1_scan_tiles(EbDecHandle *dec_handle_ptr, TilesInfo *tiles_info, ObuHeader *obu_header,
                         Bitstrm *bs, uint32_t tg_start, uint32_t tg_end) {
     size_t           tile_size;
@@ -334,7 +333,7 @@ void svt_av1_scan_tiles(EbDecHandle *dec_handle_ptr, TilesInfo *tiles_info, ObuH
         }
         PRINT_FRAME("tile_size", (tile_size));
 
-        // Assign to ParseCtxt
+        /*!< Assign to ParseCtxt */
         parse_tile_data[tile_num].data      = get_bitsteam_buf(bs);
         parse_tile_data[tile_num].data_end  = bs->buf_max;
         parse_tile_data[tile_num].tile_size = tile_size;
@@ -354,14 +353,14 @@ void svt_av1_queue_parse_jobs(EbDecHandle *dec_handle_ptr, TilesInfo *tiles_info
               0,
               picture_height_in_sb * tiles_info->tile_cols * sizeof(uint32_t));
     for (uint32_t tile_num = tg_start; tile_num <= tg_end; tile_num++) {
-        // Get Empty Parse Tile Job
+        /*!< Get Empty Parse Tile Job */
         eb_get_empty_object(dec_mt_frame_data->parse_tile_producer_fifo_ptr,
                             &parse_results_wrapper_ptr);
 
         DecMtNode *context_ptr  = (DecMtNode *)parse_results_wrapper_ptr->object_ptr;
         context_ptr->node_index = tile_num;
 
-        // Post Parse Tile Job
+        /*!< Post Parse Tile Job */
         eb_post_full_object(parse_results_wrapper_ptr);
     }
 
@@ -387,7 +386,7 @@ EbErrorType parse_tile_job(EbDecHandle *dec_handle_ptr, int32_t tile_num) {
 }
 void recon_tile_job_post(DecMtFrameData *dec_mt_frame_data, uint32_t node_index) {
     EbObjectWrapper *recon_results_wrapper_ptr;
-    // Get Empty Recon Tile Job
+    /*!< Get Empty Recon Tile Job */
     eb_get_empty_object(dec_mt_frame_data->recon_tile_producer_fifo_ptr,
                         &recon_results_wrapper_ptr);
 
@@ -395,7 +394,7 @@ void recon_tile_job_post(DecMtFrameData *dec_mt_frame_data, uint32_t node_index)
     recon_context_ptr->node_index = node_index;
     //SVT_LOG("\nPost dec job in queue Thread id : %d Tile id : %d \n",
     //    th_cnt, recon_context_ptr->node_index);
-    // Post Recon Tile Job
+    /*!< Post Recon Tile Job */
     eb_post_full_object(recon_results_wrapper_ptr);
 }
 void parse_frame_tiles(EbDecHandle *dec_handle_ptr, DecThreadCtxt *thread_ctxt) {
@@ -424,7 +423,7 @@ void parse_frame_tiles(EbDecHandle *dec_handle_ptr, DecThreadCtxt *thread_ctxt) 
             for (uint32_t lib_thrd = 0; lib_thrd < dec_handle_ptr->dec_config.threads - 1;
                  lib_thrd++)
                 eb_post_semaphore(dec_handle_ptr->thread_ctxt_pa[lib_thrd].thread_semaphore);
-            // Release Parse Results
+            /*!< Release Parse Results */
             eb_release_object(parse_results_wrapper_ptr);
         } else
             break;
@@ -458,7 +457,7 @@ void decode_frame_tiles(EbDecHandle *dec_handle_ptr, DecThreadCtxt *thread_ctxt)
         if (thread_ctxt != NULL) {
             dec_mod_ctxt = thread_ctxt->dec_mod_ctxt;
 
-            /* TODO : Calling this function at a tile level is
+            /*!< TODO : Calling this function at a tile level is
                    excessive. Move this call to operate at a frame level.*/
             setup_segmentation_dequant(thread_ctxt->dec_mod_ctxt);
         }
@@ -480,13 +479,13 @@ void decode_frame_tiles(EbDecHandle *dec_handle_ptr, DecThreadCtxt *thread_ctxt)
 
             eb_block_on_mutex(dec_mt_frame_data->tile_switch_mutex);
 
-            //logic for switching acroos tile in SB decode
+            /*!< logic for switching acroos tile in SB decode */
             for (tile_idx = 0; tile_idx < num_tiles; tile_idx++) {
                 DecMtParseReconTileInfo *parse_recon_tile_info_array =
                     &dec_mt_frame_data->parse_recon_tile_info_array[tile_idx];
                 int32_t tile_num_sb_rows = parse_recon_tile_info_array->tile_num_sb_rows;
 
-                //check for incompleted tile with maximum rows to be processed
+                /*!< check for incompleted tile with maximum rows to be processed */
                 if (parse_recon_tile_info_array->sb_row_to_process !=
                     parse_recon_tile_info_array->tile_num_sb_rows) {
                     int32_t ctr;
@@ -498,7 +497,7 @@ void decode_frame_tiles(EbDecHandle *dec_handle_ptr, DecThreadCtxt *thread_ctxt)
 
                     curr_tile_rows_pend = tile_num_sb_rows - ctr;
 
-                    //check for min completed rows in a tile
+                    /*!< check for min completed rows in a tile */
                     if (max_rows_pend < curr_tile_rows_pend) {
                         max_rows_pend = curr_tile_rows_pend;
                         next_tile_idx = tile_idx;
@@ -508,7 +507,7 @@ void decode_frame_tiles(EbDecHandle *dec_handle_ptr, DecThreadCtxt *thread_ctxt)
 
             eb_release_mutex(dec_mt_frame_data->tile_switch_mutex);
 
-            //break from while 1 loop if no tile to be processed
+            /*!< break from while 1 loop if no tile to be processed */
             if (-1 == next_tile_idx) {
                 break;
             } else {
@@ -528,7 +527,7 @@ void svt_av1_queue_lf_jobs(EbDecHandle *dec_handle_ptr) {
     EbObjectWrapper *lf_results_wrapper_ptr;
 
     int32_t sb_size_h = block_size_high[dec_handle_ptr->seq_header.sb_size];
-    /* ToDo : picture_height_in_sb used many places. Reuse! */
+    /*!< ToDo : picture_height_in_sb used many places. Reuse! */
     uint32_t picture_height_in_sb =
         (dec_handle_ptr->frame_header.frame_size.frame_height + sb_size_h - 1) / sb_size_h;
     uint32_t y_sb_index;
@@ -541,18 +540,18 @@ void svt_av1_queue_lf_jobs(EbDecHandle *dec_handle_ptr) {
     memset(lf_frame_info->sb_lf_completed_in_row, -1, picture_height_in_sb * sizeof(int32_t));
 
     for (y_sb_index = 0; y_sb_index < picture_height_in_sb; ++y_sb_index) {
-        // Get Empty LF Frame Row Job
+        /*!< Get Empty LF Frame Row Job */
         eb_get_empty_object(lf_frame_info->lf_row_producer_fifo_ptr, &lf_results_wrapper_ptr);
 
         DecMtNode *context_ptr  = (DecMtNode *)lf_results_wrapper_ptr->object_ptr;
         context_ptr->node_index = y_sb_index;
 
-        // Post Parse Tile Job
+        /*!< Post Parse Tile Job */
         eb_post_full_object(lf_results_wrapper_ptr);
     }
 }
 
-/* Store LF_boundary_line req for LR */
+/*!< Store LF_boundary_line req for LR */
 static INLINE void dec_save_lf_boundary_lines_sb_row(EbDecHandle *  dec_handle,
                                                      Av1PixelRect **tile_rect, int32_t sb_row,
                                                      uint8_t **src, int32_t *stride,
@@ -564,7 +563,7 @@ static INLINE void dec_save_lf_boundary_lines_sb_row(EbDecHandle *  dec_handle,
     const int  use_highbd = (dec_handle->seq_header.color_config.bit_depth > 8);
     LrCtxt *   lr_ctxt    = (LrCtxt *)dec_handle->pv_lr_ctxt;
 
-    int32_t frame_stripe /* 64 strip */, plane_height;
+    int32_t frame_stripe /*!< 64 strip */, plane_height;
     for (int32_t p = 0; p < num_planes; ++p) {
         int32_t                      ss_x          = p ? cm->subsampling_x : 0;
         int32_t                      ss_y          = p ? cm->subsampling_y : 0;
@@ -587,13 +586,13 @@ static INLINE void dec_save_lf_boundary_lines_sb_row(EbDecHandle *  dec_handle,
             const int32_t y1     = AOMMIN(tile_rect[p]->top + rel_y1, tile_rect[p]->bottom);
 
             int32_t use_deblock_above, use_deblock_below;
-            // In this case, we should only use CDEF pixels at the top
-            // and bottom of the frame as a whole; internal tile boundaries
-            // can use deblocked pixels from adjacent tiles for context.
+            /*!< In this case, we should only use CDEF pixels at the top
+             * and bottom of the frame as a whole; internal tile boundaries
+             * can use deblocked pixels from adjacent tiles for context. */
             use_deblock_above = (frame_stripe > 0);
             use_deblock_below = (y1 < plane_height);
 
-            // Save deblocked context where needed.
+            /*!< Save deblocked context where needed. */
             if (use_deblock_above) {
                 save_deblock_boundary_lines(src[p],
                                             stride[p],
@@ -624,7 +623,7 @@ static INLINE void dec_save_lf_boundary_lines_sb_row(EbDecHandle *  dec_handle,
     }
 }
 
-/*Frame level function to trigger loop filter for each superblock*/
+/*!< Frame level function to trigger loop filter for each superblock */
 void dec_av1_loop_filter_frame_mt(EbDecHandle *dec_handle, EbPictureBufferDesc *recon_picture_buf,
                                   LfCtxt *lf_ctxt, LoopFilterInfoN *lf_info, int32_t plane_start,
                                   int32_t plane_end, DecThreadCtxt *thread_ctxt) {
@@ -640,7 +639,7 @@ void dec_av1_loop_filter_frame_mt(EbDecHandle *dec_handle, EbPictureBufferDesc *
 
     lf_ctxt->delta_lf_stride = dec_handle->master_frame_buf.sb_cols * FRAME_LF_COUNT;
     frm_hdr->loop_filter_params.combine_vert_horz_lf = 1;
-    /*init hev threshold const vectors*/
+    /*!< init hev threshold const vectors */
     for (int lvl = 0; lvl <= MAX_LOOP_FILTER; lvl++)
         memset(lf_info->lfthr[lvl].hev_thr, (lvl >> 4), SIMD_WIDTH);
 
@@ -649,9 +648,9 @@ void dec_av1_loop_filter_frame_mt(EbDecHandle *dec_handle, EbPictureBufferDesc *
     set_lbd_lf_filter_tap_functions();
     set_hbd_lf_filter_tap_functions();
 
-    /* For LF boundary store : Can optimize based on CDEF & LR flag */
-    // Get the tile rectangle, with height rounded up to the next multiple of 8
-    // luma pixels (only relevant for the bottom tile of the frame)
+    /*!< For LF boundary store : Can optimize based on CDEF & LR flag
+     * Get the tile rectangle, with height rounded up to the next multiple of 8
+     * luma pixels (only relevant for the bottom tile of the frame) */
     Av1PixelRect         tile_rect[MAX_MB_PLANE];
     Av1PixelRect *       tile_rect_p[MAX_MB_PLANE];
     const int            num_planes  = av1_num_planes(&dec_handle->seq_header.color_config);
@@ -682,10 +681,10 @@ void dec_av1_loop_filter_frame_mt(EbDecHandle *dec_handle, EbPictureBufferDesc *
             TilesInfo *tiles_info = &dec_handle->frame_header.tiles_info;
             sb_row                = context_ptr->node_index;
 
-            /* Ensure all TileRecon jobs are over for (row, row-1, row+1)      */
-            /* row-1 : To ensure line buf copy with TopR sync if LF skips row  */
-            /* This prevent issues across Tiles where recon sync is not ensured*/
-            /* row+1 : This is for CDEF actually, should be moved to CDEF stage*/
+            /*!< Ensure all TileRecon jobs are over for (row, row-1, row+1)      */
+            /*!< row-1 : To ensure line buf copy with TopR sync if LF skips row  */
+            /*!< This prevent issues across Tiles where recon sync is not ensured */
+            /*!< row+1 : This is for CDEF actually, should be moved to CDEF stage */
             int32_t start_lf[3] = {0};
             int32_t row_index[3];
             row_index[0] = (sb_row)*tiles_info->tile_cols;
@@ -716,17 +715,17 @@ void dec_av1_loop_filter_frame_mt(EbDecHandle *dec_handle, EbPictureBufferDesc *
                 }
             }
 
-            /* Store LR_save_boundary_lines at 64 lines : After LF         */
-            /* Store Above 64 line always, for SB 128 store Middle 64 also */
-            /* Bottom 64 won't be ready yet as next SB row Lf can modify it*/
-            /* TO DO: Should be based on LR flag! */
+            /*!< Store LR_save_boundary_lines at 64 lines : After LF         */
+            /*!< Store Above 64 line always, for SB 128 store Middle 64 also */
+            /*!< Bottom 64 won't be ready yet as next SB row Lf can modify it */
+            /*!< TO DO: Should be based on LR flag! */
             dec_save_lf_boundary_lines_sb_row(
                 dec_handle, tile_rect_p, sb_row, src, stride, num_planes);
 
-            /* Update LF done map */
+            /*!< Update LF done map */
             dec_mt_frame_data1->lf_row_map[context_ptr->node_index] = 1;
 
-            // Release LF Results
+            /*!< Release LF Results */
             eb_release_object(lf_results_wrapper_ptr);
         } else
             break;
@@ -747,14 +746,14 @@ void svt_av1_queue_cdef_jobs(EbDecHandle *dec_handle_ptr) {
     memset(dec_mt_frame_data->cdef_completed_in_row, 0, nvfb * sizeof(uint32_t));
 
     for (uint32_t sb_fbr = 0; sb_fbr < picture_height_in_sb; ++sb_fbr) {
-        // Get Empty LF Frame Row Job
+        /*!< Get Empty LF Frame Row Job */
         eb_get_empty_object(dec_mt_frame_data->cdef_row_producer_fifo_ptr,
                             &cdef_results_wrapper_ptr);
 
         DecMtNode *context_ptr  = (DecMtNode *)cdef_results_wrapper_ptr->object_ptr;
         context_ptr->node_index = sb_fbr;
 
-        // Post Parse Tile Job
+        /*!< Post Parse Tile Job */
         eb_post_full_object(cdef_results_wrapper_ptr);
     }
 }
@@ -781,7 +780,7 @@ void svt_cdef_frame_mt(EbDecHandle *dec_handle_ptr, DecThreadCtxt *thread_ctxt) 
         mi_wide_l2[pli] = MI_SIZE_LOG2 - sub_x;
         mi_high_l2[pli] = MI_SIZE_LOG2 - sub_y;
 
-        /*Deriveing  recon pict buffer ptr's*/
+        /*!< Deriveing  recon pict buffer ptr's */
         derive_blk_pointers(recon_picture_ptr,
                             pli,
                             0,
@@ -792,9 +791,9 @@ void svt_cdef_frame_mt(EbDecHandle *dec_handle_ptr, DecThreadCtxt *thread_ctxt) 
                             sub_y);
 
         if (dec_handle_ptr->seq_header.sb_size == BLOCK_128X128) {
-            /*For SB SIZE 128x128, we need two colbuf because, because we do cdef for
-            each 64x64 in SB block in raster scan order,
-            i.e for transversing across 0 - 3 64x64s in SB block*/
+            /*!< For SB SIZE 128x128, we need two colbuf because, because we do cdef for
+             *   each 64x64 in SB block in raster scan order,
+             *   i.e for transversing across 0 - 3 64x64s in SB block*/
             for (int32_t i = 0; i < 4; i += 3)
                 colbuf[pli + i] = (uint16_t *)eb_aom_malloc(
                     sizeof(*colbuf) * ((CDEF_BLOCKSIZE << mi_high_l2[pli]) + 2 * CDEF_VBORDER) *
@@ -818,7 +817,7 @@ void svt_cdef_frame_mt(EbDecHandle *dec_handle_ptr, DecThreadCtxt *thread_ctxt) 
         if (NULL != cdef_results_wrapper_ptr) {
             context_ptr = (DecMtNode *)cdef_results_wrapper_ptr->object_ptr;
 
-            /* Ensure all LF jobs are over for row_index (row / row+1) */
+            /*!< Ensure all LF jobs are over for row_index (row / row+1) */
             int32_t offset =
                 (int32_t)context_ptr->node_index == dec_mt_frame_data->sb_rows - 1 ? 0 : 1;
 
@@ -834,7 +833,7 @@ void svt_cdef_frame_mt(EbDecHandle *dec_handle_ptr, DecThreadCtxt *thread_ctxt) 
                                          frame_header->cdef_params.cdef_y_strength[0] ||
                                          frame_header->cdef_params.cdef_uv_strength[0]);
                 if (do_cdef) {
-                    /* SB Row Index */
+                    /*!< SB Row Index */
                     int32_t sb_fbr = (int32_t)context_ptr->node_index;
                     svt_cdef_sb_row_mt(dec_handle_ptr,
                                        mi_wide_l2,
@@ -846,7 +845,7 @@ void svt_cdef_frame_mt(EbDecHandle *dec_handle_ptr, DecThreadCtxt *thread_ctxt) 
                                        &curr_blk_recon_buf[0]);
                 }
             }
-            // Release Parse Results
+            /*!< Release Parse Results */
             eb_release_object(cdef_results_wrapper_ptr);
         } else
             break;
@@ -877,7 +876,7 @@ void svt_cdef_frame_mt(EbDecHandle *dec_handle_ptr, DecThreadCtxt *thread_ctxt) 
 }
 
 void *dec_all_stage_kernel(void *input_ptr) {
-    // Context
+    /*!< Context */
     DecThreadCtxt * thread_ctxt    = (DecThreadCtxt *)input_ptr;
     EbDecHandle *   dec_handle_ptr = thread_ctxt->dec_handle_ptr;
     DecMtFrameData *dec_mt_frame_data =
@@ -887,11 +886,11 @@ void *dec_all_stage_kernel(void *input_ptr) {
         ;
 
     while (1) {
-        /* Motion Field Projection */
+        /*!< Motion Field Projection */
         svt_setup_motion_field(dec_handle_ptr, thread_ctxt);
-        /* Parse Tiles */
+        /*!< Parse Tiles */
         parse_frame_tiles(dec_handle_ptr, thread_ctxt);
-        /* Decode Tiles */
+        /*!< Decode Tiles */
         decode_frame_tiles(dec_handle_ptr, thread_ctxt);
         dec_av1_loop_filter_frame_mt(dec_handle_ptr,
                                      dec_handle_ptr->cur_pic_buf[0]->ps_pic_buf,
@@ -900,7 +899,7 @@ void *dec_all_stage_kernel(void *input_ptr) {
                                      AOM_PLANE_Y,
                                      MAX_MB_PLANE,
                                      thread_ctxt);
-        /*Frame CDEF*/
+        /*!< Frame CDEF */
         svt_cdef_frame_mt(dec_handle_ptr, thread_ctxt);
         if (EB_TRUE == dec_mt_frame_data->end_flag) {
             eb_block_on_mutex(dec_mt_frame_data->temp_mutex);
@@ -917,9 +916,9 @@ void dec_sync_all_threads(EbDecHandle *dec_handle_ptr) {
         &dec_handle_ptr->master_frame_buf.cur_frame_bufs[0].dec_mt_frame_data;
     dec_mt_frame_data->end_flag = EB_TRUE;
 
-    /* To make all worker exit except main thread! */
+    /*!< To make all worker exit except main thread! */
     dec_mt_frame_data->num_threads_cdefed = 1;
-    /* To make all worker exit except main thread! */
+    /*!< To make all worker exit except main thread! */
     dec_mt_frame_data->num_threads_header          = 1;
     dec_handle_ptr->frame_header.use_ref_frame_mvs = 0;
     dec_mt_frame_data->start_motion_proj           = EB_TRUE;

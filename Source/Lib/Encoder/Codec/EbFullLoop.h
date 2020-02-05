@@ -1,7 +1,5 @@
-/*
-* Copyright(c) 2019 Intel Corporation
-* SPDX - License - Identifier: BSD - 2 - Clause - Patent
-*/
+/*!< Copyright(c) 2019 Intel Corporation
+ * SPDX - License - Identifier: BSD - 2 - Clause - Patent */
 
 #ifndef EbFullLoop_h
 #define EbFullLoop_h
@@ -62,7 +60,7 @@ extern uint32_t d2_inter_depth_block_decision(ModeDecisionContext *context_ptr, 
                                               MdRateEstimationContext *md_rate_estimation_ptr,
                                               PictureControlSet *      pcs_ptr);
 
-// compute the cost of curr depth, and the depth above
+/*!< compute the cost of curr depth, and the depth above */
 extern void compute_depth_costs_md_skip(ModeDecisionContext *context_ptr,
                                         SequenceControlSet *scs_ptr, uint32_t above_depth_mds,
                                         uint32_t step, uint64_t *above_depth_cost,
@@ -83,28 +81,28 @@ static AOM_FORCE_INLINE int get_nz_mag(const uint8_t *const levels, const int bw
                                        const TxClass tx_class) {
     int mag;
 
-    // Note: AOMMIN(level, 3) is useless for decoder since level < 3.
-    mag = clip_max3[levels[1]]; // { 0, 1 }
-    mag += clip_max3[levels[(1 << bwl) + TX_PAD_HOR]]; // { 1, 0 }
+    /*!< Note: AOMMIN(level, 3) is useless for decoder since level < 3. */
+    mag = clip_max3[levels[1]]; /*!< { 0, 1 } */
+    mag += clip_max3[levels[(1 << bwl) + TX_PAD_HOR]]; /*!< { 1, 0 } */
 
     if (tx_class == TX_CLASS_2D) {
-        mag += clip_max3[levels[(1 << bwl) + TX_PAD_HOR + 1]]; // { 1, 1 }
-        mag += clip_max3[levels[2]]; // { 0, 2 }
-        mag += clip_max3[levels[(2 << bwl) + (2 << TX_PAD_HOR_LOG2)]]; // { 2, 0 }
+        mag += clip_max3[levels[(1 << bwl) + TX_PAD_HOR + 1]]; /*!< { 1, 1 } */
+        mag += clip_max3[levels[2]]; /*!< { 0, 2 } */
+        mag += clip_max3[levels[(2 << bwl) + (2 << TX_PAD_HOR_LOG2)]]; /*!< { 2, 0 } */
     } else if (tx_class == TX_CLASS_VERT) {
-        mag += clip_max3[levels[(2 << bwl) + (2 << TX_PAD_HOR_LOG2)]]; // { 2, 0 }
-        mag += clip_max3[levels[(3 << bwl) + (3 << TX_PAD_HOR_LOG2)]]; // { 3, 0 }
-        mag += clip_max3[levels[(4 << bwl) + (4 << TX_PAD_HOR_LOG2)]]; // { 4, 0 }
+        mag += clip_max3[levels[(2 << bwl) + (2 << TX_PAD_HOR_LOG2)]]; /*!< { 2, 0 } */
+        mag += clip_max3[levels[(3 << bwl) + (3 << TX_PAD_HOR_LOG2)]]; /*!< { 3, 0 } */
+        mag += clip_max3[levels[(4 << bwl) + (4 << TX_PAD_HOR_LOG2)]]; /*!< { 4, 0 } */
     } else {
-        mag += clip_max3[levels[2]]; // { 0, 2 }
-        mag += clip_max3[levels[3]]; // { 0, 3 }
-        mag += clip_max3[levels[4]]; // { 0, 4 }
+        mag += clip_max3[levels[2]]; /*!< { 0, 2 } */
+        mag += clip_max3[levels[3]]; /*!< { 0, 3 } */
+        mag += clip_max3[levels[4]]; /*!< { 0, 4 } */
     }
 
     return mag;
 }
-// The ctx offset table when TX is TX_CLASS_2D.
-// TX col and row indices are clamped to 4
+/*!< The ctx offset table when TX is TX_CLASS_2D. */
+/*!< TX col and row indices are clamped to 4 */
 
 static const int8_t eb_av1_nz_map_ctx_offset_4x4[16] = {
     0,
@@ -388,29 +386,29 @@ static const int8_t eb_av1_nz_map_ctx_offset_32x8[256] = {
 };
 
 static const int8_t *eb_av1_nz_map_ctx_offset[19] = {
-    eb_av1_nz_map_ctx_offset_4x4, // TX_4x4
-    eb_av1_nz_map_ctx_offset_8x8, // TX_8x8
-    eb_av1_nz_map_ctx_offset_16x16, // TX_16x16
-    eb_av1_nz_map_ctx_offset_32x32, // TX_32x32
-    eb_av1_nz_map_ctx_offset_32x32, // TX_32x32
-    eb_av1_nz_map_ctx_offset_4x16, // TX_4x8
-    eb_av1_nz_map_ctx_offset_8x4, // TX_8x4
-    eb_av1_nz_map_ctx_offset_8x32, // TX_8x16
-    eb_av1_nz_map_ctx_offset_16x8, // TX_16x8
-    eb_av1_nz_map_ctx_offset_16x32, // TX_16x32
-    eb_av1_nz_map_ctx_offset_32x16, // TX_32x16
-    eb_av1_nz_map_ctx_offset_32x64, // TX_32x64
-    eb_av1_nz_map_ctx_offset_64x32, // TX_64x32
-    eb_av1_nz_map_ctx_offset_4x16, // TX_4x16
-    eb_av1_nz_map_ctx_offset_16x4, // TX_16x4
-    eb_av1_nz_map_ctx_offset_8x32, // TX_8x32
-    eb_av1_nz_map_ctx_offset_32x8, // TX_32x8
-    eb_av1_nz_map_ctx_offset_16x32, // TX_16x64
-    eb_av1_nz_map_ctx_offset_64x32, // TX_64x16
+    eb_av1_nz_map_ctx_offset_4x4, /*!< TX_4x4 */
+    eb_av1_nz_map_ctx_offset_8x8, /*!< TX_8x8 */
+    eb_av1_nz_map_ctx_offset_16x16, /*!< TX_16x16 */
+    eb_av1_nz_map_ctx_offset_32x32, /*!< TX_32x32 */
+    eb_av1_nz_map_ctx_offset_32x32, /*!< TX_32x32 */
+    eb_av1_nz_map_ctx_offset_4x16, /*!< TX_4x8 */
+    eb_av1_nz_map_ctx_offset_8x4, /*!< TX_8x4 */
+    eb_av1_nz_map_ctx_offset_8x32, /*!< TX_8x16 */
+    eb_av1_nz_map_ctx_offset_16x8, /*!< TX_16x8 */
+    eb_av1_nz_map_ctx_offset_16x32, /*!< TX_16x32 */
+    eb_av1_nz_map_ctx_offset_32x16, /*!< TX_32x16 */
+    eb_av1_nz_map_ctx_offset_32x64, /*!< TX_32x64 */
+    eb_av1_nz_map_ctx_offset_64x32, /*!< TX_64x32 */
+    eb_av1_nz_map_ctx_offset_4x16, /*!< TX_4x16 */
+    eb_av1_nz_map_ctx_offset_16x4, /*!< TX_16x4 */
+    eb_av1_nz_map_ctx_offset_8x32, /*!< TX_8x32 */
+    eb_av1_nz_map_ctx_offset_32x8, /*!< TX_32x8 */
+    eb_av1_nz_map_ctx_offset_16x32, /*!< TX_16x64 */
+    eb_av1_nz_map_ctx_offset_64x32, /*!< TX_64x16 */
 };
 
 static AOM_FORCE_INLINE int get_nz_map_ctx_from_stats(const int stats,
-                                                      const int coeff_idx, // raster order
+                                                      const int coeff_idx, /*!< raster order */
                                                       const int bwl, const TxSize tx_size,
                                                       const TxClass tx_class) {
     // tx_class == 0(TX_CLASS_2D)
@@ -419,7 +417,7 @@ static AOM_FORCE_INLINE int get_nz_map_ctx_from_stats(const int stats,
     ctx     = AOMMIN(ctx, 4);
     switch (tx_class) {
     case TX_CLASS_2D: {
-        // This is the algorithm to generate eb_av1_nz_map_ctx_offset[][]
+        /*!< This is the algorithm to generate eb_av1_nz_map_ctx_offset[][] */
         //   const int width = tx_size_wide[tx_size];
         //   const int height = tx_size_high[tx_size];
         //   if (width < height) {

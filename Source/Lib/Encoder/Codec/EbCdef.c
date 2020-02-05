@@ -1,13 +1,11 @@
-/*
- * Copyright (c) 2016, Alliance for Open Media. All rights reserved
+/*!< Copyright (c) 2016, Alliance for Open Media. All rights reserved
  *
  * This source code is subject to the terms of the BSD 2 Clause License and
  * the Alliance for Open Media Patent License 1.0. If the BSD 2 Clause License
  * was not distributed with this source code in the LICENSE file, you can
  * obtain it at www.aomedia.org/license/software. If the Alliance for Open
  * Media Patent License 1.0 was not distributed with this source code in the
- * PATENTS file, you can obtain it at www.aomedia.org/license/patent.
- */
+ * PATENTS file, you can obtain it at www.aomedia.org/license/patent. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -22,15 +20,15 @@ extern int16_t eb_av1_ac_quant_q3(int32_t qindex, int32_t delta, AomBitDepth bit
 
 #include "EbRateDistortionCost.h"
 
-//-------memory stuff
+/*!< -------memory stuff */
 
 #define ADDRESS_STORAGE_SIZE sizeof(size_t)
 #define DEFAULT_ALIGNMENT (2 * sizeof(void *))
-#define AOM_MAX_ALLOCABLE_MEMORY 8589934592 // 8 GB
-/*returns an addr aligned to the byte boundary specified by align*/
+#define AOM_MAX_ALLOCABLE_MEMORY 8589934592 /*!< 8 GB */
+/*!< returns an addr aligned to the byte boundary specified by align */
 #define align_addr(addr, align) (void *)(((size_t)(addr) + ((align)-1)) & ~(size_t)((align)-1))
 
-// Returns 0 in case of overflow of nmemb * size.
+/*!< Returns 0 in case of overflow of nmemb * size. */
 static int32_t check_size_argument_overflow(uint64_t nmemb, uint64_t size) {
     const uint64_t total_size = nmemb * size;
     if (nmemb == 0) return 1;
@@ -96,7 +94,7 @@ static INLINE int32_t constrain(int32_t diff, int32_t threshold, int32_t damping
     return sign(diff) * AOMMIN(abs(diff), AOMMAX(0, threshold - (abs(diff) >> shift)));
 }
 
-/* Generated from gen_filter_tables.c. */
+/*!< Generated from gen_filter_tables.c. */
 DECLARE_ALIGNED(16, const int32_t, eb_cdef_directions[8][2]) = {
     {-1 * CDEF_BSTRIDE + 1, -2 * CDEF_BSTRIDE + 2},
     {0 * CDEF_BSTRIDE + 1, -1 * CDEF_BSTRIDE + 2},
@@ -107,29 +105,29 @@ DECLARE_ALIGNED(16, const int32_t, eb_cdef_directions[8][2]) = {
     {1 * CDEF_BSTRIDE + 0, 2 * CDEF_BSTRIDE + 0},
     {1 * CDEF_BSTRIDE + 0, 2 * CDEF_BSTRIDE - 1}};
 
-/* Detect direction. 0 means 45-degree up-right, 2 is horizontal, and so on.
-The search minimizes the weighted variance along all the lines in a
-particular direction, i.e. the squared error between the input and a
-"predicted" block where each pixel is replaced by the average along a line
-in a particular direction. Since each direction have the same sum(x^2) term,
-that term is never computed. See Section 2, step 2, of:
-http://jmvalin.ca/notes/intra_paint.pdf */
+/*!< Detect direction. 0 means 45-degree up-right, 2 is horizontal, and so on.
+ * The search minimizes the weighted variance along all the lines in a
+ * particular direction, i.e. the squared error between the input and a
+ * "predicted" block where each pixel is replaced by the average along a line
+ * in a particular direction. Since each direction have the same sum(x^2) term,
+ * that term is never computed. See Section 2, step 2, of:
+ * http://jmvalin.ca/notes/intra_paint.pdf */
 int32_t eb_cdef_find_dir_c(const uint16_t *img, int32_t stride, int32_t *var, int32_t coeff_shift) {
     int32_t i;
     int32_t cost[8]        = {0};
     int32_t partial[8][15] = {{0}};
     int32_t best_cost      = 0;
     int32_t best_dir       = 0;
-    /* Instead of dividing by n between 2 and 8, we multiply by 3*5*7*8/n.
-    The output is then 840 times larger, but we don't care for finding
-    the max. */
+    /*!< Instead of dividing by n between 2 and 8, we multiply by 3*5*7*8/n.
+     *   The output is then 840 times larger, but we don't care for finding
+     *   the max. */
     static const int32_t div_table[] = {0, 840, 420, 280, 210, 168, 140, 120, 105};
     for (i = 0; i < 8; i++) {
         int32_t j;
         for (j = 0; j < 8; j++) {
             int32_t x;
-            /* We subtract 128 here to reduce the maximum range of the squared
-            partial sums. */
+            /*!< We subtract 128 here to reduce the maximum range of the squared
+             *   partial sums. */
             x = (img[i * stride + j] >> coeff_shift) - 128;
             partial[0][i + j] += x;
             partial[1][i + j / 2] += x;
@@ -170,11 +168,11 @@ int32_t eb_cdef_find_dir_c(const uint16_t *img, int32_t stride, int32_t *var, in
             best_dir  = i;
         }
     }
-    /* Difference between the optimal variance and the variance along the
-    orthogonal direction. Again, the sum(x^2) terms cancel out. */
+    /*!< Difference between the optimal variance and the variance along the
+     *   orthogonal direction. Again, the sum(x^2) terms cancel out. */
     *var = best_cost - cost[(best_dir + 4) & 7];
-    /* We'd normally divide by 840, but dividing by 1024 is close enough
-    for what we're going to do with this. */
+    /*!< We'd normally divide by 840, but dividing by 1024 is close enough
+     *   for what we're going to do with this. */
     *var >>= 10;
     return best_dir;
 }
@@ -182,7 +180,7 @@ int32_t eb_cdef_find_dir_c(const uint16_t *img, int32_t stride, int32_t *var, in
 const int32_t eb_cdef_pri_taps[2][2] = {{4, 2}, {3, 3}};
 const int32_t eb_cdef_sec_taps[2][2] = {{2, 1}, {2, 1}};
 
-/* Smooth in the direction detected. */
+/*!< Smooth in the direction detected. */
 void eb_cdef_filter_block_c(uint8_t *dst8, uint16_t *dst16, int32_t dstride, const uint16_t *in,
                             int32_t pri_strength, int32_t sec_strength, int32_t dir,
                             int32_t pri_damping, int32_t sec_damping, int32_t bsize,
@@ -241,15 +239,15 @@ int32_t get_cdef_gi_step(int8_t cdef_filter_mode) {
                                 : cdef_filter_mode == 3 ? 8 : cdef_filter_mode == 4 ? 16 : 64;
     return gi_step;
 }
-/* Compute the primary filter strength for an 8x8 block based on the
-directional variance difference. A high variance difference means
-that we have a highly directional pattern (e.g. a high contrast
-edge), so we can apply more deringing. A low variance means that we
-either have a low contrast edge, or a non-directional texture, so
-we want to be careful not to blur. */
+/*!< Compute the primary filter strength for an 8x8 block based on the
+ *   directional variance difference. A high variance difference means
+ *   that we have a highly directional pattern (e.g. a high contrast
+ *   edge), so we can apply more deringing. A low variance means that we
+ *   either have a low contrast edge, or a non-directional texture, so
+ *   we want to be careful not to blur. */
 static INLINE int32_t adjust_strength(int32_t strength, int32_t var) {
     const int32_t i = var >> 6 ? AOMMIN(get_msb(var >> 6), 12) : 0;
-    /* We use the variance of 8x8 blocks to adjust the strength. */
+    /*!< We use the variance of 8x8 blocks to adjust the strength. */
     return var ? (strength * (4 + i) + 8) >> 4 : 0;
 }
 
@@ -271,15 +269,15 @@ void eb_cdef_filter_fb(uint8_t *dst8, uint16_t *dst16, int32_t dstride, uint16_t
     bsizex = 3 - xdec;
     bsizey = 3 - ydec;
     if (dirinit && pri_strength == 0 && sec_strength == 0) {
-        // If we're here, both primary and secondary strengths are 0, and
-        // we still haven't written anything to y[] yet, so we just copy
-        // the input to y[]. This is necessary only for eb_av1_cdef_search()
-        // and only eb_av1_cdef_search() sets dirinit.
+        /*!< If we're here, both primary and secondary strengths are 0, and
+         *   we still haven't written anything to y[] yet, so we just copy
+         *   the input to y[]. This is necessary only for eb_av1_cdef_search()
+         *   and only eb_av1_cdef_search() sets dirinit. */
         for (bi = 0; bi < cdef_count; bi++) {
             by = dlist[bi].by << bsizey;
             bx = dlist[bi].bx << bsizex;
             int32_t iy, ix;
-            // TODO(stemidts/jmvalin): SIMD optimisations
+            /*!< TODO(stemidts/jmvalin): SIMD optimisations */
             if (dst8) {
                 for (iy = 0; iy < 1 << bsizey; iy++)
                     for (ix = 0; ix < 1 << bsizex; ix++)
@@ -531,7 +529,7 @@ void eb_av1_cdef_frame(EncDecContext *context_ptr, SequenceControlSet *scs_ptr,
             int32_t cstart     = 0;
             curr_row_cdef[fbc] = 0;
 
-            //WAHT IS THIS  ?? CHKN -->for
+            /*!< WHAT IS THIS  ?? CHKN -->for */
             if (pCs->mi_grid_base[MI_SIZE_64X64 * fbr * cm->mi_stride + MI_SIZE_64X64 * fbc] ==
                     NULL ||
                 pCs->mi_grid_base[MI_SIZE_64X64 * fbr * cm->mi_stride + MI_SIZE_64X64 * fbc]
@@ -543,7 +541,7 @@ void eb_av1_cdef_frame(EncDecContext *context_ptr, SequenceControlSet *scs_ptr,
 
             if (!cdef_left)
                 cstart =
-                    -CDEF_HBORDER; //CHKN if the left block has not been filtered, then we can use samples on the left as input.
+                    -CDEF_HBORDER; /*!< CHKN if the left block has not been filtered, then we can use samples on the left as input. */
 
             nhb = AOMMIN(MI_SIZE_64X64, cm->mi_cols - MI_SIZE_64X64 * fbc);
             nvb = AOMMIN(MI_SIZE_64X64, cm->mi_rows - MI_SIZE_64X64 * fbr);
@@ -551,15 +549,15 @@ void eb_av1_cdef_frame(EncDecContext *context_ptr, SequenceControlSet *scs_ptr,
 
             int32_t mi_row = MI_SIZE_64X64 * fbr;
             int32_t mi_col = MI_SIZE_64X64 * fbc;
-            // for the current filter block, it's top left corner mi structure (mi_tl)
-            // is first accessed to check whether the top and left boundaries are
-            // frame boundaries. Then bottom-left and top-right mi structures are
-            // accessed to check whether the bottom and right boundaries
-            // (respectively) are frame boundaries.
-            //
-            // Note that we can't just check the bottom-right mi structure - eg. if
-            // we're at the right-hand edge of the frame but not the bottom, then
-            // the bottom-right mi is NULL but the bottom-left is not.
+            /*!< for the current filter block, it's top left corner mi structure (mi_tl)
+             *   is first accessed to check whether the top and left boundaries are
+             *   frame boundaries. Then bottom-left and top-right mi structures are
+             *   accessed to check whether the bottom and right boundaries
+             *   (respectively) are frame boundaries.
+             *
+             *   Note that we can't just check the bottom-right mi structure - eg. if
+             *   we're at the right-hand edge of the frame but not the bottom, then
+             *   the bottom-right mi is NULL but the bottom-left is not. */
             frame_top  = (mi_row == 0) ? 1 : 0;
             frame_left = (mi_col == 0) ? 1 : 0;
 
@@ -618,8 +616,8 @@ void eb_av1_cdef_frame(EncDecContext *context_ptr, SequenceControlSet *scs_ptr,
 
                 coffset = fbc * MI_SIZE_64X64 << mi_wide_l2[pli];
                 if (fbc == nhfb - 1) {
-                    /* On the last superblock column, fill in the right border with
-                       CDEF_VERY_LARGE to avoid filtering with the outside. */
+                    /*!< On the last superblock column, fill in the right border with
+                     *   CDEF_VERY_LARGE to avoid filtering with the outside. */
                     fill_rect(&src[cend + CDEF_HBORDER],
                               CDEF_BSTRIDE,
                               rend + CDEF_VBORDER,
@@ -627,8 +625,8 @@ void eb_av1_cdef_frame(EncDecContext *context_ptr, SequenceControlSet *scs_ptr,
                               CDEF_VERY_LARGE);
                 }
                 if (fbr == nvfb - 1) {
-                    /* On the last superblock row, fill in the bottom border with
-                       CDEF_VERY_LARGE to avoid filtering with the outside. */
+                    /*!< On the last superblock row, fill in the bottom border with
+                     *   CDEF_VERY_LARGE to avoid filtering with the outside. */
                     fill_rect(&src[(rend + CDEF_VBORDER) * CDEF_BSTRIDE],
                               CDEF_BSTRIDE,
                               CDEF_VBORDER,
@@ -655,8 +653,8 @@ void eb_av1_cdef_frame(EncDecContext *context_ptr, SequenceControlSet *scs_ptr,
                     break;
                 }
 
-                /* Copy in the pixels we need from the current superblock for
-                   deringing.*/
+                /*!< Copy in the pixels we need from the current superblock for
+                 *   deringing. */
                 copy_sb8_16(&src[CDEF_VBORDER * CDEF_BSTRIDE + CDEF_HBORDER + cstart],
                             CDEF_BSTRIDE,
                             rec_buff,
@@ -731,8 +729,8 @@ void eb_av1_cdef_frame(EncDecContext *context_ptr, SequenceControlSet *scs_ptr,
                 }
 
                 if (cdef_left) {
-                    /* If we deringed the superblock on the left then we need to copy in
-                       saved pixels. */
+                    /*!< If we deringed the superblock on the left then we need to copy in
+                     *   saved pixels. */
                     copy_rect(src,
                               CDEF_BSTRIDE,
                               colbuf[pli],
@@ -741,8 +739,8 @@ void eb_av1_cdef_frame(EncDecContext *context_ptr, SequenceControlSet *scs_ptr,
                               CDEF_HBORDER);
                 }
 
-                /* Saving pixels in case we need to dering the superblock on the
-                    right. */
+                /*!< Saving pixels in case we need to dering the superblock on the
+                 *   right. */
                 if (fbc < nhfb - 1)
                     copy_rect(colbuf[pli],
                               CDEF_HBORDER,
@@ -806,7 +804,7 @@ void eb_av1_cdef_frame(EncDecContext *context_ptr, SequenceControlSet *scs_ptr,
                         coeff_shift);
                 }
             }
-            cdef_left = 1; //CHKN filtered data is written back directy to recFrame.
+            cdef_left = 1; /*!< CHKN filtered data is written back directy to recFrame. */
         }
         {
             uint8_t *tmp  = prev_row_cdef;
@@ -901,7 +899,7 @@ void av1_cdef_frame16bit(EncDecContext *context_ptr, SequenceControlSet *scs_ptr
             int32_t cstart     = 0;
             curr_row_cdef[fbc] = 0;
 
-            //WAHT IS THIS  ?? CHKN -->for
+            /*!< WHAT IS THIS  ?? CHKN -->for */
             if (pCs->mi_grid_base[MI_SIZE_64X64 * fbr * cm->mi_stride + MI_SIZE_64X64 * fbc] ==
                     NULL ||
                 pCs->mi_grid_base[MI_SIZE_64X64 * fbr * cm->mi_stride + MI_SIZE_64X64 * fbc]
@@ -913,7 +911,7 @@ void av1_cdef_frame16bit(EncDecContext *context_ptr, SequenceControlSet *scs_ptr
 
             if (!cdef_left)
                 cstart =
-                    -CDEF_HBORDER; //CHKN if the left block has not been filtered, then we can use samples on the left as input.
+                    -CDEF_HBORDER; /*!< CHKN if the left block has not been filtered, then we can use samples on the left as input. */
 
             nhb = AOMMIN(MI_SIZE_64X64, cm->mi_cols - MI_SIZE_64X64 * fbc);
             nvb = AOMMIN(MI_SIZE_64X64, cm->mi_rows - MI_SIZE_64X64 * fbr);
@@ -921,15 +919,15 @@ void av1_cdef_frame16bit(EncDecContext *context_ptr, SequenceControlSet *scs_ptr
 
             int32_t mi_row = MI_SIZE_64X64 * fbr;
             int32_t mi_col = MI_SIZE_64X64 * fbc;
-            // for the current filter block, it's top left corner mi structure (mi_tl)
-            // is first accessed to check whether the top and left boundaries are
-            // frame boundaries. Then bottom-left and top-right mi structures are
-            // accessed to check whether the bottom and right boundaries
-            // (respectively) are frame boundaries.
-            //
-            // Note that we can't just check the bottom-right mi structure - eg. if
-            // we're at the right-hand edge of the frame but not the bottom, then
-            // the bottom-right mi is NULL but the bottom-left is not.
+            /*!< for the current filter block, it's top left corner mi structure (mi_tl)
+             *   is first accessed to check whether the top and left boundaries are
+             *   frame boundaries. Then bottom-left and top-right mi structures are
+             *   accessed to check whether the bottom and right boundaries
+             *   (respectively) are frame boundaries.
+             *
+             *   Note that we can't just check the bottom-right mi structure - eg. if
+             *   we're at the right-hand edge of the frame but not the bottom, then
+             *   the bottom-right mi is NULL but the bottom-left is not. */
             frame_top  = (mi_row == 0) ? 1 : 0;
             frame_left = (mi_col == 0) ? 1 : 0;
 
@@ -988,8 +986,8 @@ void av1_cdef_frame16bit(EncDecContext *context_ptr, SequenceControlSet *scs_ptr
 
                 coffset = fbc * MI_SIZE_64X64 << mi_wide_l2[pli];
                 if (fbc == nhfb - 1) {
-                    /* On the last superblock column, fill in the right border with
-                    CDEF_VERY_LARGE to avoid filtering with the outside. */
+                    /*!< On the last superblock column, fill in the right border with
+                     *   CDEF_VERY_LARGE to avoid filtering with the outside. */
                     fill_rect(&src[cend + CDEF_HBORDER],
                               CDEF_BSTRIDE,
                               rend + CDEF_VBORDER,
@@ -997,8 +995,8 @@ void av1_cdef_frame16bit(EncDecContext *context_ptr, SequenceControlSet *scs_ptr
                               CDEF_VERY_LARGE);
                 }
                 if (fbr == nvfb - 1) {
-                    /* On the last superblock row, fill in the bottom border with
-                    CDEF_VERY_LARGE to avoid filtering with the outside. */
+                    /*!< On the last superblock row, fill in the bottom border with
+                     *   CDEF_VERY_LARGE to avoid filtering with the outside. */
                     fill_rect(&src[(rend + CDEF_VBORDER) * CDEF_BSTRIDE],
                               CDEF_BSTRIDE,
                               CDEF_VBORDER,
@@ -1025,8 +1023,8 @@ void av1_cdef_frame16bit(EncDecContext *context_ptr, SequenceControlSet *scs_ptr
                     break;
                 }
 
-                /* Copy in the pixels we need from the current superblock for
-                deringing.*/
+                /*!< Copy in the pixels we need from the current superblock for
+                 *   deringing.*/
 
                 copy_sb16_16(&src[CDEF_VBORDER * CDEF_BSTRIDE + CDEF_HBORDER + cstart],
                              CDEF_BSTRIDE,
@@ -1103,8 +1101,8 @@ void av1_cdef_frame16bit(EncDecContext *context_ptr, SequenceControlSet *scs_ptr
                 }
 
                 if (cdef_left) {
-                    /* If we deringed the superblock on the left then we need to copy in
-                    saved pixels. */
+                    /*!< If we deringed the superblock on the left then we need to copy in
+                     *   saved pixels. */
                     copy_rect(src,
                               CDEF_BSTRIDE,
                               colbuf[pli],
@@ -1113,8 +1111,8 @@ void av1_cdef_frame16bit(EncDecContext *context_ptr, SequenceControlSet *scs_ptr
                               CDEF_HBORDER);
                 }
 
-                /* Saving pixels in case we need to dering the superblock on the
-                right. */
+                /*!< Saving pixels in case we need to dering the superblock on the
+                 *   right. */
                 if (fbc < nhfb - 1)
                     copy_rect(colbuf[pli],
                               CDEF_HBORDER,
@@ -1173,7 +1171,7 @@ void av1_cdef_frame16bit(EncDecContext *context_ptr, SequenceControlSet *scs_ptr
                                   sec_damping,
                                   coeff_shift);
             }
-            cdef_left = 1; //CHKN filtered data is written back directy to recFrame.
+            cdef_left = 1; /*!< CHKN filtered data is written back directy to recFrame. */
         }
         {
             uint8_t *tmp  = prev_row_cdef;
@@ -1188,12 +1186,12 @@ void av1_cdef_frame16bit(EncDecContext *context_ptr, SequenceControlSet *scs_ptr
     }
 }
 
-///-------search
+/*!< -------search */
 
 static int32_t priconv[REDUCED_PRI_STRENGTHS] = {0, 1, 2, 3, 5, 7, 10, 13};
 
-/* Search for the best strength to add as an option, knowing we
-already selected nb_strengths options. */
+/*!< Search for the best strength to add as an option,
+ *   knowing we already selected nb_strengths options. */
 static uint64_t search_one(int32_t *lev, int32_t nb_strengths, uint64_t mse[][TOTAL_STRENGTHS],
                            int32_t sb_count, int32_t fast, int32_t start_gi, int32_t end_gi) {
     uint64_t tot_mse[TOTAL_STRENGTHS];
@@ -1206,11 +1204,11 @@ static uint64_t search_one(int32_t *lev, int32_t nb_strengths, uint64_t mse[][TO
     for (i = 0; i < sb_count; i++) {
         int32_t  gi;
         uint64_t best_mse = (uint64_t)1 << 63;
-        /* Find best mse among already selected options. */
+        /*!< Find best mse among already selected options. */
         for (gi = 0; gi < nb_strengths; gi++) {
             if (mse[i][lev[gi]] < best_mse) best_mse = mse[i][lev[gi]];
         }
-        /* Find best mse when adding each possible new option. */
+        /*!< Find best mse when adding each possible new option. */
 
         for (j = start_gi; j < total_strengths; j++) {
             uint64_t best = best_mse;
@@ -1228,8 +1226,8 @@ static uint64_t search_one(int32_t *lev, int32_t nb_strengths, uint64_t mse[][TO
     return best_tot_mse;
 }
 
-/* Search for the best luma+chroma strength to add as an option, knowing we
-already selected nb_strengths options. */
+/*!< Search for the best luma+chroma strength to add as an
+ *   option, knowing we already selected nb_strengths options. */
 uint64_t search_one_dual_c(int *lev0, int *lev1, int nb_strengths,
                            uint64_t (**mse)[TOTAL_STRENGTHS], int sb_count, int fast, int start_gi,
                            int end_gi) {
@@ -1244,13 +1242,13 @@ uint64_t search_one_dual_c(int *lev0, int *lev1, int nb_strengths,
     for (i = 0; i < sb_count; i++) {
         int32_t  gi;
         uint64_t best_mse = (uint64_t)1 << 63;
-        /* Find best mse among already selected options. */
+        /*!< Find best mse among already selected options. */
         for (gi = 0; gi < nb_strengths; gi++) {
             uint64_t curr = mse[0][i][lev0[gi]];
             curr += mse[1][i][lev1[gi]];
             if (curr < best_mse) best_mse = curr;
         }
-        /* Find best mse when adding each possible new option. */
+        /*!< Find best mse when adding each possible new option. */
         for (j = start_gi; j < total_strengths; j++) {
             int32_t k;
             for (k = start_gi; k < total_strengths; k++) {
@@ -1278,18 +1276,18 @@ uint64_t search_one_dual_c(int *lev0, int *lev1, int nb_strengths,
     return best_tot_mse;
 }
 
-/* Search for the set of strengths that minimizes mse. */
+/*!< Search for the set of strengths that minimizes mse. */
 static uint64_t joint_strength_search(int32_t *best_lev, int32_t nb_strengths,
                                       uint64_t mse[][TOTAL_STRENGTHS], int32_t sb_count,
                                       int32_t fast, int32_t start_gi, int32_t end_gi) {
     uint64_t best_tot_mse;
     int32_t  i;
     best_tot_mse = (uint64_t)1 << 63;
-    /* Greedy search: add one strength options at a time. */
+    /*!< Greedy search: add one strength options at a time. */
     for (i = 0; i < nb_strengths; i++)
         best_tot_mse = search_one(best_lev, i, mse, sb_count, fast, start_gi, end_gi);
-    /* Trying to refine the greedy search by reconsidering each
-    already-selected option. */
+    /*!< Trying to refine the greedy search by reconsidering each
+     *   already-selected option. */
     if (!fast) {
         for (i = 0; i < 4 * nb_strengths; i++) {
             int32_t j;
@@ -1301,7 +1299,7 @@ static uint64_t joint_strength_search(int32_t *best_lev, int32_t nb_strengths,
     return best_tot_mse;
 }
 
-/* Search for the set of luma+chroma strengths that minimizes mse. */
+/*!< Search for the set of luma+chroma strengths that minimizes mse. */
 static uint64_t joint_strength_search_dual(int32_t *best_lev0, int32_t *best_lev1,
                                            int32_t nb_strengths, uint64_t (**mse)[TOTAL_STRENGTHS],
                                            int32_t sb_count, int32_t fast, int32_t start_gi,
@@ -1309,12 +1307,12 @@ static uint64_t joint_strength_search_dual(int32_t *best_lev0, int32_t *best_lev
     uint64_t best_tot_mse;
     int32_t  i;
     best_tot_mse = (uint64_t)1 << 63;
-    /* Greedy search: add one strength options at a time. */
+    /*!< Greedy search: add one strength options at a time. */
     for (i = 0; i < nb_strengths; i++)
         best_tot_mse =
             search_one_dual(best_lev0, best_lev1, i, mse, sb_count, fast, start_gi, end_gi);
-    /* Trying to refine the greedy search by reconsidering each
-    already-selected option. */
+    /*!< Trying to refine the greedy search by reconsidering each
+     *   already-selected option. */
     for (i = 0; i < 4 * nb_strengths; i++) {
         int32_t j;
         for (j = 0; j < nb_strengths - 1; j++) {
@@ -1327,7 +1325,7 @@ static uint64_t joint_strength_search_dual(int32_t *best_lev0, int32_t *best_lev
     return best_tot_mse;
 }
 
-/* FIXME: SSE-optimize this. */
+/*!< FIXME: SSE-optimize this. */
 void copy_sb16_16(uint16_t *dst, int32_t dstride, const uint16_t *src, int32_t src_voffset,
                   int32_t src_hoffset, int32_t sstride, int32_t vsize, int32_t hsize) {
     int32_t         r, c;
@@ -1359,7 +1357,7 @@ static INLINE uint64_t dist_8x8_16bit_c(const uint16_t *src, const uint16_t *dst
             sum_sd += src[8 * i + j] * dst[i * dstride + j];
         }
     }
-    /* Compute the variance -- the calculation cannot go negative. */
+    /*!< Compute the variance -- the calculation cannot go negative. */
     svar = sum_s2 - ((sum_s * sum_s + 32) >> 6);
     dvar = sum_d2 - ((sum_d * sum_d + 32) >> 6);
     return (uint64_t)floor(.5 + (sum_d2 + sum_s2 - 2 * sum_sd) * .5 *
@@ -1412,7 +1410,7 @@ static INLINE uint64_t dist_8x8_8bit_c(const uint8_t *src, const uint8_t *dst,
             sum_sd += src[8 * i + j] * dst[i * dstride + j];
         }
     }
-    /* Compute the variance -- the calculation cannot go negative. */
+    /*!< Compute the variance -- the calculation cannot go negative. */
     svar = sum_s2 - ((sum_s * sum_s + 32) >> 6);
     dvar = sum_d2 - ((sum_d * sum_d + 32) >> 6);
     return (uint64_t)floor(.5 + (sum_d2 + sum_s2 - 2 * sum_sd) * .5 *
@@ -1446,7 +1444,7 @@ static INLINE uint64_t mse_4_8bit_c(const uint8_t *src, const uint8_t *dst, cons
     return sum;
 }
 
-/* Compute MSE only on the blocks we filtered. */
+/*!< Compute MSE only on the blocks we filtered. */
 uint64_t compute_cdef_dist_c(const uint16_t *dst, int32_t dstride, const uint16_t *src,
                              const CdefList *dlist, int32_t cdef_count, BlockSize bsize,
                              int32_t coeff_shift, int32_t pli) {
@@ -1611,7 +1609,7 @@ void finish_cdef_search(EncDecContext *context_ptr, PictureControlSet *pcs_ptr,
                 continue;
             }
 
-            // No filtering if the entire filter block is skipped
+            /*!< No filtering if the entire filter block is skipped */
             if (eb_sb_all_skip(pcs_ptr, cm, fbr * MI_SIZE_64X64, fbc * MI_SIZE_64X64)) continue;
 
             for (pli = 0; pli < num_planes; pli++) {
@@ -1630,7 +1628,7 @@ void finish_cdef_search(EncDecContext *context_ptr, PictureControlSet *pcs_ptr,
     }
 
     nb_strength_bits = 0;
-    /* Search for different number of signalling bits. */
+    /*!< Search for different number of signalling bits. */
     for (i = 0; i <= 3; i++) {
         int32_t j;
         int32_t best_lev0[CDEF_MAX_STRENGTHS];
@@ -1642,7 +1640,7 @@ void finish_cdef_search(EncDecContext *context_ptr, PictureControlSet *pcs_ptr,
         else
             tot_mse = joint_strength_search(
                 best_lev0, nb_strengths, mse[0], sb_count, fast, start_gi, end_gi);
-        /* Count superblock signalling cost. */
+        /*!< Count superblock signalling cost. */
         const int total_bits =
             sb_count * i + nb_strengths * CDEF_STRENGTH_BITS * (num_planes > 1 ? 2 : 1);
         const int      rate_cost = av1_cost_literal(total_bits);
@@ -1678,8 +1676,8 @@ void finish_cdef_search(EncDecContext *context_ptr, PictureControlSet *pcs_ptr,
         selected_strength_cnt[best_gi]++;
 
         pcs_ptr->mi_grid_base[sb_index[i]]->mbmi.cdef_strength = (int8_t)best_gi;
-        //in case the fb is within a block=128x128 or 128x64, or 64x128, then we genrate param only for the first 64x64.
-        //since our mi map deos not have the multi pointer single data assignment, we need to duplicate data.
+        /*!< in case the fb is within a block=128x128 or 128x64, or 64x128, then we genrate param only for the first 64x64.
+         *   since our mi map deos not have the multi pointer single data assignment, we need to duplicate data. */
         BlockSize sb_type = pcs_ptr->mi_grid_base[sb_index[i]]->mbmi.block_mi.sb_type;
 
         switch (sb_type) {
@@ -1715,7 +1713,7 @@ void finish_cdef_search(EncDecContext *context_ptr, PictureControlSet *pcs_ptr,
                 (frm_hdr->cdef_params.cdef_uv_strength[j] % CDEF_SEC_STRENGTHS);
         }
     }
-    //cdef_pri_damping & cdef_sec_damping consolidated to cdef_damping
+    /*!< cdef_pri_damping & cdef_sec_damping consolidated to cdef_damping */
     frm_hdr->cdef_params.cdef_damping = pri_damping;
     for (int i = 0; i < total_strengths; i++)
         best_frame_gi_cnt += selected_strength_cnt[i] > best_frame_gi_cnt ? 1 : 0;

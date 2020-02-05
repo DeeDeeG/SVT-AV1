@@ -1,18 +1,14 @@
-/*
-* Copyright(c) 2019 Intel Corporation
-* SPDX - License - Identifier: BSD - 2 - Clause - Patent
-*/
+/*!< Copyright(c) 2019 Intel Corporation
+ * SPDX - License - Identifier: BSD - 2 - Clause - Patent */
 
-/*
-* Copyright (c) 2016, Alliance for Open Media. All rights reserved
-*
-* This source code is subject to the terms of the BSD 2 Clause License and
-* the Alliance for Open Media Patent License 1.0. If the BSD 2 Clause License
-* was not distributed with this source code in the LICENSE file, you can
-* obtain it at www.aomedia.org/license/software. If the Alliance for Open
-* Media Patent License 1.0 was not distributed with this source code in the
-* PATENTS file, you can obtain it at www.aomedia.org/license/patent.
-*/
+/*!< Copyright (c) 2016, Alliance for Open Media. All rights reserved
+ *
+ * This source code is subject to the terms of the BSD 2 Clause License and
+ * the Alliance for Open Media Patent License 1.0. If the BSD 2 Clause License
+ * was not distributed with this source code in the LICENSE file, you can
+ * obtain it at www.aomedia.org/license/software. If the Alliance for Open
+ * Media Patent License 1.0 was not distributed with this source code in the
+ * PATENTS file, you can obtain it at www.aomedia.org/license/patent. */
 
 #include <stdlib.h>
 #include "EbEncHandle.h"
@@ -34,9 +30,9 @@ static void dlf_context_dctor(EbPtr p) {
     EB_DELETE(obj->temp_lf_recon_picture16bit_ptr);
     EB_FREE_ARRAY(obj);
 }
-/******************************************************
- * Dlf Context Constructor
- ******************************************************/
+/******************************************************/
+/*!< Dlf Context Constructor */
+/******************************************************/
 EbErrorType dlf_context_ctor(EbThreadContext *thread_context_ptr, const EbEncHandle *enc_handle_ptr,
                              int index) {
     EbErrorType               return_error = EB_ErrorNone;
@@ -49,7 +45,7 @@ EbErrorType dlf_context_ctor(EbThreadContext *thread_context_ptr, const EbEncHan
     thread_context_ptr->priv  = context_ptr;
     thread_context_ptr->dctor = dlf_context_dctor;
 
-    // Input/Output System Resource Manager FIFOs
+    /*!< Input/Output System Resource Manager FIFOs */
     context_ptr->dlf_input_fifo_ptr =
         eb_system_resource_get_consumer_fifo(enc_handle_ptr->enc_dec_results_resource_ptr, index);
     context_ptr->dlf_output_fifo_ptr =
@@ -85,27 +81,27 @@ EbErrorType dlf_context_ctor(EbThreadContext *thread_context_ptr, const EbEncHan
     return return_error;
 }
 
-/******************************************************
- * Dlf Kernel
- ******************************************************/
+/******************************************************/
+/*!< Dlf Kernel */
+/******************************************************/
 void *dlf_kernel(void *input_ptr) {
-    // Context & SCS & PCS
+    /*!< Context & SCS & PCS */
     EbThreadContext *   thread_context_ptr = (EbThreadContext *)input_ptr;
     DlfContext *        context_ptr        = (DlfContext *)thread_context_ptr->priv;
     PictureControlSet * pcs_ptr;
     SequenceControlSet *scs_ptr;
 
-    //// Input
+    /*!< Input */
     EbObjectWrapper *enc_dec_results_wrapper_ptr;
     EncDecResults *  enc_dec_results_ptr;
 
-    //// Output
+    /*!< Output */
     EbObjectWrapper *  dlf_results_wrapper_ptr;
     struct DlfResults *dlf_results_ptr;
 
-    // SB Loop variables
+    /*!< SB Loop variables */
     for (;;) {
-        // Get EncDec Results
+        /*!< Get EncDec Results */
         eb_get_full_object(context_ptr->dlf_input_fifo_ptr, &enc_dec_results_wrapper_ptr);
 
         enc_dec_results_ptr = (EncDecResults *)enc_dec_results_wrapper_ptr->object_ptr;
@@ -120,7 +116,7 @@ void *dlf_kernel(void *input_ptr) {
                 is_16bit ? pcs_ptr->recon_picture16bit_ptr : pcs_ptr->recon_picture_ptr;
 
             if (pcs_ptr->parent_pcs_ptr->is_used_as_reference_flag == EB_TRUE)
-                //get the 16bit form of the input SB
+                /*!<get the 16bit form of the input SB */
                 if (is_16bit)
                     recon_buffer =
                         ((EbReferenceObject *)
@@ -131,7 +127,7 @@ void *dlf_kernel(void *input_ptr) {
                         ((EbReferenceObject *)
                              pcs_ptr->parent_pcs_ptr->reference_picture_wrapper_ptr->object_ptr)
                             ->reference_picture;
-            else // non ref pictures
+            else /*!< non ref pictures */
                 recon_buffer =
                     is_16bit ? pcs_ptr->recon_picture16bit_ptr : pcs_ptr->recon_picture_ptr;
 
@@ -152,7 +148,7 @@ void *dlf_kernel(void *input_ptr) {
                 LPF_PICK_FROM_FULL_IMAGE);
 
 #if NO_ENCDEC
-            //NO DLF
+            /*!<NO DLF */
             pcs_ptr->parent_pcs_ptr->lf.filter_level[0] = 0;
             pcs_ptr->parent_pcs_ptr->lf.filter_level[1] = 0;
             pcs_ptr->parent_pcs_ptr->lf.filter_level_u  = 0;
@@ -161,7 +157,7 @@ void *dlf_kernel(void *input_ptr) {
             eb_av1_loop_filter_frame(recon_buffer, pcs_ptr, 0, 3);
         }
 
-        //pre-cdef prep
+        /*!< pre-cdef prep */
         {
             Av1Common *          cm = pcs_ptr->parent_pcs_ptr->av1_cm;
             EbPictureBufferDesc *recon_picture_ptr;
@@ -263,16 +259,16 @@ void *dlf_kernel(void *input_ptr) {
 
         for (segment_index = 0; segment_index < pcs_ptr->cdef_segments_total_count;
              ++segment_index) {
-            // Get Empty DLF Results to Cdef
+            /*!< Get Empty DLF Results to Cdef */
             eb_get_empty_object(context_ptr->dlf_output_fifo_ptr, &dlf_results_wrapper_ptr);
             dlf_results_ptr = (struct DlfResults *)dlf_results_wrapper_ptr->object_ptr;
             dlf_results_ptr->pcs_wrapper_ptr = enc_dec_results_ptr->pcs_wrapper_ptr;
             dlf_results_ptr->segment_index   = segment_index;
-            // Post DLF Results
+            /*!< Post DLF Results */
             eb_post_full_object(dlf_results_wrapper_ptr);
         }
 
-        // Release EncDec Results
+        /*!< Release EncDec Results */
         eb_release_object(enc_dec_results_wrapper_ptr);
     }
 

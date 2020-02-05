@@ -1,18 +1,14 @@
-/*
-* Copyright(c) 2019 Intel Corporation
-* SPDX - License - Identifier: BSD - 2 - Clause - Patent
-*/
+/*!< Copyright(c) 2019 Intel Corporation
+ * SPDX - License - Identifier: BSD - 2 - Clause - Patent */
 
-/*
- * Copyright (c) 2016, Alliance for Open Media. All rights reserved
+/*!< Copyright (c) 2016, Alliance for Open Media. All rights reserved
  *
  * This source code is subject to the terms of the BSD 2 Clause License and
  * the Alliance for Open Media Patent License 1.0. If the BSD 2 Clause License
  * was not distributed with this source code in the LICENSE file, you can
  * obtain it at www.aomedia.org/license/software. If the Alliance for Open
  * Media Patent License 1.0 was not distributed with this source code in the
- * PATENTS file, you can obtain it at www.aomedia.org/license/patent.
- */
+ * PATENTS file, you can obtain it at www.aomedia.org/license/patent. */
 
 #include <assert.h>
 #include "smmintrin.h"
@@ -21,20 +17,20 @@
 
 #include "aom_dsp_rtcd.h"
 
-// Blending with alpha mask. Mask values come from the range [0, 64],
-// as described for AOM_BLEND_A64 in aom_dsp/blend.h. src0 or src1 can
-// be the same as dst, or dst can be different from both sources.
-
-// NOTE(david.barker): The input and output of aom_blend_a64_d16_mask_c() are
-// in a higher intermediate precision, and will later be rounded down to pixel
-// precision.
-// Thus, in order to avoid double-rounding, we want to use normal right shifts
-// within this function, not ROUND_POWER_OF_TWO.
-// This works because of the identity:
-// ROUND_POWER_OF_TWO(x >> y, z) == ROUND_POWER_OF_TWO(x, y+z)
-//
-// In contrast, the output of the non-d16 functions will not be further rounded,
-// so we *should* use ROUND_POWER_OF_TWO there.
+/*!< Blending with alpha mask. Mask values come from the range [0, 64],
+ *   as described for AOM_BLEND_A64 in aom_dsp/blend.h. src0 or src1 can
+ *   be the same as dst, or dst can be different from both sources.
+ *
+ *   NOTE(david.barker): The input and output of aom_blend_a64_d16_mask_c() are
+ *   in a higher intermediate precision, and will later be rounded down to pixel
+ *   precision.
+ *   Thus, in order to avoid double-rounding, we want to use normal right shifts
+ *   within this function, not ROUND_POWER_OF_TWO.
+ *   This works because of the identity:
+ *   ROUND_POWER_OF_TWO(x >> y, z) == ROUND_POWER_OF_TWO(x, y+z)
+ *
+ *   In contrast, the output of the non-d16 functions will not be further rounded,
+ *   so we *should* use ROUND_POWER_OF_TWO there. */
 
 void aom_lowbd_blend_a64_d16_mask_c(uint8_t *dst, uint32_t dst_stride, const CONV_BUF_TYPE *src0,
                                     uint32_t src0_stride, const CONV_BUF_TYPE *src1,
@@ -130,8 +126,8 @@ void aom_highbd_blend_a64_d16_mask_c(uint8_t *dst_8, uint32_t dst_stride, const 
     assert(IS_POWER_OF_TWO(h));
     assert(IS_POWER_OF_TWO(w));
 
-    // excerpt from clip_pixel_highbd()
-    // set saturation_value to (1 << bd) - 1
+    /*!< excerpt from clip_pixel_highbd() */
+    /*!< set saturation_value to (1 << bd) - 1 */
     unsigned int saturation_value;
     switch (bd) {
     case 8:
@@ -210,9 +206,9 @@ void aom_highbd_blend_a64_d16_mask_c(uint8_t *dst_8, uint32_t dst_stride, const 
     }
 }
 
-// Blending with alpha mask. Mask values come from the range [0, 64],
-// as described for AOM_BLEND_A64 in aom_dsp/blend.h. src0 or src1 can
-// be the same as dst, or dst can be different from both sources.
+/*!< Blending with alpha mask. Mask values come from the range [0, 64],
+ *   as described for AOM_BLEND_A64 in aom_dsp/blend.h. src0 or src1 can
+ *   be the same as dst, or dst can be different from both sources. */
 
 void aom_blend_a64_mask_c(uint8_t *dst, uint32_t dst_stride, const uint8_t *src0,
                           uint32_t src0_stride, const uint8_t *src1, uint32_t src1_stride,
@@ -330,7 +326,7 @@ void aom_highbd_blend_a64_mask_c(uint8_t *dst_8, uint32_t dst_stride, const uint
     }
 }
 
-/*Vertical mask related blend functions*/
+/*!< Vertical mask related blend functions */
 void aom_blend_a64_vmask_c(uint8_t *dst, uint32_t dst_stride, const uint8_t *src0,
                            uint32_t src0_stride, const uint8_t *src1, uint32_t src1_stride,
                            const uint8_t *mask, int w, int h) {
@@ -381,7 +377,7 @@ void aom_highbd_blend_a64_vmask_c(uint8_t *dst_8, uint32_t dst_stride, const uin
     }
 }
 
-/*Horizontal mask related blend functions*/
+/*!< Horizontal mask related blend functions */
 void aom_blend_a64_hmask_c(uint8_t *dst, uint32_t dst_stride, const uint8_t *src0,
                            uint32_t src0_stride, const uint8_t *src1, uint32_t src1_stride,
                            const uint8_t *mask, int w, int h) {

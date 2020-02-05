@@ -1,98 +1,96 @@
-/*
-* Copyright(c) 2019 Netflix, Inc.
-* SPDX - License - Identifier: BSD - 2 - Clause - Patent
-*/
+/*!< Copyright(c) 2019 Netflix, Inc.
+ * SPDX - License - Identifier: BSD - 2 - Clause - Patent */
 
 #ifndef EbSvtAv1Dec_h
 #define EbSvtAv1Dec_h
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif /*!< __cplusplus */
 
 #include "stdint.h"
 #include "EbSvtAv1.h"
 #include "EbSvtAv1ExtFrameBuf.h"
 
 typedef struct EbAV1StreamInfo {
-    /*seq_profile*/
+    /*!< seq_profile */
     EbAv1SeqProfile seq_profile;
 
-    /* Max Picture Dimensions */
+    /*!< Max Picture Dimensions */
     uint32_t max_picture_width;
     uint32_t max_picture_height;
 
-    /* Operating points present in the bitstream */
+    /*!< Operating points present in the bitstream */
     uint32_t            num_operating_points;
     EbAv1OperatingPoint op_points[EB_MAX_NUM_OPERATING_POINTS];
 
-    /* Display Timing Info*/
+    /*!< Display Timing Info */
     EbTimingInfo timing_info;
 
-    /* Color description */
+    /*!< Color description */
     EbColorConfig color_config;
 
-    /* Film Grain Synthesis Present */
+    /*!< Film Grain Synthesis Present */
     EbBool film_grain_params_present;
 
-    /* The stream is in annex_b format */
+    /*!< The stream is in annex_b format */
     EbBool is_annex_b;
 } EbAV1StreamInfo;
 
 typedef struct EbAV1FrameInfo {
-    /* Layer to which the current frame belong */
+    /*!< Layer to which the current frame belong */
     uint32_t layer;
 
-    /* Frame presentation time */
+    /*!< Frame presentation time */
     uint64_t frame_presentation_time;
 } EbAV1FrameInfo;
 
 typedef struct EbSvtAv1DecConfiguration {
-    /* Bitstream operating point to decode.
+    /*!< Bitstream operating point to decode.
      *
      * Default is -1, the highest operating point present in the bitstream
      * A value higher than the maximum number of operating points present
      * returns the highest available operating point. */
 
-    int32_t operating_point; // Operating point to decode
+    int32_t operating_point; /*!< Operating point to decode */
 
-    /* When set to 1, returns output pictures from all scalable layers present in the bitstream.
+    /*!< When set to 1, returns output pictures from all scalable layers present in the bitstream.
      *
      * Default is 0, only one output layer is returned, defined by operating_point parameter */
     uint32_t output_all_layers;
 
-    /* Skip film grain synthesis if it is present in the bitstream. Can be used for debugging purpose.
+    /*!< Skip film grain synthesis if it is present in the bitstream. Can be used for debugging purpose.
      *
      * Default is 0 */
     EbBool skip_film_grain;
 
-    /* Skip N output frames in the display order.
+    /*!< Skip N output frames in the display order.
      *
      * 0 = decodes from the start of the bitstream.
      *
      * Default is 0. */
     uint64_t skip_frames;
 
-    /* Maximum number of frames in the sequence to be decoded.
+    /*!< Maximum number of frames in the sequence to be decoded.
      *
      * 0 = decodes the full bitstream.
      *
      * Default is 0. */
     uint64_t frames_to_be_decoded;
 
-    /* Offline packing of the 2bits: requires two bits packed input.
+    /*!< Offline packing of the 2bits: requires two bits packed input.
      *
      * Default is 0. */
     uint32_t compressed_ten_bit_format; //remove?
 
-    /* Outputs 8-bit pictures even if the bitstream has higher bit depth.
+    /*!< Outputs 8-bit pictures even if the bitstream has higher bit depth.
      * Ignored if the bitstream is 8-bit
      *
      * Default is 0. */
 
     EbBool eight_bit_output;
 
-    /* Picture parameters */
+    /*!< Picture parameters */
     uint32_t max_picture_width;
     uint32_t max_picture_height;
 
@@ -100,19 +98,19 @@ typedef struct EbSvtAv1DecConfiguration {
 
     EbColorFormat max_color_format;
 
-    // Application Specific parameters
+    /*!< Application Specific parameters */
 
-    /* Number of threads used by decoder.
+    /*!< Number of threads used by decoder.
      * Default is 1. */
     uint32_t threads;
 
-    /* Number of frames that can be processed
-       in parallel. Default is 1 */
+    /*!< Number of frames that can be processed
+     *  in parallel. Default is 1 */
     uint32_t num_p_frames;
 
-    // Application Specific parameters
+    /*!< Application Specific parameters */
 
-    /* ID assigned to each channel when multiple instances are running within the
+    /*!< ID assigned to each channel when multiple instances are running within the
      * same application. */
     uint32_t channel_id;
     uint32_t active_channel_count;
@@ -120,7 +118,7 @@ typedef struct EbSvtAv1DecConfiguration {
     uint32_t stat_report;
 } EbSvtAv1DecConfiguration;
 
-/* STEP 1: Call the library to construct a Component Handle.
+/*!< STEP 1: Call the library to construct a Component Handle.
      *
      * Parameter:
      * @ **p_handle      Handle to be called in the future for manipulating the
@@ -259,5 +257,5 @@ EB_API EbErrorType eb_get_stream_info(EbComponentType *svt_dec_component,
 
 #ifdef __cplusplus
 }
-#endif // __cplusplus
-#endif // EbSvtAv1Dec_h
+#endif /*!< __cplusplus */
+#endif /*!< EbSvtAv1Dec_h */

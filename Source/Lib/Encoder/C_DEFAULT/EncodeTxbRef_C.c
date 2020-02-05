@@ -1,13 +1,11 @@
-/*
- * Copyright (c) 2017, Alliance for Open Media. All rights reserved
+/*!< Copyright (c) 2017, Alliance for Open Media. All rights reserved
  *
  * This source code is subject to the terms of the BSD 2 Clause License and
  * the Alliance for Open Media Patent License 1.0. If the BSD 2 Clause License
  * was not distributed with this source code in the LICENSE file, you can
  * obtain it at www.aomedia.org/license/software. If the Alliance for Open
  * Media Patent License 1.0 was not distributed with this source code in the
- * PATENTS file, you can obtain it at www.aomedia.org/license/patent.
- */
+ * PATENTS file, you can obtain it at www.aomedia.org/license/patent. */
 
 #include "EncodeTxbRef_C.h"
 #include "EbCommonUtils.h"
@@ -293,25 +291,25 @@ const int8_t av1_nz_map_ctx_offset_32x8[256] = {
 };
 
 const int8_t* av1_nz_map_ctx_offset[19] = {
-    av1_nz_map_ctx_offset_4x4, // TX_4x4
-    av1_nz_map_ctx_offset_8x8, // TX_8x8
-    av1_nz_map_ctx_offset_16x16, // TX_16x16
-    av1_nz_map_ctx_offset_32x32, // TX_32x32
-    av1_nz_map_ctx_offset_32x32, // TX_32x32
-    av1_nz_map_ctx_offset_4x16, // TX_4x8
-    av1_nz_map_ctx_offset_8x4, // TX_8x4
-    av1_nz_map_ctx_offset_8x32, // TX_8x16
-    av1_nz_map_ctx_offset_16x8, // TX_16x8
-    av1_nz_map_ctx_offset_16x32, // TX_16x32
-    av1_nz_map_ctx_offset_32x16, // TX_32x16
-    av1_nz_map_ctx_offset_32x64, // TX_32x64
-    av1_nz_map_ctx_offset_64x32, // TX_64x32
-    av1_nz_map_ctx_offset_4x16, // TX_4x16
-    av1_nz_map_ctx_offset_16x4, // TX_16x4
-    av1_nz_map_ctx_offset_8x32, // TX_8x32
-    av1_nz_map_ctx_offset_32x8, // TX_32x8
-    av1_nz_map_ctx_offset_16x32, // TX_16x64
-    av1_nz_map_ctx_offset_64x32, // TX_64x16
+    av1_nz_map_ctx_offset_4x4, /*!< TX_4x4 */
+    av1_nz_map_ctx_offset_8x8, /*!< TX_8x8 */
+    av1_nz_map_ctx_offset_16x16, /*!< TX_16x16 */
+    av1_nz_map_ctx_offset_32x32, /*!< TX_32x32 */
+    av1_nz_map_ctx_offset_32x32, /*!< TX_32x32 */
+    av1_nz_map_ctx_offset_4x16, /*!< TX_4x8 */
+    av1_nz_map_ctx_offset_8x4, /*!< TX_8x4 */
+    av1_nz_map_ctx_offset_8x32, /*!< TX_8x16 */
+    av1_nz_map_ctx_offset_16x8, /*!< TX_16x8 */
+    av1_nz_map_ctx_offset_16x32, /*!< TX_16x32 */
+    av1_nz_map_ctx_offset_32x16, /*!< TX_32x16 */
+    av1_nz_map_ctx_offset_32x64, /*!< TX_32x64 */
+    av1_nz_map_ctx_offset_64x32, /*!< TX_64x32 */
+    av1_nz_map_ctx_offset_4x16, /*!< TX_4x16 */
+    av1_nz_map_ctx_offset_16x4, /*!< TX_16x4 */
+    av1_nz_map_ctx_offset_8x32, /*!< TX_8x32 */
+    av1_nz_map_ctx_offset_32x8, /*!< TX_32x8 */
+    av1_nz_map_ctx_offset_16x32, /*!< TX_16x64 */
+    av1_nz_map_ctx_offset_64x32, /*!< TX_64x16 */
 };
 
 static const uint8_t clip_max3[256] = {
@@ -328,22 +326,22 @@ static AOM_FORCE_INLINE int get_nz_mag(const uint8_t* const levels, const int bw
                                        const TxClass tx_class) {
     int mag;
 
-    // Note: AOMMIN(level, 3) is useless for decoder since level < 3.
-    mag = clip_max3[levels[1]]; // { 0, 1 }
-    mag += clip_max3[levels[(1 << bwl) + TX_PAD_HOR]]; // { 1, 0 }
+    /*!< Note: AOMMIN(level, 3) is useless for decoder since level < 3. */
+    mag = clip_max3[levels[1]]; /*!< { 0, 1 } */
+    mag += clip_max3[levels[(1 << bwl) + TX_PAD_HOR]]; /*!< { 1, 0 } */
 
     if (tx_class == TX_CLASS_2D) {
-        mag += clip_max3[levels[(1 << bwl) + TX_PAD_HOR + 1]]; // { 1, 1 }
-        mag += clip_max3[levels[2]]; // { 0, 2 }
-        mag += clip_max3[levels[(2 << bwl) + (2 << TX_PAD_HOR_LOG2)]]; // { 2, 0 }
+        mag += clip_max3[levels[(1 << bwl) + TX_PAD_HOR + 1]]; /*!< { 1, 1 } */
+        mag += clip_max3[levels[2]]; /*!< { 0, 2 } */
+        mag += clip_max3[levels[(2 << bwl) + (2 << TX_PAD_HOR_LOG2)]]; /*!< { 2, 0 } */
     } else if (tx_class == TX_CLASS_VERT) {
-        mag += clip_max3[levels[(2 << bwl) + (2 << TX_PAD_HOR_LOG2)]]; // { 2, 0 }
-        mag += clip_max3[levels[(3 << bwl) + (3 << TX_PAD_HOR_LOG2)]]; // { 3, 0 }
-        mag += clip_max3[levels[(4 << bwl) + (4 << TX_PAD_HOR_LOG2)]]; // { 4, 0 }
+        mag += clip_max3[levels[(2 << bwl) + (2 << TX_PAD_HOR_LOG2)]]; /*!< { 2, 0 } */
+        mag += clip_max3[levels[(3 << bwl) + (3 << TX_PAD_HOR_LOG2)]]; /*!< { 3, 0 } */
+        mag += clip_max3[levels[(4 << bwl) + (4 << TX_PAD_HOR_LOG2)]]; /*!< { 4, 0 } */
     } else {
-        mag += clip_max3[levels[2]]; // { 0, 2 }
-        mag += clip_max3[levels[3]]; // { 0, 3 }
-        mag += clip_max3[levels[4]]; // { 0, 4 }
+        mag += clip_max3[levels[2]]; /*!< { 0, 2 } */
+        mag += clip_max3[levels[3]]; /*!< { 0, 3 } */
+        mag += clip_max3[levels[4]]; /*!< { 0, 4 } */
     }
 
     return mag;
@@ -364,7 +362,7 @@ static const int nz_map_ctx_offset_1d[32] = {
 };
 
 static AOM_FORCE_INLINE int get_nz_map_ctx_from_stats(const int stats,
-                                                      const int coeff_idx, // raster order
+                                                      const int coeff_idx, /*!< raster order */
                                                       const int bwl, const TxSize tx_size,
                                                       const TxClass tx_class) {
     // tx_class == 0(TX_CLASS_2D)
@@ -373,7 +371,7 @@ static AOM_FORCE_INLINE int get_nz_map_ctx_from_stats(const int stats,
     ctx     = AOMMIN(ctx, 4);
     switch (tx_class) {
     case TX_CLASS_2D: {
-        // This is the algorithm to generate av1_nz_map_ctx_offset[][]
+        /*!< This is the algorithm to generate av1_nz_map_ctx_offset[][] */
         //   const int width = tx_size_wide[tx_size];
         //   const int height = tx_size_high[tx_size];
         //   if (width < height) {
