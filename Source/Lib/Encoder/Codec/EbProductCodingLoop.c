@@ -1683,7 +1683,7 @@ void set_md_stage_counts(PictureControlSet *pcs_ptr, ModeDecisionContext *contex
         context_ptr->md_stage_1_count[CAND_CLASS_3] = context_ptr->md_stage_2_count[CAND_CLASS_3] =
             0;
 }
-void sort_fast_candidates(
+void sort_fast_cost_based_candidates(
     struct ModeDecisionContext *context_ptr, uint32_t input_buffer_start_idx,
     uint32_t
               input_buffer_count, //how many cand buffers to sort. one of the buffer can have max cost.
@@ -1866,7 +1866,7 @@ static INLINE void sort_array_index_fast_cost_ptr(ModeDecisionCandidateBuffer **
         heap_sort_stage_max_node_fast_cost_ptr(buffer_ptr, sort_index, 0, i - 1);
     }
 }
-void sort_stage1_candidates(struct ModeDecisionContext *context_ptr, uint32_t num_of_cand_to_sort,
+void sort_full_cost_based_candidates(struct ModeDecisionContext *context_ptr, uint32_t num_of_cand_to_sort,
                             uint32_t *cand_buff_indices) {
     uint32_t                      i, j, index;
     ModeDecisionCandidateBuffer **buffer_ptr_array = context_ptr->candidate_buffer_ptr_array;
@@ -5646,7 +5646,7 @@ void search_best_independent_uv_mode(PictureControlSet *  pcs_ptr,
     // Sort uv_mode (in terms of distortion only)
     uint32_t uv_cand_buff_indices[MAX_NFL_BUFF];
     memset(uv_cand_buff_indices, 0xFFFFFFFF, MAX_NFL_BUFF * sizeof(uint32_t));
-    sort_fast_candidates(
+    sort_fast_cost_based_candidates(
         context_ptr,
         0,
         uv_mode_total_count, //how many cand buffers to sort. one of the buffers can have max cost.
@@ -5837,8 +5837,8 @@ unsigned int                 eb_av1_get_sby_perpixel_variance(const AomVarianceF
 void interintra_class_pruning_1(ModeDecisionContext *context_ptr, uint64_t best_md_stage_cost) {
     for (CandClass cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL;
          cand_class_it++) {
-        if (context_ptr->md_stage_1_cand_prune_th != (uint64_t)~0 ||
-            context_ptr->md_stage_1_class_prune_th != (uint64_t)~0)
+        if (context_ptr->md_fast_cost_cand_prune_th != (uint64_t)~0 ||
+            context_ptr->md_fast_cost_class_prune_th != (uint64_t)~0)
             if (context_ptr->md_stage_0_count[cand_class_it] > 0 &&
                 context_ptr->md_stage_1_count[cand_class_it] > 0) {
                 uint32_t *cand_buff_indices = context_ptr->cand_buff_indices[cand_class_it];
@@ -5848,7 +5848,7 @@ void interintra_class_pruning_1(ModeDecisionContext *context_ptr, uint64_t best_
                 // inter class pruning
                 if (best_md_stage_cost && class_best_cost &&
                     ((((class_best_cost - best_md_stage_cost) * 100) / best_md_stage_cost) >
-                     context_ptr->md_stage_1_class_prune_th)) {
+                     context_ptr->md_fast_cost_class_prune_th)) {
                     context_ptr->md_stage_1_count[cand_class_it] = 0;
                     continue;
                 }
@@ -5861,7 +5861,7 @@ void interintra_class_pruning_1(ModeDecisionContext *context_ptr, uint64_t best_
                                   ->fast_cost_ptr) -
                             class_best_cost) *
                            100) /
-                          class_best_cost) < context_ptr->md_stage_1_cand_prune_th)) {
+                          class_best_cost) < context_ptr->md_fast_cost_cand_prune_th)) {
                         cand_count++;
                     }
                 context_ptr->md_stage_1_count[cand_class_it] = cand_count;
@@ -5873,8 +5873,8 @@ void interintra_class_pruning_1(ModeDecisionContext *context_ptr, uint64_t best_
 void interintra_class_pruning_2(ModeDecisionContext *context_ptr, uint64_t best_md_stage_cost) {
     for (CandClass cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL;
          cand_class_it++) {
-        if (context_ptr->md_stage_2_cand_prune_th != (uint64_t)~0 ||
-            context_ptr->md_stage_2_class_prune_th != (uint64_t)~0)
+        if (context_ptr->md_full_cost_cand_prune_th != (uint64_t)~0 ||
+            context_ptr->md_full_cost_class_prune_th != (uint64_t)~0)
             if (context_ptr->md_stage_1_count[cand_class_it] > 0 &&
                 context_ptr->md_stage_2_count[cand_class_it] > 0 &&
                 context_ptr->bypass_md_stage_1[cand_class_it] == EB_FALSE) {
@@ -5885,7 +5885,7 @@ void interintra_class_pruning_2(ModeDecisionContext *context_ptr, uint64_t best_
                 // inter class pruning
                 if (best_md_stage_cost && class_best_cost &&
                     ((((class_best_cost - best_md_stage_cost) * 100) / best_md_stage_cost) >
-                     context_ptr->md_stage_2_class_prune_th)) {
+                     context_ptr->md_full_cost_class_prune_th)) {
                     context_ptr->md_stage_2_count[cand_class_it] = 0;
                     continue;
                 }
@@ -5899,7 +5899,7 @@ void interintra_class_pruning_2(ModeDecisionContext *context_ptr, uint64_t best_
                                   ->full_cost_ptr) -
                             class_best_cost) *
                            100) /
-                          class_best_cost) < context_ptr->md_stage_2_cand_prune_th)) {
+                          class_best_cost) < context_ptr->md_full_cost_cand_prune_th)) {
                         cand_count++;
                     }
                 context_ptr->md_stage_2_count[cand_class_it] = cand_count;
@@ -5911,8 +5911,8 @@ void interintra_class_pruning_2(ModeDecisionContext *context_ptr, uint64_t best_
 void interintra_class_pruning_3(ModeDecisionContext *context_ptr, uint64_t best_md_stage_cost) {
     for (CandClass cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL;
          cand_class_it++) {
-        if (context_ptr->md_stage_2_cand_prune_th != (uint64_t)~0 ||
-            context_ptr->md_stage_2_class_prune_th != (uint64_t)~0)
+        if (context_ptr->md_full_cost_cand_prune_th != (uint64_t)~0 ||
+            context_ptr->md_full_cost_class_prune_th != (uint64_t)~0)
             if (context_ptr->md_stage_2_count[cand_class_it] > 0 &&
                 context_ptr->md_stage_3_count[cand_class_it] > 0 &&
                 context_ptr->bypass_md_stage_2[cand_class_it] == EB_FALSE) {
@@ -5923,7 +5923,7 @@ void interintra_class_pruning_3(ModeDecisionContext *context_ptr, uint64_t best_
                 // inter class pruning
                 if (best_md_stage_cost && class_best_cost &&
                     ((((class_best_cost - best_md_stage_cost) * 100) / best_md_stage_cost) >
-                     context_ptr->md_stage_2_class_prune_th)) {
+                     context_ptr->md_full_cost_class_prune_th)) {
                     context_ptr->md_stage_3_count[cand_class_it] = 0;
                     continue;
                 }
@@ -5937,7 +5937,7 @@ void interintra_class_pruning_3(ModeDecisionContext *context_ptr, uint64_t best_
                                   ->full_cost_ptr) -
                             class_best_cost) *
                            100) /
-                          class_best_cost) < context_ptr->md_stage_2_cand_prune_th)) {
+                          class_best_cost) < context_ptr->md_full_cost_cand_prune_th)) {
                         cand_count++;
                     }
                 context_ptr->md_stage_3_count[cand_class_it] = cand_count;
@@ -6162,7 +6162,7 @@ void md_encode_block(SequenceControlSet *scs_ptr, PictureControlSet *pcs_ptr,
                 memset(context_ptr->cand_buff_indices[cand_class_it],
                        0xFFFFFFFF,
                        MAX_NFL_BUFF * sizeof(uint32_t));
-                sort_fast_candidates(
+                sort_fast_cost_based_candidates(
                     context_ptr,
                     buffer_start_idx,
                     buffer_count_for_curr_class, //how many cand buffers to sort. one of the buffers can have max cost.
@@ -6215,7 +6215,7 @@ void md_encode_block(SequenceControlSet *scs_ptr, PictureControlSet *pcs_ptr,
 
                 //sort the new set of candidates
                 if (context_ptr->md_stage_1_count[cand_class_it])
-                    sort_stage1_candidates(context_ptr,
+                    sort_full_cost_based_candidates(context_ptr,
                                            context_ptr->md_stage_1_count[cand_class_it],
                                            context_ptr->cand_buff_indices[cand_class_it]);
                 uint32_t *cand_buff_indices = context_ptr->cand_buff_indices[cand_class_it];
@@ -6256,7 +6256,7 @@ void md_encode_block(SequenceControlSet *scs_ptr, PictureControlSet *pcs_ptr,
 
                 //sort the new set of candidates
                 if (context_ptr->md_stage_2_count[cand_class_it])
-                    sort_stage1_candidates(context_ptr,
+                    sort_full_cost_based_candidates(context_ptr,
                                            context_ptr->md_stage_2_count[cand_class_it],
                                            context_ptr->cand_buff_indices[cand_class_it]);
 

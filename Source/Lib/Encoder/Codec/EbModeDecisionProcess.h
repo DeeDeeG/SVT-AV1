@@ -317,10 +317,10 @@ typedef struct ModeDecisionContext {
     unsigned int source_variance; // input block variance
     unsigned int inter_inter_wedge_variance_th;
     uint64_t     md_exit_th;
-    uint64_t     md_stage_1_cand_prune_th;
-    uint64_t     md_stage_1_class_prune_th;
-    uint64_t     md_stage_2_cand_prune_th;
-    uint64_t     md_stage_2_class_prune_th;
+    uint64_t     md_fast_cost_cand_prune_th;
+    uint64_t     md_fast_cost_class_prune_th;
+    uint64_t     md_full_cost_cand_prune_th;
+    uint64_t     md_full_cost_class_prune_th;
     DECLARE_ALIGNED(16, uint8_t, obmc_buff_0[2 * 2 * MAX_MB_PLANE * MAX_SB_SQUARE]);
     DECLARE_ALIGNED(16, uint8_t, obmc_buff_1[2 * 2 * MAX_MB_PLANE * MAX_SB_SQUARE]);
     DECLARE_ALIGNED(16, uint8_t, obmc_buff_0_8b[2 * MAX_MB_PLANE * MAX_SB_SQUARE]);
