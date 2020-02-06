@@ -3405,14 +3405,15 @@ EbErrorType av1_intra_luma_prediction(ModeDecisionContext *        md_context_pt
                                       PictureControlSet *          pcs_ptr,
                                       ModeDecisionCandidateBuffer *candidate_buffer_ptr) {
     EbErrorType return_error = EB_ErrorNone;
+    uint8_t     is_inter     = 0; // set to 0 b/c this is an intra path
 
     uint16_t txb_origin_x =
         md_context_ptr->blk_origin_x +
-        md_context_ptr->blk_geom->tx_org_x[0][md_context_ptr->tx_depth][md_context_ptr->txb_itr] -
+        md_context_ptr->blk_geom->tx_org_x[is_inter][md_context_ptr->tx_depth][md_context_ptr->txb_itr] -
         md_context_ptr->blk_geom->origin_x;
     uint16_t txb_origin_y =
         md_context_ptr->blk_origin_y +
-        md_context_ptr->blk_geom->tx_org_y[0][md_context_ptr->tx_depth][md_context_ptr->txb_itr] -
+        md_context_ptr->blk_geom->tx_org_y[is_inter][md_context_ptr->tx_depth][md_context_ptr->txb_itr] -
         md_context_ptr->blk_geom->origin_y;
     uint8_t tx_width =
         md_context_ptr->blk_geom->tx_width[md_context_ptr->tx_depth][md_context_ptr->txb_itr];
@@ -3481,11 +3482,11 @@ EbErrorType av1_intra_luma_prediction(ModeDecisionContext *        md_context_pt
             left_neigh_array + 1,
             candidate_buffer_ptr->prediction_ptr, //uint8_t *dst,
             (md_context_ptr->blk_geom
-                 ->tx_org_x[0][md_context_ptr->tx_depth][md_context_ptr->txb_itr] -
+                 ->tx_org_x[is_inter][md_context_ptr->tx_depth][md_context_ptr->txb_itr] -
              md_context_ptr->blk_geom->origin_x) >>
                 2,
             (md_context_ptr->blk_geom
-                 ->tx_org_y[0][md_context_ptr->tx_depth][md_context_ptr->txb_itr] -
+                 ->tx_org_y[is_inter][md_context_ptr->tx_depth][md_context_ptr->txb_itr] -
              md_context_ptr->blk_geom->origin_y) >>
                 2,
             PLANE_TYPE_Y, //int32_t plane,
@@ -3495,10 +3496,10 @@ EbErrorType av1_intra_luma_prediction(ModeDecisionContext *        md_context_pt
             md_context_ptr->blk_origin_x,
             md_context_ptr->blk_origin_y,
             md_context_ptr->blk_geom
-                ->tx_org_x[0][md_context_ptr->tx_depth]
+                ->tx_org_x[is_inter][md_context_ptr->tx_depth]
                           [md_context_ptr->txb_itr], //uint32_t cuOrgX used only for prediction Ptr
             md_context_ptr->blk_geom
-                ->tx_org_y[0][md_context_ptr->tx_depth]
+                ->tx_org_y[is_inter][md_context_ptr->tx_depth]
                           [md_context_ptr->txb_itr] //uint32_t cuOrgY used only for prediction Ptr
         );
     } else {
@@ -3541,11 +3542,11 @@ EbErrorType av1_intra_luma_prediction(ModeDecisionContext *        md_context_pt
             left_neigh_array + 1,
             candidate_buffer_ptr->prediction_ptr,
             (md_context_ptr->blk_geom
-                 ->tx_org_x[0][md_context_ptr->tx_depth][md_context_ptr->txb_itr] -
+                 ->tx_org_x[is_inter][md_context_ptr->tx_depth][md_context_ptr->txb_itr] -
              md_context_ptr->blk_geom->origin_x) >>
                 2,
             (md_context_ptr->blk_geom
-                 ->tx_org_y[0][md_context_ptr->tx_depth][md_context_ptr->txb_itr] -
+                 ->tx_org_y[is_inter][md_context_ptr->tx_depth][md_context_ptr->txb_itr] -
              md_context_ptr->blk_geom->origin_y) >>
                 2,
             PLANE_TYPE_Y,
@@ -3555,10 +3556,10 @@ EbErrorType av1_intra_luma_prediction(ModeDecisionContext *        md_context_pt
             md_context_ptr->blk_origin_x,
             md_context_ptr->blk_origin_y,
             md_context_ptr->blk_geom
-                ->tx_org_x[0][md_context_ptr->tx_depth]
+                ->tx_org_x[is_inter][md_context_ptr->tx_depth]
                           [md_context_ptr->txb_itr], //uint32_t cuOrgX used only for prediction Ptr
             md_context_ptr->blk_geom
-                ->tx_org_y[0][md_context_ptr->tx_depth]
+                ->tx_org_y[is_inter][md_context_ptr->tx_depth]
                           [md_context_ptr->txb_itr] //uint32_t cuOrgY used only for prediction Ptr
         );
     }
@@ -4411,7 +4412,6 @@ void perform_tx_partitioning(ModeDecisionCandidateBuffer *candidate_buffer,
         memcpy(context_ptr->scratch_candidate_buffer->candidate_ptr,
                candidate_buffer->candidate_ptr,
                sizeof(ModeDecisionCandidate));
-    
 
     if (is_inter) {
         uint32_t block_index =

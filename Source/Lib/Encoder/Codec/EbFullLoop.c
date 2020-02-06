@@ -2155,8 +2155,8 @@ void encode_pass_tx_search(PictureControlSet *pcs_ptr, EncDecContext *context_pt
     TxType                tx_type;
     TxSize         tx_size = context_ptr->blk_geom->txsize[blk_ptr->tx_depth][context_ptr->txb_itr];
     const uint32_t scratch_luma_offset =
-        context_ptr->blk_geom->tx_org_x[1][blk_ptr->tx_depth][context_ptr->txb_itr] +
-        context_ptr->blk_geom->tx_org_y[1][blk_ptr->tx_depth][context_ptr->txb_itr] * SB_STRIDE_Y;
+        context_ptr->blk_geom->tx_org_x[is_inter][blk_ptr->tx_depth][context_ptr->txb_itr] +
+        context_ptr->blk_geom->tx_org_y[is_inter][blk_ptr->tx_depth][context_ptr->txb_itr] * SB_STRIDE_Y;
     assert(tx_size < TX_SIZES_ALL);
     const TxSetType tx_set_type =
         get_ext_tx_set_type(tx_size, is_inter, pcs_ptr->parent_pcs_ptr->frm_hdr.reduced_tx_set);

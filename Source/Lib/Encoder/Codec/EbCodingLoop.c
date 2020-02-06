@@ -1444,7 +1444,7 @@ void perform_intra_coding_loop(PictureControlSet *pcs_ptr, SuperBlock *sb_ptr, u
                                BlkStruct *blk_ptr, PredictionUnit *pu_ptr,
                                EncDecContext *context_ptr) {
     EbBool is_16bit = context_ptr->is_16bit;
-
+    uint8_t is_inter = 0; // set to 0 b/c this is the intra path
     EbPictureBufferDesc *recon_buffer =
         is_16bit ? pcs_ptr->recon_picture16bit_ptr : pcs_ptr->recon_picture_ptr;
     EbPictureBufferDesc *coeff_buffer_sb = sb_ptr->quantized_coeff;
@@ -1502,11 +1502,11 @@ void perform_intra_coding_loop(PictureControlSet *pcs_ptr, SuperBlock *sb_ptr, u
     for (context_ptr->txb_itr = 0; context_ptr->txb_itr < tot_tu; context_ptr->txb_itr++) {
         uint16_t txb_origin_x =
             context_ptr->blk_origin_x +
-            context_ptr->blk_geom->tx_org_x[0][blk_ptr->tx_depth][context_ptr->txb_itr] -
+            context_ptr->blk_geom->tx_org_x[is_inter][blk_ptr->tx_depth][context_ptr->txb_itr] -
             context_ptr->blk_geom->origin_x;
         uint16_t txb_origin_y =
             context_ptr->blk_origin_y +
-            context_ptr->blk_geom->tx_org_y[0][blk_ptr->tx_depth][context_ptr->txb_itr] -
+            context_ptr->blk_geom->tx_org_y[is_inter][blk_ptr->tx_depth][context_ptr->txb_itr] -
             context_ptr->blk_geom->origin_y;
         context_ptr->md_context->luma_txb_skip_context = 0;
         context_ptr->md_context->luma_dc_sign_context  = 0;
@@ -1563,10 +1563,10 @@ void perform_intra_coding_loop(PictureControlSet *pcs_ptr, SuperBlock *sb_ptr, u
                 top_neigh_array + 1,
                 left_neigh_array + 1,
                 recon_buffer,
-                (context_ptr->blk_geom->tx_org_x[0][blk_ptr->tx_depth][context_ptr->txb_itr] -
+                (context_ptr->blk_geom->tx_org_x[is_inter][blk_ptr->tx_depth][context_ptr->txb_itr] -
                  context_ptr->blk_geom->origin_x) >>
                     2,
-                (context_ptr->blk_geom->tx_org_y[0][blk_ptr->tx_depth][context_ptr->txb_itr] -
+                (context_ptr->blk_geom->tx_org_y[is_inter][blk_ptr->tx_depth][context_ptr->txb_itr] -
                  context_ptr->blk_geom->origin_y) >>
                     2,
                 0,
@@ -1621,10 +1621,10 @@ void perform_intra_coding_loop(PictureControlSet *pcs_ptr, SuperBlock *sb_ptr, u
                 top_neigh_array + 1,
                 left_neigh_array + 1,
                 recon_buffer,
-                (context_ptr->blk_geom->tx_org_x[0][blk_ptr->tx_depth][context_ptr->txb_itr] -
+                (context_ptr->blk_geom->tx_org_x[is_inter][blk_ptr->tx_depth][context_ptr->txb_itr] -
                  context_ptr->blk_geom->origin_x) >>
                     2,
-                (context_ptr->blk_geom->tx_org_y[0][blk_ptr->tx_depth][context_ptr->txb_itr] -
+                (context_ptr->blk_geom->tx_org_y[is_inter][blk_ptr->tx_depth][context_ptr->txb_itr] -
                  context_ptr->blk_geom->origin_y) >>
                     2,
                 0,
@@ -1752,11 +1752,11 @@ void perform_intra_coding_loop(PictureControlSet *pcs_ptr, SuperBlock *sb_ptr, u
         context_ptr->txb_itr = 0;
         uint16_t txb_origin_x =
             context_ptr->blk_origin_x +
-            context_ptr->blk_geom->tx_org_x[0][blk_ptr->tx_depth][context_ptr->txb_itr] -
+            context_ptr->blk_geom->tx_org_x[is_inter][blk_ptr->tx_depth][context_ptr->txb_itr] -
             context_ptr->blk_geom->origin_x;
         uint16_t txb_origin_y =
             context_ptr->blk_origin_y +
-            context_ptr->blk_geom->tx_org_y[0][blk_ptr->tx_depth][context_ptr->txb_itr] -
+            context_ptr->blk_geom->tx_org_y[is_inter][blk_ptr->tx_depth][context_ptr->txb_itr] -
             context_ptr->blk_geom->origin_y;
         uint32_t blk_originx_uv = (context_ptr->blk_origin_x >> 3 << 3) >> 1;
         uint32_t blk_originy_uv = (context_ptr->blk_origin_y >> 3 << 3) >> 1;
@@ -1856,12 +1856,12 @@ void perform_intra_coding_loop(PictureControlSet *pcs_ptr, SuperBlock *sb_ptr, u
                     recon_buffer,
                     plane ? 0
                           : (context_ptr->blk_geom
-                                 ->tx_org_x[0][blk_ptr->tx_depth][context_ptr->txb_itr] -
+                                 ->tx_org_x[is_inter][blk_ptr->tx_depth][context_ptr->txb_itr] -
                              context_ptr->blk_geom->origin_x) >>
                                 2,
                     plane ? 0
                           : (context_ptr->blk_geom
-                                 ->tx_org_y[0][blk_ptr->tx_depth][context_ptr->txb_itr] -
+                                 ->tx_org_y[is_inter][blk_ptr->tx_depth][context_ptr->txb_itr] -
                              context_ptr->blk_geom->origin_y) >>
                                 2,
                     plane,
@@ -1945,12 +1945,12 @@ void perform_intra_coding_loop(PictureControlSet *pcs_ptr, SuperBlock *sb_ptr, u
                     recon_buffer,
                     plane ? 0
                           : (context_ptr->blk_geom
-                                 ->tx_org_x[0][blk_ptr->tx_depth][context_ptr->txb_itr] -
+                                 ->tx_org_x[is_inter][blk_ptr->tx_depth][context_ptr->txb_itr] -
                              context_ptr->blk_geom->origin_x) >>
                                 2,
                     plane ? 0
                           : (context_ptr->blk_geom
-                                 ->tx_org_y[0][blk_ptr->tx_depth][context_ptr->txb_itr] -
+                                 ->tx_org_y[is_inter][blk_ptr->tx_depth][context_ptr->txb_itr] -
                              context_ptr->blk_geom->origin_y) >>
                                 2,
                     plane,
@@ -2899,7 +2899,7 @@ EB_EXTERN void av1_encode_pass(SequenceControlSet *scs_ptr, PictureControlSet *p
 
                 // Inter
                 else if (blk_ptr->prediction_mode_flag == INTER_MODE) {
-                    context_ptr->is_inter = 1;
+                    uint8_t is_inter = context_ptr->is_inter = 1;
                     int8_t ref_idx_l0 = (&blk_ptr->prediction_unit_array[0])->ref_frame_index_l0;
                     int8_t ref_idx_l1 = (&blk_ptr->prediction_unit_array[0])->ref_frame_index_l1;
                     MvReferenceFrame rf[2];
@@ -3113,11 +3113,11 @@ EB_EXTERN void av1_encode_pass(SequenceControlSet *scs_ptr, PictureControlSet *p
                                 blk_ptr->tx_depth && tu_it ? 0 : 1; //NM: 128x128 exeption
                             txb_origin_x =
                                 context_ptr->blk_origin_x +
-                                context_ptr->blk_geom->tx_org_x[1][blk_ptr->tx_depth][tu_it] -
+                                context_ptr->blk_geom->tx_org_x[is_inter][blk_ptr->tx_depth][tu_it] -
                                 context_ptr->blk_geom->origin_x;
                             txb_origin_y =
                                 context_ptr->blk_origin_y +
-                                context_ptr->blk_geom->tx_org_y[1][blk_ptr->tx_depth][tu_it] -
+                                context_ptr->blk_geom->tx_org_y[is_inter][blk_ptr->tx_depth][tu_it] -
                                 context_ptr->blk_geom->origin_y;
 
                             context_ptr->md_context->luma_txb_skip_context = 0;
@@ -3475,11 +3475,11 @@ EB_EXTERN void av1_encode_pass(SequenceControlSet *scs_ptr, PictureControlSet *p
                         context_ptr->txb_itr = tu_it;
                         txb_origin_x = context_ptr->blk_origin_x +
                                        (context_ptr->blk_geom
-                                            ->tx_org_x[1][blk_ptr->tx_depth][context_ptr->txb_itr] -
+                                            ->tx_org_x[is_inter][blk_ptr->tx_depth][context_ptr->txb_itr] -
                                         context_ptr->blk_geom->origin_x);
                         txb_origin_y = context_ptr->blk_origin_y +
                                        (context_ptr->blk_geom
-                                            ->tx_org_y[1][blk_ptr->tx_depth][context_ptr->txb_itr] -
+                                            ->tx_org_y[is_inter][blk_ptr->tx_depth][context_ptr->txb_itr] -
                                         context_ptr->blk_geom->origin_y);
                         context_ptr->md_context->luma_txb_skip_context = 0;
                         context_ptr->md_context->luma_dc_sign_context  = 0;
