@@ -4391,9 +4391,10 @@ uint64_t get_tx_size_bits(ModeDecisionCandidateBuffer *candidateBuffer,
 
 void perform_tx_partitioning(ModeDecisionCandidateBuffer *candidate_buffer,
                              ModeDecisionContext *context_ptr, PictureControlSet *pcs_ptr,
-                             uint64_t ref_fast_cost, uint8_t end_tx_depth, uint32_t qp,
-                             uint32_t *y_count_non_zero_coeffs, uint64_t *y_coeff_bits,
+                             uint64_t ref_fast_cost, uint8_t start_tx_depth, uint8_t end_tx_depth,
+                             uint32_t qp, uint32_t *y_count_non_zero_coeffs, uint64_t *y_coeff_bits,
                              uint64_t *y_full_distortion) {
+    UNUSED(start_tx_depth); // TODO: start_tx_depth will be used for future features; this commit is adding the infrastructure for that
     EbPictureBufferDesc *input_picture_ptr = context_ptr->hbd_mode_decision
                                                  ? pcs_ptr->input_frame16bit
                                                  : pcs_ptr->parent_pcs_ptr->enhanced_picture_ptr;
@@ -4761,6 +4762,7 @@ void full_loop_core(PictureControlSet *pcs_ptr, SuperBlock *sb_ptr, BlkStruct *b
                                 context_ptr,
                                 pcs_ptr,
                                 ref_fast_cost,
+                                start_tx_depth,
                                 end_tx_depth,
                                 context_ptr->blk_ptr->qp,
                                 &(*count_non_zero_coeffs[0]),
@@ -4969,8 +4971,7 @@ void md_stage_2(PictureControlSet *pcs_ptr, SuperBlock *sb_ptr, BlkStruct *blk_p
         candidate_buffer = candidate_buffer_ptr_array[candidateIndex];
         candidate_ptr    = candidate_buffer->candidate_ptr;
 
-        // TODO: change to context_ptr->md_staging_tx_size_mode = 0;
-        context_ptr->md_staging_skip_atb = context_ptr->coeff_based_skip_atb;
+        context_ptr->md_staging_tx_size_mode = 0;
 
         context_ptr->md_staging_tx_search =
             (candidate_ptr->cand_class == CAND_CLASS_0 ||
@@ -4983,8 +4984,7 @@ void md_stage_2(PictureControlSet *pcs_ptr, SuperBlock *sb_ptr, BlkStruct *blk_p
         context_ptr->md_staging_skip_interpolation_search = EB_TRUE;
         context_ptr->md_staging_skip_inter_chroma_pred    = EB_TRUE;
 
-        // TODO: add this line when supporting spatial/freq distortion calc per md stage
-        // context_ptr->md_staging_spatial_sse_full_loop = context_ptr->spatial_sse_full_loop;
+        context_ptr->md_staging_spatial_sse_full_loop = context_ptr->spatial_sse_full_loop;
 
         full_loop_core(pcs_ptr,
                        sb_ptr,
