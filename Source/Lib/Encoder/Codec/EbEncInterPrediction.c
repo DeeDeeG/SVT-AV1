@@ -874,7 +874,6 @@ extern void eb_av1_predict_intra_block_16bit(
         uint32_t bl_org_x_pict, uint32_t bl_org_y_pict, uint32_t bl_org_x_mb, uint32_t bl_org_y_mb,
         ModeInfo **mi_grid_base, SeqHeader *seq_header_ptr);
 
-#define INTERINTRA_WEDGE_SIGN 0
 
 struct build_prediction_hbd_ctxt {
     const AV1_COMMON *cm;
@@ -3445,19 +3444,32 @@ EbErrorType av1_inter_prediction(
                     uint8_t ref_idx = get_ref_frame_idx(this_mbmi->block_mi.ref_frame[0]);
                     assert(ref_idx < REF_LIST_MAX_DEPTH);
 
-                    EbReferenceObject *ref_obj_list0 =
-                            (EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[REF_LIST_0][ref_idx]->object_ptr;
-                    EbReferenceObject *ref_obj_list1 =
-                            (EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[REF_LIST_1][ref_idx]->object_ptr;
+                    EbPictureBufferDesc *ref_pic =
+                            this_mbmi->block_mi.ref_frame[0] == LAST_FRAME ||
+                            this_mbmi->block_mi.ref_frame[0] == LAST2_FRAME ||
+                            this_mbmi->block_mi.ref_frame[0] == LAST3_FRAME ||
+                            this_mbmi->block_mi.ref_frame[0] == GOLDEN_FRAME
+                            ? (is16bit ? ((EbReferenceObject *)(picture_control_set_ptr
+                                    ->ref_pic_ptr_array[REF_LIST_0]
+                            [ref_idx]
+                                    ->object_ptr))
+                                    ->reference_picture16bit
+                                       : ((EbReferenceObject *)(picture_control_set_ptr
+                                            ->ref_pic_ptr_array[REF_LIST_0]
+                                    [ref_idx]
+                                            ->object_ptr))
+                                       ->reference_picture)
+                            : (is16bit ? ((EbReferenceObject *)(picture_control_set_ptr
+                                    ->ref_pic_ptr_array[REF_LIST_1]
+                            [ref_idx]
+                                    ->object_ptr))
+                                    ->reference_picture16bit
+                                       : ((EbReferenceObject *)(picture_control_set_ptr
+                                            ->ref_pic_ptr_array[REF_LIST_1]
+                                    [ref_idx]
+                                            ->object_ptr))
+                                       ->reference_picture);
 
-                    EbPictureBufferDesc  *ref_pic = this_mbmi->block_mi.ref_frame[0] ==
-                                                    LAST_FRAME || this_mbmi->block_mi.ref_frame[0] == LAST2_FRAME ||
-                                                    this_mbmi->block_mi.ref_frame[0] == LAST3_FRAME ||
-                                                    this_mbmi->block_mi.ref_frame[0] == GOLDEN_FRAME ?
-                                                    (is16bit ? ref_obj_list0->reference_picture16bit :
-                                                     ref_obj_list0->reference_picture) :
-                                                    (is16bit ? ref_obj_list1->reference_picture16bit :
-                                                     ref_obj_list1->reference_picture);
                     src_ptr = ref_pic->buffer_cb +
                               (((ref_pic->origin_x + ((pu_origin_x >> 3) << 3)) / 2 +
                                 (ref_pic->origin_y + ((pu_origin_y >> 3) << 3)) / 2 *

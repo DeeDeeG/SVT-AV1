@@ -467,4 +467,7 @@ void setup_common_rtcd_internal(CPU_FLAGS flags) {
     aom_highbd_blend_a64_d16_mask = aom_highbd_blend_a64_d16_mask_c;
     if (flags & HAS_AVX2) aom_highbd_blend_a64_d16_mask = aom_highbd_blend_a64_d16_mask_avx2;
 
+    aom_highbd_subtract_block = aom_highbd_subtract_block_c;
+    if (flags & HAS_AVX2) aom_highbd_subtract_block = aom_highbd_subtract_block_sse2;
+
 }

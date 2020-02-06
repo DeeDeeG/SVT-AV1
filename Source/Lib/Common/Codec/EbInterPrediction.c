@@ -42,376 +42,7 @@
 #define ROUND0_BITS 3
 #define COMPOUND_ROUND1_BITS 7
 
-
-#define USE_PRECOMPUTED_WEDGE_SIGN 1
-#define USE_PRECOMPUTED_WEDGE_MASK 1
-
-#if USE_PRECOMPUTED_WEDGE_MASK
-static const uint8_t wedge_master_oblique_odd[MASK_MASTER_SIZE] = {
-        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-        0,  0,  0,  0,  0,  0,  1,  2,  6,  18, 37, 53, 60, 63, 64, 64, 64, 64, 64, 64, 64, 64,
-        64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
-};
-static const uint8_t wedge_master_oblique_even[MASK_MASTER_SIZE] = {
-        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-        0,  0,  0,  0,  0,  0,  1,  4,  11, 27, 46, 58, 62, 63, 64, 64, 64, 64, 64, 64, 64, 64,
-        64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
-};
-static const uint8_t wedge_master_vertical[MASK_MASTER_SIZE] = {
-        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-        0,  0,  0,  0,  0,  0,  0,  2,  7,  21, 43, 57, 62, 64, 64, 64, 64, 64, 64, 64, 64, 64,
-        64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
-};
-
-void aom_convolve_copy_c(const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst,
-                         ptrdiff_t dst_stride, const int16_t *filter_x, int filter_x_stride,
-                         const int16_t *filter_y, int filter_y_stride, int w, int h) {
-    int r;
-
-    (void)filter_x;
-    (void)filter_x_stride;
-    (void)filter_y;
-    (void)filter_y_stride;
-
-    for (r = h; r > 0; --r) {
-        memcpy(dst, src, w);
-        src += src_stride;
-        dst += dst_stride;
-    }
-}
-
-static void shift_copy(const uint8_t *src, uint8_t *dst, int shift, int width) {
-    if (shift >= 0) {
-        memcpy(dst + shift, src, width - shift);
-        memset(dst, src[0], shift);
-    } else {
-        shift = -shift;
-        memcpy(dst, src + shift, width - shift);
-        memset(dst + width - shift, src[width - 1], shift);
-    }
-}
-#endif // USE_PRECOMPUTED_WEDGE_MASK
-
-// [negative][direction]
-DECLARE_ALIGNED(16, static uint8_t,
-                wedge_mask_obl[2][WEDGE_DIRECTIONS][MASK_MASTER_SIZE * MASK_MASTER_SIZE]);
-
-// 4 * MAX_WEDGE_SQUARE is an easy to compute and fairly tight upper bound
-// on the sum of all mask sizes up to an including MAX_WEDGE_SQUARE.
-DECLARE_ALIGNED(16, static uint8_t, wedge_mask_buf[2 * MAX_WEDGE_TYPES * 4 * MAX_WEDGE_SQUARE]);
-
-static void init_wedge_master_masks() {
-    int       i, j;
-    const int w      = MASK_MASTER_SIZE;
-    const int h      = MASK_MASTER_SIZE;
-    const int stride = MASK_MASTER_STRIDE;
-    // Note: index [0] stores the masters, and [1] its complement.
-#if USE_PRECOMPUTED_WEDGE_MASK
-    // Generate prototype by shifting the masters
-    int shift = h / 4;
-    for (i = 0; i < h; i += 2) {
-        shift_copy(wedge_master_oblique_even,
-                   &wedge_mask_obl[0][WEDGE_OBLIQUE63][i * stride],
-                   shift,
-                   MASK_MASTER_SIZE);
-        shift--;
-        shift_copy(wedge_master_oblique_odd,
-                   &wedge_mask_obl[0][WEDGE_OBLIQUE63][(i + 1) * stride],
-                   shift,
-                   MASK_MASTER_SIZE);
-        memcpy(&wedge_mask_obl[0][WEDGE_VERTICAL][i * stride],
-               wedge_master_vertical,
-               MASK_MASTER_SIZE * sizeof(wedge_master_vertical[0]));
-        memcpy(&wedge_mask_obl[0][WEDGE_VERTICAL][(i + 1) * stride],
-               wedge_master_vertical,
-               MASK_MASTER_SIZE * sizeof(wedge_master_vertical[0]));
-    }
-#else
-    static const double smoother_param = 2.85;
-    const int           a[2]           = {2, 1};
-    const double        asqrt          = sqrt(a[0] * a[0] + a[1] * a[1]);
-    for (i = 0; i < h; i++) {
-        for (j = 0; j < w; ++j) {
-            int       x   = (2 * j + 1 - w);
-            int       y   = (2 * i + 1 - h);
-            double    d   = (a[0] * x + a[1] * y) / asqrt;
-            const int msk = (int)rint((1.0 + tanh(d / smoother_param)) * 32);
-            wedge_mask_obl[0][WEDGE_OBLIQUE63][i * stride + j] = msk;
-            const int mskx = (int)rint((1.0 + tanh(x / smoother_param)) * 32);
-            wedge_mask_obl[0][WEDGE_VERTICAL][i * stride + j] = mskx;
-        }
-    }
-#endif // USE_PRECOMPUTED_WEDGE_MASK
-    for (i = 0; i < h; ++i) {
-        for (j = 0; j < w; ++j) {
-            const int msk = wedge_mask_obl[0][WEDGE_OBLIQUE63][i * stride + j];
-            wedge_mask_obl[0][WEDGE_OBLIQUE27][j * stride + i] = msk;
-            wedge_mask_obl[0][WEDGE_OBLIQUE117][i * stride + w - 1 - j] =
-            wedge_mask_obl[0][WEDGE_OBLIQUE153][(w - 1 - j) * stride + i] =
-                    (1 << WEDGE_WEIGHT_BITS) - msk;
-            wedge_mask_obl[1][WEDGE_OBLIQUE63][i * stride + j] =
-            wedge_mask_obl[1][WEDGE_OBLIQUE27][j * stride + i] = (1 << WEDGE_WEIGHT_BITS) - msk;
-            wedge_mask_obl[1][WEDGE_OBLIQUE117][i * stride + w - 1 - j] =
-            wedge_mask_obl[1][WEDGE_OBLIQUE153][(w - 1 - j) * stride + i] = msk;
-            const int mskx = wedge_mask_obl[0][WEDGE_VERTICAL][i * stride + j];
-            wedge_mask_obl[0][WEDGE_HORIZONTAL][j * stride + i] = mskx;
-            wedge_mask_obl[1][WEDGE_VERTICAL][i * stride + j] =
-            wedge_mask_obl[1][WEDGE_HORIZONTAL][j * stride + i] =
-                    (1 << WEDGE_WEIGHT_BITS) - mskx;
-        }
-    }
-}
-
-#if !USE_PRECOMPUTED_WEDGE_SIGN
-// If the signs for the wedges for various blocksizes are
-// inconsistent flip the sign flag. Do it only once for every
-// wedge codebook.
-static void init_wedge_signs() {
-    BLOCK_SIZE sb_type;
-    memset(wedge_signflip_lookup, 0, sizeof(wedge_signflip_lookup));
-    for (sb_type = BLOCK_4X4; sb_type < BLOCK_SIZES_ALL; ++sb_type) {
-        const int               bw           = block_size_wide[sb_type];
-        const int               bh           = block_size_high[sb_type];
-        const wedge_params_type wedge_params = wedge_params_lookup[sb_type];
-        const int               wbits        = wedge_params.bits;
-        const int               wtypes       = 1 << wbits;
-        int                     i, w;
-        if (wbits) {
-            for (w = 0; w < wtypes; ++w) {
-                // Get the mask master, i.e. index [0]
-                const uint8_t *mask = get_wedge_mask_inplace(w, 0, sb_type);
-                int            avg  = 0;
-                for (i = 0; i < bw; ++i) avg += mask[i];
-                for (i = 1; i < bh; ++i) avg += mask[i * MASK_MASTER_STRIDE];
-                avg = (avg + (bw + bh - 1) / 2) / (bw + bh - 1);
-                // Default sign of this wedge is 1 if the average < 32, 0 otherwise.
-                // If default sign is 1:
-                //   If sign requested is 0, we need to flip the sign and return
-                //   the complement i.e. index [1] instead. If sign requested is 1
-                //   we need to flip the sign and return index [0] instead.
-                // If default sign is 0:
-                //   If sign requested is 0, we need to return index [0] the master
-                //   if sign requested is 1, we need to return the complement index [1]
-                //   instead.
-                wedge_params.signflip[w] = (avg < 32);
-            }
-        }
-    }
-}
-#endif // !USE_PRECOMPUTED_WEDGE_SIGN
-
-static const uint8_t *get_wedge_mask_inplace(int wedge_index, int neg, BlockSize sb_type) {
-    const uint8_t *      master;
-    const int            bh = block_size_high[sb_type];
-    const int            bw = block_size_wide[sb_type];
-    const WedgeCodeType *a  = wedge_params_lookup[sb_type].codebook + wedge_index;
-    int                  woff, hoff;
-    const uint8_t        wsignflip = wedge_params_lookup[sb_type].signflip[wedge_index];
-
-    assert(wedge_index >= 0 && wedge_index < (1 << get_wedge_bits_lookup(sb_type)));
-    woff   = (a->x_offset * bw) >> 3;
-    hoff   = (a->y_offset * bh) >> 3;
-    master = wedge_mask_obl[neg ^ wsignflip][a->direction] +
-             MASK_MASTER_STRIDE * (MASK_MASTER_SIZE / 2 - hoff) + MASK_MASTER_SIZE / 2 - woff;
-    return master;
-}
-
-static void init_wedge_masks() {
-    uint8_t * dst = wedge_mask_buf;
-    BlockSize bsize;
-    memset(wedge_masks, 0, sizeof(wedge_masks));
-    for (bsize = BLOCK_4X4; bsize < BlockSizeS_ALL; ++bsize) {
-        const uint8_t *        mask;
-        const int              bw           = block_size_wide[bsize];
-        const int              bh           = block_size_high[bsize];
-        const WedgeParamsType *wedge_params = &wedge_params_lookup[bsize];
-        const int              wbits        = wedge_params->bits;
-        const int              wtypes       = 1 << wbits;
-        int                    w;
-        if (wbits == 0) continue;
-        for (w = 0; w < wtypes; ++w) {
-            mask = get_wedge_mask_inplace(w, 0, bsize);
-            aom_convolve_copy_c(mask, MASK_MASTER_STRIDE, dst, bw, NULL, 0, NULL, 0, bw, bh);
-            wedge_params->masks[0][w] = dst;
-            dst += bw * bh;
-
-            mask = get_wedge_mask_inplace(w, 1, bsize);
-            aom_convolve_copy_c(mask, MASK_MASTER_STRIDE, dst, bw, NULL, 0, NULL, 0, bw, bh);
-            wedge_params->masks[1][w] = dst;
-            dst += bw * bh;
-        }
-        assert(sizeof(wedge_mask_buf) >= (size_t)(dst - wedge_mask_buf));
-    }
-}
-
-// Equation of line: f(x, y) = a[0]*(x - a[2]*w/8) + a[1]*(y - a[3]*h/8) = 0
-void av1_init_wedge_masks(void) {
-    init_wedge_master_masks();
-#if !USE_PRECOMPUTED_WEDGE_SIGN
-    init_wedge_signs();
-#endif // !USE_PRECOMPUTED_WEDGE_SIGN
-    init_wedge_masks();
-}
-
-int is_masked_compound_type(COMPOUND_TYPE type);
-
-/* clang-format off */
-static const uint8_t ii_weights1d[MAX_SB_SIZE] = {
-        60, 58, 56, 54, 52, 50, 48, 47, 45, 44, 42, 41, 39, 38, 37, 35, 34, 33, 32,
-        31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 22, 21, 20, 19, 19, 18, 18, 17, 16,
-        16, 15, 15, 14, 14, 13, 13, 12, 12, 12, 11, 11, 10, 10, 10,  9,  9,  9,  8,
-        8,  8,  8,  7,  7,  7,  7,  6,  6,  6,  6,  6,  5,  5,  5,  5,  5,  4,  4,
-        4,  4,  4,  4,  4,  4,  3,  3,  3,  3,  3,  3,  3,  3,  3,  2,  2,  2,  2,
-        2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  1,  1,  1,  1,  1,  1,  1,  1,
-        1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1
-};
-static uint8_t ii_size_scales[BlockSizeS_ALL] = {
-        32, 16, 16, 16, 8, 8, 8, 4,
-        4,  4,  2,  2,  2, 1, 1, 1,
-        8,  8,  4,  4,  2, 2
-};
-/* clang-format on */
-
-void build_smooth_interintra_mask(uint8_t *mask, int stride, BlockSize plane_bsize,
-                                         InterIntraMode mode) {
-    int       i, j;
-    const int bw         = block_size_wide[plane_bsize];
-    const int bh         = block_size_high[plane_bsize];
-    const int size_scale = ii_size_scales[plane_bsize];
-
-    switch (mode) {
-        case II_V_PRED:
-            for (i = 0; i < bh; ++i) {
-                memset(mask, ii_weights1d[i * size_scale], bw * sizeof(mask[0]));
-                mask += stride;
-            }
-            break;
-
-        case II_H_PRED:
-            for (i = 0; i < bh; ++i) {
-                for (j = 0; j < bw; ++j) mask[j] = ii_weights1d[j * size_scale];
-                mask += stride;
-            }
-            break;
-
-        case II_SMOOTH_PRED:
-            for (i = 0; i < bh; ++i) {
-                for (j = 0; j < bw; ++j) mask[j] = ii_weights1d[(i < j ? i : j) * size_scale];
-                mask += stride;
-            }
-            break;
-
-        case II_DC_PRED:
-        default:
-            for (i = 0; i < bh; ++i) {
-                memset(mask, 32, bw * sizeof(mask[0]));
-                mask += stride;
-            }
-            break;
-    }
-}
-
-void combine_interintra_highbd(InterIntraMode mode, uint8_t use_wedge_interintra,
-                               uint8_t wedge_index, uint8_t wedge_sign, BlockSize bsize,
-                               BlockSize plane_bsize, uint8_t *comppred8, int compstride,
-                               const uint8_t *interpred8, int interstride,
-                               const uint8_t *intrapred8, int intrastride, int bd) {
-    const int bw = block_size_wide[plane_bsize];
-    const int bh = block_size_high[plane_bsize];
-
-    if (use_wedge_interintra) {
-        if (is_interintra_wedge_used(bsize)) {
-            const uint8_t *mask = av1_get_contiguous_soft_mask(wedge_index, wedge_sign, bsize);
-            const int      subh = 2 * mi_size_high[bsize] == bh;
-            const int      subw = 2 * mi_size_wide[bsize] == bw;
-            aom_highbd_blend_a64_mask(comppred8,
-                                      compstride,
-                                      intrapred8,
-                                      intrastride,
-                                      interpred8,
-                                      interstride,
-                                      mask,
-                                      block_size_wide[bsize],
-                                      bw,
-                                      bh,
-                                      subw,
-                                      subh,
-                                      bd);
-        }
-        return;
-    }
-
-    uint8_t mask[MAX_SB_SQUARE];
-    build_smooth_interintra_mask(mask, bw, plane_bsize, mode);
-    aom_highbd_blend_a64_mask(comppred8,
-                              compstride,
-                              intrapred8,
-                              intrastride,
-                              interpred8,
-                              interstride,
-                              mask,
-                              bw,
-                              bw,
-                              bh,
-                              0,
-                              0,
-                              bd);
-}
-
-const uint8_t *av1_get_compound_type_mask(const InterInterCompoundData *const comp_data,
-                                          uint8_t *seg_mask, BlockSize sb_type) {
-    assert(is_masked_compound_type(comp_data->type));
-    (void)sb_type;
-    switch (comp_data->type) {
-        case COMPOUND_WEDGE:
-            return av1_get_contiguous_soft_mask(comp_data->wedge_index, comp_data->wedge_sign, sb_type);
-        case COMPOUND_DIFFWTD: return seg_mask;
-        default: assert(0); return NULL;
-    }
-}
-
-void build_masked_compound_no_round(uint8_t *dst, int dst_stride, const CONV_BUF_TYPE *src0,
-                                    int src0_stride, const CONV_BUF_TYPE *src1, int src1_stride,
-                                    const InterInterCompoundData *const comp_data,
-                                    uint8_t *seg_mask, BlockSize sb_type, int h, int w,
-                                    ConvolveParams *conv_params, uint8_t bit_depth) {
-    // Derive subsampling from h and w passed in. May be refactored to
-    // pass in subsampling factors directly.
-    const int      subh = (2 << mi_size_high_log2[sb_type]) == h;
-    const int      subw = (2 << mi_size_wide_log2[sb_type]) == w;
-    const uint8_t *mask = av1_get_compound_type_mask(comp_data, seg_mask, sb_type);
-
-    if (bit_depth > EB_8BIT) {
-        aom_highbd_blend_a64_d16_mask(dst,
-                                      dst_stride,
-                                      src0,
-                                      src0_stride,
-                                      src1,
-                                      src1_stride,
-                                      mask,
-                                      block_size_wide[sb_type],
-                                      w,
-                                      h,
-                                      subw,
-                                      subh,
-                                      conv_params,
-                                      bit_depth);
-    } else {
-        aom_lowbd_blend_a64_d16_mask(dst,
-                                     dst_stride,
-                                     src0,
-                                     src0_stride,
-                                     src1,
-                                     src1_stride,
-                                     mask,
-                                     block_size_wide[sb_type],
-                                     w,
-                                     h,
-                                     subw,
-                                     subh,
-                                     conv_params);
-    }
-}
+static WedgeMasksType wedge_masks[BlockSizeS_ALL][2];
 
 void aom_highbd_subtract_block_c(int rows, int cols, int16_t *diff, ptrdiff_t diff_stride,
                                  const uint8_t *src8, ptrdiff_t src_stride, const uint8_t *pred8,
@@ -1875,3 +1506,489 @@ void svt_highbd_inter_predictor(const uint16_t *src, int32_t src_stride, uint16_
                                                                                   bd);
     }
 }
+
+
+#define USE_PRECOMPUTED_WEDGE_SIGN 1
+#define USE_PRECOMPUTED_WEDGE_MASK 1
+
+#if USE_PRECOMPUTED_WEDGE_MASK
+static const uint8_t wedge_master_oblique_odd[MASK_MASTER_SIZE] = {
+        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+        0,  0,  0,  0,  0,  0,  1,  2,  6,  18, 37, 53, 60, 63, 64, 64, 64, 64, 64, 64, 64, 64,
+        64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+};
+static const uint8_t wedge_master_oblique_even[MASK_MASTER_SIZE] = {
+        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+        0,  0,  0,  0,  0,  0,  1,  4,  11, 27, 46, 58, 62, 63, 64, 64, 64, 64, 64, 64, 64, 64,
+        64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+};
+static const uint8_t wedge_master_vertical[MASK_MASTER_SIZE] = {
+        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+        0,  0,  0,  0,  0,  0,  0,  2,  7,  21, 43, 57, 62, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+        64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+};
+
+
+DECLARE_ALIGNED(16, static uint8_t, wedge_signflip_lookup[BlockSizeS_ALL][MAX_WEDGE_TYPES]) = {
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },  // not used
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },  // not used
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },  // not used
+        { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, },
+        { 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, },
+        { 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, },
+        { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, },
+        { 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, },
+        { 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, },
+        { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, },
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },  // not used
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },  // not used
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },  // not used
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },  // not used
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },  // not used
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },  // not used
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },  // not used
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },  // not used
+        { 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, },
+        { 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, },
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },  // not used
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },  // not used
+};
+
+
+static const WedgeCodeType wedge_codebook_16_hgtw[16] = {
+        { WEDGE_OBLIQUE27, 4, 4 }, { WEDGE_OBLIQUE63, 4, 4 },
+        { WEDGE_OBLIQUE117, 4, 4 }, { WEDGE_OBLIQUE153, 4, 4 },
+        { WEDGE_HORIZONTAL, 4, 2 }, { WEDGE_HORIZONTAL, 4, 4 },
+        { WEDGE_HORIZONTAL, 4, 6 }, { WEDGE_VERTICAL, 4, 4 },
+        { WEDGE_OBLIQUE27, 4, 2 }, { WEDGE_OBLIQUE27, 4, 6 },
+        { WEDGE_OBLIQUE153, 4, 2 }, { WEDGE_OBLIQUE153, 4, 6 },
+        { WEDGE_OBLIQUE63, 2, 4 }, { WEDGE_OBLIQUE63, 6, 4 },
+        { WEDGE_OBLIQUE117, 2, 4 }, { WEDGE_OBLIQUE117, 6, 4 },
+};
+
+static const WedgeCodeType wedge_codebook_16_hltw[16] = {
+        { WEDGE_OBLIQUE27, 4, 4 }, { WEDGE_OBLIQUE63, 4, 4 },
+        { WEDGE_OBLIQUE117, 4, 4 }, { WEDGE_OBLIQUE153, 4, 4 },
+        { WEDGE_VERTICAL, 2, 4 }, { WEDGE_VERTICAL, 4, 4 },
+        { WEDGE_VERTICAL, 6, 4 }, { WEDGE_HORIZONTAL, 4, 4 },
+        { WEDGE_OBLIQUE27, 4, 2 }, { WEDGE_OBLIQUE27, 4, 6 },
+        { WEDGE_OBLIQUE153, 4, 2 }, { WEDGE_OBLIQUE153, 4, 6 },
+        { WEDGE_OBLIQUE63, 2, 4 }, { WEDGE_OBLIQUE63, 6, 4 },
+        { WEDGE_OBLIQUE117, 2, 4 }, { WEDGE_OBLIQUE117, 6, 4 },
+};
+
+static const WedgeCodeType wedge_codebook_16_heqw[16] = {
+        { WEDGE_OBLIQUE27, 4, 4 }, { WEDGE_OBLIQUE63, 4, 4 },
+        { WEDGE_OBLIQUE117, 4, 4 }, { WEDGE_OBLIQUE153, 4, 4 },
+        { WEDGE_HORIZONTAL, 4, 2 }, { WEDGE_HORIZONTAL, 4, 6 },
+        { WEDGE_VERTICAL, 2, 4 }, { WEDGE_VERTICAL, 6, 4 },
+        { WEDGE_OBLIQUE27, 4, 2 }, { WEDGE_OBLIQUE27, 4, 6 },
+        { WEDGE_OBLIQUE153, 4, 2 }, { WEDGE_OBLIQUE153, 4, 6 },
+        { WEDGE_OBLIQUE63, 2, 4 }, { WEDGE_OBLIQUE63, 6, 4 },
+        { WEDGE_OBLIQUE117, 2, 4 }, { WEDGE_OBLIQUE117, 6, 4 },
+};
+
+static const WedgeParamsType wedge_params_lookup[BlockSizeS_ALL] = {
+        { 0, NULL, NULL, NULL },
+        { 0, NULL, NULL, NULL },
+        { 0, NULL, NULL, NULL },
+        { 4, wedge_codebook_16_heqw, wedge_signflip_lookup[BLOCK_8X8],
+                wedge_masks[BLOCK_8X8] },
+        { 4, wedge_codebook_16_hgtw, wedge_signflip_lookup[BLOCK_8X16],
+                wedge_masks[BLOCK_8X16] },
+        { 4, wedge_codebook_16_hltw, wedge_signflip_lookup[BLOCK_16X8],
+                wedge_masks[BLOCK_16X8] },
+        { 4, wedge_codebook_16_heqw, wedge_signflip_lookup[BLOCK_16X16],
+                wedge_masks[BLOCK_16X16] },
+        { 4, wedge_codebook_16_hgtw, wedge_signflip_lookup[BLOCK_16X32],
+                wedge_masks[BLOCK_16X32] },
+        { 4, wedge_codebook_16_hltw, wedge_signflip_lookup[BLOCK_32X16],
+                wedge_masks[BLOCK_32X16] },
+        { 4, wedge_codebook_16_heqw, wedge_signflip_lookup[BLOCK_32X32],
+                wedge_masks[BLOCK_32X32] },
+        { 0, NULL, NULL, NULL },
+        { 0, NULL, NULL, NULL },
+        { 0, NULL, NULL, NULL },
+        { 0, NULL, NULL, NULL },
+        { 0, NULL, NULL, NULL },
+        { 0, NULL, NULL, NULL },
+        { 0, NULL, NULL, NULL },
+        { 0, NULL, NULL, NULL },
+        { 4, wedge_codebook_16_hgtw, wedge_signflip_lookup[BLOCK_8X32],
+                wedge_masks[BLOCK_8X32] },
+        { 4, wedge_codebook_16_hltw, wedge_signflip_lookup[BLOCK_32X8],
+                wedge_masks[BLOCK_32X8] },
+        { 0, NULL, NULL, NULL },
+        { 0, NULL, NULL, NULL },
+};
+
+INLINE int is_interintra_wedge_used(BlockSize sb_type) {
+    return wedge_params_lookup[sb_type].bits > 0;
+}
+
+INLINE int32_t get_wedge_bits_lookup(BlockSize sb_type) {
+    return wedge_params_lookup[sb_type].bits;
+}
+
+INLINE const uint8_t *av1_get_contiguous_soft_mask(int wedge_index, int wedge_sign,
+                                                   BlockSize sb_type) {
+    return wedge_params_lookup[sb_type].masks[wedge_sign][wedge_index];
+}
+
+void aom_convolve_copy_c(const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst,
+                         ptrdiff_t dst_stride, const int16_t *filter_x, int filter_x_stride,
+                         const int16_t *filter_y, int filter_y_stride, int w, int h) {
+    int r;
+
+    (void)filter_x;
+    (void)filter_x_stride;
+    (void)filter_y;
+    (void)filter_y_stride;
+
+    for (r = h; r > 0; --r) {
+        memcpy(dst, src, w);
+        src += src_stride;
+        dst += dst_stride;
+    }
+}
+
+static void shift_copy(const uint8_t *src, uint8_t *dst, int shift, int width) {
+    if (shift >= 0) {
+        memcpy(dst + shift, src, width - shift);
+        memset(dst, src[0], shift);
+    } else {
+        shift = -shift;
+        memcpy(dst, src + shift, width - shift);
+        memset(dst + width - shift, src[width - 1], shift);
+    }
+}
+
+int get_wedge_params_bits(BlockSize sb_type) {
+    return wedge_params_lookup[sb_type].bits;
+}
+
+#endif // USE_PRECOMPUTED_WEDGE_MASK
+
+
+// [negative][direction]
+DECLARE_ALIGNED(16, static uint8_t,
+                wedge_mask_obl[2][WEDGE_DIRECTIONS][MASK_MASTER_SIZE * MASK_MASTER_SIZE]);
+
+// 4 * MAX_WEDGE_SQUARE is an easy to compute and fairly tight upper bound
+// on the sum of all mask sizes up to an including MAX_WEDGE_SQUARE.
+DECLARE_ALIGNED(16, static uint8_t, wedge_mask_buf[2 * MAX_WEDGE_TYPES * 4 * MAX_WEDGE_SQUARE]);
+
+static void init_wedge_master_masks() {
+    int       i, j;
+    const int w      = MASK_MASTER_SIZE;
+    const int h      = MASK_MASTER_SIZE;
+    const int stride = MASK_MASTER_STRIDE;
+    // Note: index [0] stores the masters, and [1] its complement.
+#if USE_PRECOMPUTED_WEDGE_MASK
+    // Generate prototype by shifting the masters
+    int shift = h / 4;
+    for (i = 0; i < h; i += 2) {
+        shift_copy(wedge_master_oblique_even,
+                   &wedge_mask_obl[0][WEDGE_OBLIQUE63][i * stride],
+                   shift,
+                   MASK_MASTER_SIZE);
+        shift--;
+        shift_copy(wedge_master_oblique_odd,
+                   &wedge_mask_obl[0][WEDGE_OBLIQUE63][(i + 1) * stride],
+                   shift,
+                   MASK_MASTER_SIZE);
+        memcpy(&wedge_mask_obl[0][WEDGE_VERTICAL][i * stride],
+               wedge_master_vertical,
+               MASK_MASTER_SIZE * sizeof(wedge_master_vertical[0]));
+        memcpy(&wedge_mask_obl[0][WEDGE_VERTICAL][(i + 1) * stride],
+               wedge_master_vertical,
+               MASK_MASTER_SIZE * sizeof(wedge_master_vertical[0]));
+    }
+#else
+    static const double smoother_param = 2.85;
+    const int           a[2]           = {2, 1};
+    const double        asqrt          = sqrt(a[0] * a[0] + a[1] * a[1]);
+    for (i = 0; i < h; i++) {
+        for (j = 0; j < w; ++j) {
+            int       x   = (2 * j + 1 - w);
+            int       y   = (2 * i + 1 - h);
+            double    d   = (a[0] * x + a[1] * y) / asqrt;
+            const int msk = (int)rint((1.0 + tanh(d / smoother_param)) * 32);
+            wedge_mask_obl[0][WEDGE_OBLIQUE63][i * stride + j] = msk;
+            const int mskx = (int)rint((1.0 + tanh(x / smoother_param)) * 32);
+            wedge_mask_obl[0][WEDGE_VERTICAL][i * stride + j] = mskx;
+        }
+    }
+#endif // USE_PRECOMPUTED_WEDGE_MASK
+    for (i = 0; i < h; ++i) {
+        for (j = 0; j < w; ++j) {
+            const int msk = wedge_mask_obl[0][WEDGE_OBLIQUE63][i * stride + j];
+            wedge_mask_obl[0][WEDGE_OBLIQUE27][j * stride + i] = msk;
+            wedge_mask_obl[0][WEDGE_OBLIQUE117][i * stride + w - 1 - j] =
+            wedge_mask_obl[0][WEDGE_OBLIQUE153][(w - 1 - j) * stride + i] =
+                    (1 << WEDGE_WEIGHT_BITS) - msk;
+            wedge_mask_obl[1][WEDGE_OBLIQUE63][i * stride + j] =
+            wedge_mask_obl[1][WEDGE_OBLIQUE27][j * stride + i] = (1 << WEDGE_WEIGHT_BITS) - msk;
+            wedge_mask_obl[1][WEDGE_OBLIQUE117][i * stride + w - 1 - j] =
+            wedge_mask_obl[1][WEDGE_OBLIQUE153][(w - 1 - j) * stride + i] = msk;
+            const int mskx = wedge_mask_obl[0][WEDGE_VERTICAL][i * stride + j];
+            wedge_mask_obl[0][WEDGE_HORIZONTAL][j * stride + i] = mskx;
+            wedge_mask_obl[1][WEDGE_VERTICAL][i * stride + j] =
+            wedge_mask_obl[1][WEDGE_HORIZONTAL][j * stride + i] =
+                    (1 << WEDGE_WEIGHT_BITS) - mskx;
+        }
+    }
+}
+
+#if !USE_PRECOMPUTED_WEDGE_SIGN
+// If the signs for the wedges for various blocksizes are
+// inconsistent flip the sign flag. Do it only once for every
+// wedge codebook.
+static void init_wedge_signs() {
+    BLOCK_SIZE sb_type;
+    memset(wedge_signflip_lookup, 0, sizeof(wedge_signflip_lookup));
+    for (sb_type = BLOCK_4X4; sb_type < BLOCK_SIZES_ALL; ++sb_type) {
+        const int               bw           = block_size_wide[sb_type];
+        const int               bh           = block_size_high[sb_type];
+        const wedge_params_type wedge_params = wedge_params_lookup[sb_type];
+        const int               wbits        = wedge_params.bits;
+        const int               wtypes       = 1 << wbits;
+        int                     i, w;
+        if (wbits) {
+            for (w = 0; w < wtypes; ++w) {
+                // Get the mask master, i.e. index [0]
+                const uint8_t *mask = get_wedge_mask_inplace(w, 0, sb_type);
+                int            avg  = 0;
+                for (i = 0; i < bw; ++i) avg += mask[i];
+                for (i = 1; i < bh; ++i) avg += mask[i * MASK_MASTER_STRIDE];
+                avg = (avg + (bw + bh - 1) / 2) / (bw + bh - 1);
+                // Default sign of this wedge is 1 if the average < 32, 0 otherwise.
+                // If default sign is 1:
+                //   If sign requested is 0, we need to flip the sign and return
+                //   the complement i.e. index [1] instead. If sign requested is 1
+                //   we need to flip the sign and return index [0] instead.
+                // If default sign is 0:
+                //   If sign requested is 0, we need to return index [0] the master
+                //   if sign requested is 1, we need to return the complement index [1]
+                //   instead.
+                wedge_params.signflip[w] = (avg < 32);
+            }
+        }
+    }
+}
+#endif // !USE_PRECOMPUTED_WEDGE_SIGN
+
+static const uint8_t *get_wedge_mask_inplace(int wedge_index, int neg, BlockSize sb_type) {
+    const uint8_t *      master;
+    const int            bh = block_size_high[sb_type];
+    const int            bw = block_size_wide[sb_type];
+    const WedgeCodeType *a  = wedge_params_lookup[sb_type].codebook + wedge_index;
+    int                  woff, hoff;
+    const uint8_t        wsignflip = wedge_params_lookup[sb_type].signflip[wedge_index];
+
+    assert(wedge_index >= 0 && wedge_index < (1 << get_wedge_bits_lookup(sb_type)));
+    woff   = (a->x_offset * bw) >> 3;
+    hoff   = (a->y_offset * bh) >> 3;
+    master = wedge_mask_obl[neg ^ wsignflip][a->direction] +
+             MASK_MASTER_STRIDE * (MASK_MASTER_SIZE / 2 - hoff) + MASK_MASTER_SIZE / 2 - woff;
+    return master;
+}
+
+static void init_wedge_masks() {
+    uint8_t * dst = wedge_mask_buf;
+    BlockSize bsize;
+    memset(wedge_masks, 0, sizeof(wedge_masks));
+    for (bsize = BLOCK_4X4; bsize < BlockSizeS_ALL; ++bsize) {
+        const uint8_t *        mask;
+        const int              bw           = block_size_wide[bsize];
+        const int              bh           = block_size_high[bsize];
+        const WedgeParamsType *wedge_params = &wedge_params_lookup[bsize];
+        const int              wbits        = wedge_params->bits;
+        const int              wtypes       = 1 << wbits;
+        int                    w;
+        if (wbits == 0) continue;
+        for (w = 0; w < wtypes; ++w) {
+            mask = get_wedge_mask_inplace(w, 0, bsize);
+            aom_convolve_copy_c(mask, MASK_MASTER_STRIDE, dst, bw, NULL, 0, NULL, 0, bw, bh);
+            wedge_params->masks[0][w] = dst;
+            dst += bw * bh;
+
+            mask = get_wedge_mask_inplace(w, 1, bsize);
+            aom_convolve_copy_c(mask, MASK_MASTER_STRIDE, dst, bw, NULL, 0, NULL, 0, bw, bh);
+            wedge_params->masks[1][w] = dst;
+            dst += bw * bh;
+        }
+        assert(sizeof(wedge_mask_buf) >= (size_t)(dst - wedge_mask_buf));
+    }
+}
+
+// Equation of line: f(x, y) = a[0]*(x - a[2]*w/8) + a[1]*(y - a[3]*h/8) = 0
+void av1_init_wedge_masks(void) {
+    init_wedge_master_masks();
+#if !USE_PRECOMPUTED_WEDGE_SIGN
+    init_wedge_signs();
+#endif // !USE_PRECOMPUTED_WEDGE_SIGN
+    init_wedge_masks();
+}
+
+int is_masked_compound_type(COMPOUND_TYPE type);
+
+/* clang-format off */
+static const uint8_t ii_weights1d[MAX_SB_SIZE] = {
+        60, 58, 56, 54, 52, 50, 48, 47, 45, 44, 42, 41, 39, 38, 37, 35, 34, 33, 32,
+        31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 22, 21, 20, 19, 19, 18, 18, 17, 16,
+        16, 15, 15, 14, 14, 13, 13, 12, 12, 12, 11, 11, 10, 10, 10,  9,  9,  9,  8,
+        8,  8,  8,  7,  7,  7,  7,  6,  6,  6,  6,  6,  5,  5,  5,  5,  5,  4,  4,
+        4,  4,  4,  4,  4,  4,  3,  3,  3,  3,  3,  3,  3,  3,  3,  2,  2,  2,  2,
+        2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  1,  1,  1,  1,  1,  1,  1,  1,
+        1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1
+};
+static uint8_t ii_size_scales[BlockSizeS_ALL] = {
+        32, 16, 16, 16, 8, 8, 8, 4,
+        4,  4,  2,  2,  2, 1, 1, 1,
+        8,  8,  4,  4,  2, 2
+};
+/* clang-format on */
+
+void build_smooth_interintra_mask(uint8_t *mask, int stride, BlockSize plane_bsize,
+                                  InterIntraMode mode) {
+    int       i, j;
+    const int bw         = block_size_wide[plane_bsize];
+    const int bh         = block_size_high[plane_bsize];
+    const int size_scale = ii_size_scales[plane_bsize];
+
+    switch (mode) {
+        case II_V_PRED:
+            for (i = 0; i < bh; ++i) {
+                memset(mask, ii_weights1d[i * size_scale], bw * sizeof(mask[0]));
+                mask += stride;
+            }
+            break;
+
+        case II_H_PRED:
+            for (i = 0; i < bh; ++i) {
+                for (j = 0; j < bw; ++j) mask[j] = ii_weights1d[j * size_scale];
+                mask += stride;
+            }
+            break;
+
+        case II_SMOOTH_PRED:
+            for (i = 0; i < bh; ++i) {
+                for (j = 0; j < bw; ++j) mask[j] = ii_weights1d[(i < j ? i : j) * size_scale];
+                mask += stride;
+            }
+            break;
+
+        case II_DC_PRED:
+        default:
+            for (i = 0; i < bh; ++i) {
+                memset(mask, 32, bw * sizeof(mask[0]));
+                mask += stride;
+            }
+            break;
+    }
+}
+
+void combine_interintra_highbd(InterIntraMode mode, uint8_t use_wedge_interintra,
+                               uint8_t wedge_index, uint8_t wedge_sign, BlockSize bsize,
+                               BlockSize plane_bsize, uint8_t *comppred8, int compstride,
+                               const uint8_t *interpred8, int interstride,
+                               const uint8_t *intrapred8, int intrastride, int bd) {
+    const int bw = block_size_wide[plane_bsize];
+    const int bh = block_size_high[plane_bsize];
+
+    if (use_wedge_interintra) {
+        if (is_interintra_wedge_used(bsize)) {
+            const uint8_t *mask = av1_get_contiguous_soft_mask(wedge_index, wedge_sign, bsize);
+            const int      subh = 2 * mi_size_high[bsize] == bh;
+            const int      subw = 2 * mi_size_wide[bsize] == bw;
+            aom_highbd_blend_a64_mask(comppred8,
+                                      compstride,
+                                      intrapred8,
+                                      intrastride,
+                                      interpred8,
+                                      interstride,
+                                      mask,
+                                      block_size_wide[bsize],
+                                      bw,
+                                      bh,
+                                      subw,
+                                      subh,
+                                      bd);
+        }
+        return;
+    }
+
+    uint8_t mask[MAX_SB_SQUARE];
+    build_smooth_interintra_mask(mask, bw, plane_bsize, mode);
+    aom_highbd_blend_a64_mask(comppred8,
+                              compstride,
+                              intrapred8,
+                              intrastride,
+                              interpred8,
+                              interstride,
+                              mask,
+                              bw,
+                              bw,
+                              bh,
+                              0,
+                              0,
+                              bd);
+}
+
+const uint8_t *av1_get_compound_type_mask(const InterInterCompoundData *const comp_data,
+                                          uint8_t *seg_mask, BlockSize sb_type) {
+    assert(is_masked_compound_type(comp_data->type));
+    (void)sb_type;
+    switch (comp_data->type) {
+        case COMPOUND_WEDGE:
+            return av1_get_contiguous_soft_mask(comp_data->wedge_index, comp_data->wedge_sign, sb_type);
+        case COMPOUND_DIFFWTD: return seg_mask;
+        default: assert(0); return NULL;
+    }
+}
+
+void build_masked_compound_no_round(uint8_t *dst, int dst_stride, const CONV_BUF_TYPE *src0,
+                                    int src0_stride, const CONV_BUF_TYPE *src1, int src1_stride,
+                                    const InterInterCompoundData *const comp_data,
+                                    uint8_t *seg_mask, BlockSize sb_type, int h, int w,
+                                    ConvolveParams *conv_params, uint8_t bit_depth) {
+    // Derive subsampling from h and w passed in. May be refactored to
+    // pass in subsampling factors directly.
+    const int      subh = (2 << mi_size_high_log2[sb_type]) == h;
+    const int      subw = (2 << mi_size_wide_log2[sb_type]) == w;
+    const uint8_t *mask = av1_get_compound_type_mask(comp_data, seg_mask, sb_type);
+
+    if (bit_depth > EB_8BIT) {
+        aom_highbd_blend_a64_d16_mask(dst,
+                                      dst_stride,
+                                      src0,
+                                      src0_stride,
+                                      src1,
+                                      src1_stride,
+                                      mask,
+                                      block_size_wide[sb_type],
+                                      w,
+                                      h,
+                                      subw,
+                                      subh,
+                                      conv_params,
+                                      bit_depth);
+    } else {
+        aom_lowbd_blend_a64_d16_mask(dst,
+                                     dst_stride,
+                                     src0,
+                                     src0_stride,
+                                     src1,
+                                     src1_stride,
+                                     mask,
+                                     block_size_wide[sb_type],
+                                     w,
+                                     h,
+                                     subw,
+                                     subh,
+                                     conv_params);
+    }
+}
+
+

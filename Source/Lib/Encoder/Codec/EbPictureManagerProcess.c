@@ -860,9 +860,10 @@ void *picture_manager_kernel(void *input_ptr) {
                         set_tile_info(entry_pcs_ptr);
 
                         int      sb_size_log2    = entry_scs_ptr->seq_header.sb_size_log2;
-                        uint32_t encDecSegColCnt = (scs_ptr->static_config.super_block_size == 128) ?
-                                                 ((entry_pcs_ptr->aligned_width + 64) / 128) :
-                                                 ((entry_pcs_ptr->aligned_width + 32) / 64);
+
+                        uint32_t encDecSegColCnt = entry_scs_ptr->enc_dec_segment_col_count_array
+                                                        [entry_pcs_ptr->temporal_layer_index];
+
                         uint32_t encDecSegRowCnt = entry_scs_ptr->enc_dec_segment_row_count_array
                                                        [entry_pcs_ptr->temporal_layer_index];
 

@@ -43,8 +43,17 @@ extern "C" {
         int32_t subpel_y;
     } SubpelParams;
 
+    typedef struct PadBlock {
+        int x0;
+        int x1;
+        int y0;
+        int y1;
+    } PadBlock;
+
+#define INTERINTRA_WEDGE_SIGN 0
+
 typedef uint8_t *WedgeMasksType[MAX_WEDGE_TYPES];
-static WedgeMasksType wedge_masks[BlockSizeS_ALL][2];
+
 // Angles are with respect to horizontal anti-clockwise
 typedef enum WedgeDirectionType
 {
@@ -79,99 +88,6 @@ typedef struct WedgeParamsType
     WedgeMasksType *masks;
 } WedgeParamsType;
 
-
-DECLARE_ALIGNED(16, static uint8_t, wedge_signflip_lookup[BlockSizeS_ALL][MAX_WEDGE_TYPES]) = {
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },  // not used
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },  // not used
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },  // not used
-        { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, },
-        { 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, },
-        { 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, },
-        { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, },
-        { 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, },
-        { 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, },
-        { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, },
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },  // not used
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },  // not used
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },  // not used
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },  // not used
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },  // not used
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },  // not used
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },  // not used
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },  // not used
-        { 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, },
-        { 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, },
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },  // not used
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },  // not used
-};
-
-
-static const WedgeCodeType wedge_codebook_16_hgtw[16] = {
-        { WEDGE_OBLIQUE27, 4, 4 }, { WEDGE_OBLIQUE63, 4, 4 },
-        { WEDGE_OBLIQUE117, 4, 4 }, { WEDGE_OBLIQUE153, 4, 4 },
-        { WEDGE_HORIZONTAL, 4, 2 }, { WEDGE_HORIZONTAL, 4, 4 },
-        { WEDGE_HORIZONTAL, 4, 6 }, { WEDGE_VERTICAL, 4, 4 },
-        { WEDGE_OBLIQUE27, 4, 2 }, { WEDGE_OBLIQUE27, 4, 6 },
-        { WEDGE_OBLIQUE153, 4, 2 }, { WEDGE_OBLIQUE153, 4, 6 },
-        { WEDGE_OBLIQUE63, 2, 4 }, { WEDGE_OBLIQUE63, 6, 4 },
-        { WEDGE_OBLIQUE117, 2, 4 }, { WEDGE_OBLIQUE117, 6, 4 },
-};
-
-static const WedgeCodeType wedge_codebook_16_hltw[16] = {
-        { WEDGE_OBLIQUE27, 4, 4 }, { WEDGE_OBLIQUE63, 4, 4 },
-        { WEDGE_OBLIQUE117, 4, 4 }, { WEDGE_OBLIQUE153, 4, 4 },
-        { WEDGE_VERTICAL, 2, 4 }, { WEDGE_VERTICAL, 4, 4 },
-        { WEDGE_VERTICAL, 6, 4 }, { WEDGE_HORIZONTAL, 4, 4 },
-        { WEDGE_OBLIQUE27, 4, 2 }, { WEDGE_OBLIQUE27, 4, 6 },
-        { WEDGE_OBLIQUE153, 4, 2 }, { WEDGE_OBLIQUE153, 4, 6 },
-        { WEDGE_OBLIQUE63, 2, 4 }, { WEDGE_OBLIQUE63, 6, 4 },
-        { WEDGE_OBLIQUE117, 2, 4 }, { WEDGE_OBLIQUE117, 6, 4 },
-};
-
-static const WedgeCodeType wedge_codebook_16_heqw[16] = {
-        { WEDGE_OBLIQUE27, 4, 4 }, { WEDGE_OBLIQUE63, 4, 4 },
-        { WEDGE_OBLIQUE117, 4, 4 }, { WEDGE_OBLIQUE153, 4, 4 },
-        { WEDGE_HORIZONTAL, 4, 2 }, { WEDGE_HORIZONTAL, 4, 6 },
-        { WEDGE_VERTICAL, 2, 4 }, { WEDGE_VERTICAL, 6, 4 },
-        { WEDGE_OBLIQUE27, 4, 2 }, { WEDGE_OBLIQUE27, 4, 6 },
-        { WEDGE_OBLIQUE153, 4, 2 }, { WEDGE_OBLIQUE153, 4, 6 },
-        { WEDGE_OBLIQUE63, 2, 4 }, { WEDGE_OBLIQUE63, 6, 4 },
-        { WEDGE_OBLIQUE117, 2, 4 }, { WEDGE_OBLIQUE117, 6, 4 },
-};
-
-static const WedgeParamsType wedge_params_lookup[BlockSizeS_ALL] = {
-        { 0, NULL, NULL, NULL },
-        { 0, NULL, NULL, NULL },
-        { 0, NULL, NULL, NULL },
-        { 4, wedge_codebook_16_heqw, wedge_signflip_lookup[BLOCK_8X8],
-                wedge_masks[BLOCK_8X8] },
-        { 4, wedge_codebook_16_hgtw, wedge_signflip_lookup[BLOCK_8X16],
-                wedge_masks[BLOCK_8X16] },
-        { 4, wedge_codebook_16_hltw, wedge_signflip_lookup[BLOCK_16X8],
-                wedge_masks[BLOCK_16X8] },
-        { 4, wedge_codebook_16_heqw, wedge_signflip_lookup[BLOCK_16X16],
-                wedge_masks[BLOCK_16X16] },
-        { 4, wedge_codebook_16_hgtw, wedge_signflip_lookup[BLOCK_16X32],
-                wedge_masks[BLOCK_16X32] },
-        { 4, wedge_codebook_16_hltw, wedge_signflip_lookup[BLOCK_32X16],
-                wedge_masks[BLOCK_32X16] },
-        { 4, wedge_codebook_16_heqw, wedge_signflip_lookup[BLOCK_32X32],
-                wedge_masks[BLOCK_32X32] },
-        { 0, NULL, NULL, NULL },
-        { 0, NULL, NULL, NULL },
-        { 0, NULL, NULL, NULL },
-        { 0, NULL, NULL, NULL },
-        { 0, NULL, NULL, NULL },
-        { 0, NULL, NULL, NULL },
-        { 0, NULL, NULL, NULL },
-        { 0, NULL, NULL, NULL },
-        { 4, wedge_codebook_16_hgtw, wedge_signflip_lookup[BLOCK_8X32],
-                wedge_masks[BLOCK_8X32] },
-        { 4, wedge_codebook_16_hltw, wedge_signflip_lookup[BLOCK_32X8],
-                wedge_masks[BLOCK_32X8] },
-        { 0, NULL, NULL, NULL },
-        { 0, NULL, NULL, NULL },
-};
 
     struct ModeDecisionContext;
 
@@ -217,9 +133,6 @@ static const WedgeParamsType wedge_params_lookup[BlockSizeS_ALL] = {
     static const PredictionMode interintra_to_intra_mode[INTERINTRA_MODES] = {
       DC_PRED, V_PRED, H_PRED, SMOOTH_PRED
     };
-    static INLINE int is_interintra_wedge_used(BlockSize sb_type) {
-        return wedge_params_lookup[sb_type].bits > 0;
-    }
 
     void combine_interintra(InterIntraMode mode,
         int8_t use_wedge_interintra, int wedge_index,
@@ -256,14 +169,6 @@ static const WedgeParamsType wedge_params_lookup[BlockSizeS_ALL] = {
     MV32 av1_scale_mv(const MV *mvq4, int x, int y,
         const ScaleFactors *sf);
 
-static INLINE int get_wedge_bits_lookup(BlockSize sb_type) {
-    return wedge_params_lookup[sb_type].bits;
-}
-
-static INLINE const uint8_t *av1_get_contiguous_soft_mask(int wedge_index, int wedge_sign,
-                                                          BlockSize sb_type) {
-    return wedge_params_lookup[sb_type].masks[wedge_sign][wedge_index];
-}
 
 void build_smooth_interintra_mask(uint8_t *mask, int stride, BlockSize plane_bsize,
                                   InterIntraMode mode);
@@ -276,8 +181,18 @@ void convolve_2d_for_intrabc(const uint8_t *src, int src_stride, uint8_t *dst,
                              int dst_stride, int w, int h, int subpel_x_q4, int subpel_y_q4,
                              ConvolveParams *conv_params);
 
-        extern aom_highbd_convolve_fn_t convolve_hbd[/*sub_x*/2][/*sub_y*/2][/*bi*/2];
-    extern AomConvolveFn convolve[/*sub_x*/2][/*sub_y*/2][/*bi*/2];
+extern aom_highbd_convolve_fn_t convolve_hbd[/*sub_x*/2][/*sub_y*/2][/*bi*/2];
+
+extern AomConvolveFn convolve[/*sub_x*/2][/*sub_y*/2][/*bi*/2];
+
+int is_interintra_wedge_used(BlockSize sb_type);
+
+int32_t get_wedge_bits_lookup(BlockSize sb_type);
+
+const uint8_t *av1_get_contiguous_soft_mask(int wedge_index, int wedge_sign, BlockSize sb_type);
+
+int get_wedge_params_bits(BlockSize sb_type);
+
 
 #ifdef __cplusplus
 }
