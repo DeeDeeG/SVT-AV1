@@ -6410,7 +6410,7 @@ EbErrorType warped_motion_prediction(PictureControlSet *picture_control_set_ptr,
         buf_width = ref_pic_list0->width;
         buf_height = ref_pic_list0->height;
     }
-    else if (mv_unit->pred_direction == UNI_PRED_LIST_1) {
+    else{ //UNI_PRED_LIST_1
         src_ptr_l0 = ref_pic_list1->buffer_y + (is16bit ? 2 : 1)
             * (ref_pic_list1->origin_x + ref_pic_list1->origin_y * ref_pic_list1->stride_y);
         src_ptr_l1 = NULL;
@@ -6481,7 +6481,7 @@ EbErrorType warped_motion_prediction(PictureControlSet *picture_control_set_ptr,
                     : NULL;
                 src_stride = ref_pic_list0->stride_cb;
             }
-            else if (mv_unit->pred_direction == UNI_PRED_LIST_1) {
+            else { //UNI_PRED_LIST_1
                 src_ptr_l0 = ref_pic_list1->buffer_cb + (is16bit ? 2 : 1)
                     * (ref_pic_list1->origin_x / 2
                         + (ref_pic_list1->origin_y / 2) * ref_pic_list1->stride_cb);
@@ -6543,7 +6543,7 @@ EbErrorType warped_motion_prediction(PictureControlSet *picture_control_set_ptr,
                     : NULL;
                 src_stride = ref_pic_list0->stride_cr;
             }
-            else if (mv_unit->pred_direction == UNI_PRED_LIST_1) {
+            else { //UNI_PRED_LIST_1
                 src_ptr_l0 = ref_pic_list1->buffer_cr + (is16bit ? 2 : 1)
                     * (ref_pic_list1->origin_x / 2
                         + (ref_pic_list1->origin_y / 2) * ref_pic_list1->stride_cr);
@@ -6607,7 +6607,7 @@ EbErrorType warped_motion_prediction(PictureControlSet *picture_control_set_ptr,
                     : NULL;
                 src_stride = ref_pic_list0->stride_cb;
             }
-            else if (mv_unit->pred_direction == UNI_PRED_LIST_1) {
+            else { //UNI_PRED_LIST_1
                 src_ptr_l0 = ref_pic_list1->buffer_cb + (is16bit ? 2 : 1)
                     * ((ref_pic_list1->origin_x + ((pu_origin_x >> 3) << 3)) / 2
                         + (ref_pic_list1->origin_y + ((pu_origin_y >> 3) << 3)) / 2 * ref_pic_list1->stride_cb);
@@ -6664,7 +6664,7 @@ EbErrorType warped_motion_prediction(PictureControlSet *picture_control_set_ptr,
                     : NULL;
                 src_stride = ref_pic_list0->stride_cr;
             }
-            else if (mv_unit->pred_direction == UNI_PRED_LIST_1) {
+            else { //UNI_PRED_LIST_1
                 src_ptr_l0 = ref_pic_list1->buffer_cr + (is16bit ? 2 : 1)
                     * ((ref_pic_list1->origin_x + ((pu_origin_x >> 3) << 3)) / 2
                         + (ref_pic_list1->origin_y + ((pu_origin_y >> 3) << 3)) / 2 * ref_pic_list1->stride_cr);
