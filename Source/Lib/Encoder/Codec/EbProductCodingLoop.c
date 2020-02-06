@@ -4410,7 +4410,7 @@ void perform_tx_partitioning(ModeDecisionCandidateBuffer *candidate_buffer,
         memcpy(context_ptr->scratch_candidate_buffer->candidate_ptr,
                candidate_buffer->candidate_ptr,
                sizeof(ModeDecisionCandidate));
-    }
+    
 
     if (is_inter) {
         uint32_t block_index =
@@ -4472,6 +4472,7 @@ void perform_tx_partitioning(ModeDecisionCandidateBuffer *candidate_buffer,
                 }
             }
         }
+    }
     }
 
     uint8_t tx_search_skip_flag;
