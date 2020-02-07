@@ -3498,8 +3498,9 @@ EbErrorType av1_intra_luma_prediction(ModeDecisionContext *        md_context_pt
             md_context_ptr->blk_geom
                 ->tx_org_x[is_inter][md_context_ptr->tx_depth]
                           [md_context_ptr->txb_itr], //uint32_t cuOrgX used only for prediction Ptr
-            md_context_ptr->blk_geom->tx_org_y[md_context_ptr->tx_depth]
-                          [md_context_ptr->txb_itr], //uint32_t cuOrgY used only for prediction Ptr
+            md_context_ptr->blk_geom
+                    ->tx_org_y[is_inter][md_context_ptr->tx_depth]
+            [md_context_ptr->txb_itr], //uint32_t cuOrgY used only for prediction Ptr
             pcs_ptr->mi_grid_base,
             &((SequenceControlSet *)pcs_ptr->scs_wrapper_ptr->object_ptr)->seq_header
         );
@@ -3559,8 +3560,9 @@ EbErrorType av1_intra_luma_prediction(ModeDecisionContext *        md_context_pt
             md_context_ptr->blk_geom
                 ->tx_org_x[is_inter][md_context_ptr->tx_depth]
                           [md_context_ptr->txb_itr], //uint32_t cuOrgX used only for prediction Ptr
-            md_context_ptr->blk_geom->tx_org_y[md_context_ptr->tx_depth]
-                          [md_context_ptr->txb_itr], //uint32_t cuOrgY used only for prediction Ptr
+            md_context_ptr->blk_geom
+                    ->tx_org_y[is_inter][md_context_ptr->tx_depth]
+            [md_context_ptr->txb_itr], //uint32_t cuOrgY used only for prediction Ptr
             pcs_ptr->mi_grid_base,
             &((SequenceControlSet *)pcs_ptr->scs_wrapper_ptr->object_ptr)->seq_header
         );
