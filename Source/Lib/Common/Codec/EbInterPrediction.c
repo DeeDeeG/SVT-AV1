@@ -1622,15 +1622,15 @@ static const WedgeParamsType wedge_params_lookup[BlockSizeS_ALL] = {
         { 0, NULL, NULL, NULL },
 };
 
-INLINE int is_interintra_wedge_used(BlockSize sb_type) {
+int is_interintra_wedge_used(BlockSize sb_type) {
     return wedge_params_lookup[sb_type].bits > 0;
 }
 
-INLINE int32_t get_wedge_bits_lookup(BlockSize sb_type) {
+int32_t get_wedge_bits_lookup(BlockSize sb_type) {
     return wedge_params_lookup[sb_type].bits;
 }
 
-INLINE const uint8_t *av1_get_contiguous_soft_mask(int wedge_index, int wedge_sign,
+const uint8_t *av1_get_contiguous_soft_mask(int wedge_index, int wedge_sign,
                                                    BlockSize sb_type) {
     return wedge_params_lookup[sb_type].masks[wedge_sign][wedge_index];
 }
